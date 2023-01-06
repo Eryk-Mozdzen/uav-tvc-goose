@@ -1,7 +1,20 @@
 
+# matlab
 **/slprj
 **/*.slxc
 **/*.slx.*
 
+# kicad
 **/*-backups
 **/*.kicad_prl
+**/fp-info-cache
+**/fp-lib-table
+**/sym-lib-table
+**/#auto_saved_files#
+**/*.csv
+**/*.xml
+**/gerber
+**/*.gbr
+**/*.gbrjob
+**/*.drl
+**/*.zip
