@@ -18,3 +18,7 @@
 **/*.gbrjob
 **/*.drl
 **/*.zip
+
+# software
+**/.vscode
+**/build
