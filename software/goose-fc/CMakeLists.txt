@@ -10,6 +10,7 @@ set(TARGET ${CMAKE_PROJECT_NAME}.elf)
 
 add_executable(${TARGET}
 	"../third-party/stm32f4xx_hal_driver/Src/stm32f4xx_ll_usb.c"
+	"../third-party/stm32f4xx_hal_driver/Src/stm32f4xx_hal_i2c.c"
 	"../third-party/stm32f4xx_hal_driver/Src/stm32f4xx_hal_can.c"
 	"../third-party/stm32f4xx_hal_driver/Src/stm32f4xx_hal_pcd.c"
 	"../third-party/stm32f4xx_hal_driver/Src/stm32f4xx_hal_pcd_ex.c"

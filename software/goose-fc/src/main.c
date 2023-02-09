@@ -10,6 +10,7 @@
 #include "usbd_cdc_if.h"
 
 USBD_HandleTypeDef hUsbDeviceFS;
+I2C_HandleTypeDef hi2c1;
 
 void Init() {
 
@@ -66,11 +67,81 @@ void blink(void *param) {
 void telemetry(void *param) {
 	(void)param;
 
-	char buffer[64];
+	#define MPU6050_DEVICE_ID			0x68 ///< The correct MPU6050_WHO_AM_I value
+	#define MPU6050_SELF_TEST_X			0x0D ///< Self test factory calibrated values register
+	#define MPU6050_SELF_TEST_Y			0x0E ///< Self test factory calibrated values register
+	#define MPU6050_SELF_TEST_Z			0x0F ///< Self test factory calibrated values register
+	#define MPU6050_SELF_TEST_A			0x10 ///< Self test factory calibrated values register
+	#define MPU6050_SMPLRT_DIV			0x19  ///< sample rate divisor register
+	#define MPU6050_CONFIG				0x1A      ///< General configuration register
+	#define MPU6050_GYRO_CONFIG			0x1B ///< Gyro specfic configuration register
+	#define MPU6050_ACCEL_CONFIG    	0x1C ///< Accelerometer specific configration register
+	#define MPU6050_INT_PIN_CONFIG		0x37 ///< Interrupt pin configuration register
+	#define MPU6050_INT_ENABLE			0x38     ///< Interrupt enable configuration register
+	#define MPU6050_INT_STATUS			0x3A     ///< Interrupt status register
+	#define MPU6050_WHO_AM_I			0x75       ///< Divice ID register
+	#define MPU6050_SIGNAL_PATH_RESET	0x68 ///< Signal path reset register
+	#define MPU6050_USER_CTRL			0x6A         ///< FIFO and I2C Master control register
+	#define MPU6050_PWR_MGMT_1			0x6B        ///< Primary power/sleep control register
+	#define MPU6050_PWR_MGMT_2			0x6C ///< Secondary power/sleep control register
+	#define MPU6050_TEMP_H				0x41     ///< Temperature data high byte register
+	#define MPU6050_TEMP_L				0x42     ///< Temperature data low byte register
+	#define MPU6050_ACCEL_OUT			0x3B  ///< base address for sensor data reads
+	#define MPU6050_MOT_THR				0x1F    ///< Motion detection threshold bits [7:0]
+	#define MPU6050_MOT_DUR				0x20 ///< Duration counter threshold for motion int. 1 kHz rate, LSB = 1 ms
+
+	char buffer[128];
+
+	uint8_t reg = 0x00;
+	HAL_I2C_Mem_Write(&hi2c1, 0x68<<1, 0x6B, 1, &reg, 1, 100);
+	reg = 0x10;
+	HAL_I2C_Mem_Write(&hi2c1, 0x68<<1, 0x1C, 1, &reg, 1, 100);
+	reg = 0x10;
+	HAL_I2C_Mem_Write(&hi2c1, 0x68<<1, 0x1B, 1, &reg, 1, 100);
+
+	reg = 0x70;
+	HAL_I2C_Mem_Write(&hi2c1, 0x1E<<1, 0x00, 1, &reg, 1, 100);
+	reg = 0xE0;
+	HAL_I2C_Mem_Write(&hi2c1, 0x1E<<1, 0x01, 1, &reg, 1, 100);
+	reg = 0x00;
+	HAL_I2C_Mem_Write(&hi2c1, 0x1E<<1, 0x02, 1, &reg, 1, 100);
 
 	while(1) {
 
-		snprintf(buffer, sizeof(buffer), "Time: %lu\n\r", xTaskGetTickCount());
+		uint8_t imu_data[14] = {0};
+		HAL_StatusTypeDef status_imu = HAL_I2C_Mem_Read(&hi2c1, 0x68<<1, 0x3B, 1, imu_data, 14, 100);
+
+		uint8_t mag_data[6] = {0};
+		HAL_StatusTypeDef status_mag = HAL_I2C_Mem_Read(&hi2c1, 0x1E<<1, 0x03, 1, mag_data, 6, 100);
+
+		if(status_imu==HAL_OK && status_mag==HAL_OK) {
+			int16_t accel[3] = {0};
+			int16_t gyro[3] = {0};
+			int16_t mag[3] = {0};
+
+			accel[0] = (((int16_t)imu_data[0])<<8) | imu_data[1];
+			accel[1] = (((int16_t)imu_data[2])<<8) | imu_data[3];
+			accel[2] = (((int16_t)imu_data[4])<<8) | imu_data[5];
+			gyro[0] = (((int16_t)imu_data[8])<<8) | imu_data[9];
+			gyro[1] = (((int16_t)imu_data[10])<<8) | imu_data[11];
+			gyro[2] = (((int16_t)imu_data[12])<<8) | imu_data[13];
+
+			mag[0] = (((int16_t)mag_data[0])<<8) | mag_data[1];
+			mag[1] = (((int16_t)mag_data[4])<<8) | mag_data[5];
+			mag[2] = (((int16_t)mag_data[2])<<8) | mag_data[3];
+
+			snprintf(buffer, sizeof(buffer), 
+				"accel: %7d %7d %7d\n\rgyro:  %7d %7d %7d\n\rmag:   %7d %7d %7d\n\r\n\r", 
+				accel[0], accel[1], accel[2], 
+				gyro[0], gyro[1], gyro[2],
+				mag[0], mag[1], mag[2]
+			);
+
+			//snprintf(buffer, sizeof(buffer), "%02X %02X %02X %02X %02X %02X\n\r\n\r", mag_data[0], mag_data[1], mag_data[2], mag_data[3], mag_data[4], mag_data[5]);
+
+		} else {
+			snprintf(buffer, sizeof(buffer), "Error %d %d\n\r", status_imu, status_mag);
+		}
 
 		CDC_Transmit_FS((uint8_t *)buffer, strlen(buffer));
 
@@ -86,6 +157,17 @@ int main() {
 	USBD_RegisterClass(&hUsbDeviceFS, &USBD_CDC);
 	USBD_CDC_RegisterInterface(&hUsbDeviceFS, &USBD_Interface_fops_FS);
 	USBD_Start(&hUsbDeviceFS);
+
+	hi2c1.Instance = I2C1;
+	hi2c1.Init.ClockSpeed = 100000;
+	hi2c1.Init.DutyCycle = I2C_DUTYCYCLE_2;
+	hi2c1.Init.OwnAddress1 = 0;
+	hi2c1.Init.AddressingMode = I2C_ADDRESSINGMODE_7BIT;
+	hi2c1.Init.DualAddressMode = I2C_DUALADDRESS_DISABLE;
+	hi2c1.Init.OwnAddress2 = 0;
+	hi2c1.Init.GeneralCallMode = I2C_GENERALCALL_DISABLE;
+	hi2c1.Init.NoStretchMode = I2C_NOSTRETCH_DISABLE;
+	HAL_I2C_Init(&hi2c1);
 
 	xTaskCreate(blink, "blink", 1024, NULL, 4, NULL);
 	xTaskCreate(telemetry, "usb", 1024, NULL, 4, NULL);
