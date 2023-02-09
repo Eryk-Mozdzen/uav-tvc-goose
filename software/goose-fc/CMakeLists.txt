@@ -9,7 +9,10 @@ enable_language(C ASM)
 set(TARGET ${CMAKE_PROJECT_NAME}.elf)
 
 add_executable(${TARGET}
+	"../third-party/stm32f4xx_hal_driver/Src/stm32f4xx_ll_usb.c"
 	"../third-party/stm32f4xx_hal_driver/Src/stm32f4xx_hal_can.c"
+	"../third-party/stm32f4xx_hal_driver/Src/stm32f4xx_hal_pcd.c"
+	"../third-party/stm32f4xx_hal_driver/Src/stm32f4xx_hal_pcd_ex.c"
 	"../third-party/stm32f4xx_hal_driver/Src/stm32f4xx_hal_adc.c"
 	"../third-party/stm32f4xx_hal_driver/Src/stm32f4xx_hal_adc_ex.c"
 	"../third-party/stm32f4xx_hal_driver/Src/stm32f4xx_hal_exti.c"
@@ -29,6 +32,11 @@ add_executable(${TARGET}
 	"../third-party/FreeRTOS-Kernel/timers.c"
 	"../third-party/FreeRTOS-Kernel/list.c"
 
+	"../third-party/stm32_mw_usb_device/Core/Src/usbd_core.c"
+	"../third-party/stm32_mw_usb_device/Core/Src/usbd_ctlreq.c"
+	"../third-party/stm32_mw_usb_device/Core/Src/usbd_ioreq.c"
+	"../third-party/stm32_mw_usb_device/Class/CDC/Src/usbd_cdc.c"
+
 	"startup/system_stm32f4xx.c"
 	"startup/startup_stm32f411xe.s"
 
@@ -38,6 +46,10 @@ add_executable(${TARGET}
 	"HAL/stm32f4xx_hal_it.c"
 	"HAL/stm32f4xx_hal_msp.c"
 	"HAL/stm32f4xx_hal_timebase.c"
+
+	"USB/usbd_cdc_if.c"
+	"USB/usbd_conf.c"
+	"USB/usbd_desc.c"
 
 	"src/main.c"
 )
@@ -53,11 +65,15 @@ target_include_directories(${TARGET} PRIVATE
 	"../third-party/stm32f4xx_hal_driver/Inc"
 
 	"../third-party/FreeRTOS-Kernel/include"
+
+	"../third-party/stm32_mw_usb_device/Core/Inc"
+	"../third-party/stm32_mw_usb_device/Class/CDC/Inc"
 	
 	"FreeRTOS/ARM_CM4F"
 	"FreeRTOS/MemMang"
 	"FreeRTOS"
 	"HAL"
+	"USB"
 
 	"src"
 )

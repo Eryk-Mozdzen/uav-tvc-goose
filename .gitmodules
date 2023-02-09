@@ -10,3 +10,6 @@
 [submodule "software/third-party/FreeRTOS-Kernel"]
 	path = software/third-party/FreeRTOS-Kernel
 	url = git@github.com:FreeRTOS/FreeRTOS-Kernel.git
+[submodule "software/third-party/stm32_mw_usb_device"]
+	path = software/third-party/stm32_mw_usb_device
+	url = git@github.com:STMicroelectronics/stm32_mw_usb_device.git

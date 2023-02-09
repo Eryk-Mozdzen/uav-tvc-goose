@@ -2,6 +2,15 @@
 #include "FreeRTOS.h"
 #include "task.h"
 
+#include "stm32f4xx_hal.h"
+#include "usbd_def.h"
+#include "usbd_core.h"
+#include "usbd_desc.h"
+#include "usbd_cdc.h"
+#include "usbd_cdc_if.h"
+
+USBD_HandleTypeDef hUsbDeviceFS;
+
 void Init() {
 
 	HAL_Init();
@@ -12,7 +21,7 @@ void Init() {
 		.PLL.PLLState = RCC_PLL_ON,
 		.PLL.PLLSource = RCC_PLLSOURCE_HSE,
 		.PLL.PLLM = 4,
-		.PLL.PLLN = 100,
+		.PLL.PLLN = 96,
 		.PLL.PLLP = RCC_PLLP_DIV2,
 		.PLL.PLLQ = 4
 	};
@@ -54,11 +63,32 @@ void blink(void *param) {
 	}
 }
 
+void telemetry(void *param) {
+	(void)param;
+
+	char buffer[64];
+
+	while(1) {
+
+		snprintf(buffer, sizeof(buffer), "Time: %lu\n\r", xTaskGetTickCount());
+
+		CDC_Transmit_FS((uint8_t *)buffer, strlen(buffer));
+
+		vTaskDelay(100);
+	}
+}
+
 int main() {
 
 	Init();
 
+	USBD_Init(&hUsbDeviceFS, &FS_Desc, DEVICE_FS);
+	USBD_RegisterClass(&hUsbDeviceFS, &USBD_CDC);
+	USBD_CDC_RegisterInterface(&hUsbDeviceFS, &USBD_Interface_fops_FS);
+	USBD_Start(&hUsbDeviceFS);
+
 	xTaskCreate(blink, "blink", 1024, NULL, 4, NULL);
+	xTaskCreate(telemetry, "usb", 1024, NULL, 4, NULL);
 
 	vTaskStartScheduler();
 
