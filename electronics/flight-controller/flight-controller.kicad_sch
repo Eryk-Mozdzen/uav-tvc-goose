@@ -649,7 +649,7 @@
       (reference "U4") (unit 1) (value "MPU-6050") (footprint "goose:mpu6050_hand_solder")
     )
     (path "/1e3cd0d1-e618-4c5a-9e56-7898401d6d3f/469d7d39-863f-42c9-98ae-614f3999f20a"
-      (reference "U5") (unit 1) (value "QMC5883L") (footprint "goose:qmc5883l_hand_solder")
+      (reference "U5") (unit 1) (value "HMC5883L") (footprint "goose:qmc5883l_hand_solder")
     )
     (path "/136458f4-d6d5-4813-b058-8b4c028388d5/90ff8054-f247-4d62-bd04-d735356d08e0"
       (reference "Y1") (unit 1) (value "8MHz") (footprint "Crystal:Crystal_SMD_5032-2Pin_5.0x3.2mm")

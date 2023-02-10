@@ -106,6 +106,11 @@ void telemetry(void *param) {
 	reg = 0x00;
 	HAL_I2C_Mem_Write(&hi2c1, 0x1E<<1, 0x02, 1, &reg, 1, 100);
 
+	reg = 0xB6;
+	HAL_I2C_Mem_Write(&hi2c1, 0x77<<1, 0xE0, 1, &reg, 1, 100);
+	reg = 0xFF;
+	HAL_I2C_Mem_Write(&hi2c1, 0x77<<1, 0xF4, 1, &reg, 1, 100);
+
 	while(1) {
 
 		uint8_t imu_data[14] = {0};
@@ -114,33 +119,40 @@ void telemetry(void *param) {
 		uint8_t mag_data[6] = {0};
 		HAL_StatusTypeDef status_mag = HAL_I2C_Mem_Read(&hi2c1, 0x1E<<1, 0x03, 1, mag_data, 6, 100);
 
-		if(status_imu==HAL_OK && status_mag==HAL_OK) {
-			int16_t accel[3] = {0};
-			int16_t gyro[3] = {0};
-			int16_t mag[3] = {0};
+		uint8_t bar_data[6] = {0};
+		HAL_StatusTypeDef status_bar = HAL_I2C_Mem_Read(&hi2c1, 0x77<<1, 0xF7, 1, bar_data, 6, 100);
 
-			accel[0] = (((int16_t)imu_data[0])<<8) | imu_data[1];
-			accel[1] = (((int16_t)imu_data[2])<<8) | imu_data[3];
-			accel[2] = (((int16_t)imu_data[4])<<8) | imu_data[5];
-			gyro[0] = (((int16_t)imu_data[8])<<8) | imu_data[9];
-			gyro[1] = (((int16_t)imu_data[10])<<8) | imu_data[11];
-			gyro[2] = (((int16_t)imu_data[12])<<8) | imu_data[13];
+		if(status_imu==HAL_OK && status_mag==HAL_OK && status_bar==HAL_OK) {
+			int16_t acc[3] = {0};
+			int16_t gyr[3] = {0};
+			int16_t mag[3] = {0};
+			int32_t bar = 0;
+
+			acc[0] = (((int16_t)imu_data[0])<<8) | imu_data[1];
+			acc[1] = (((int16_t)imu_data[2])<<8) | imu_data[3];
+			acc[2] = (((int16_t)imu_data[4])<<8) | imu_data[5];
+			gyr[0] = (((int16_t)imu_data[8])<<8) | imu_data[9];
+			gyr[1] = (((int16_t)imu_data[10])<<8) | imu_data[11];
+			gyr[2] = (((int16_t)imu_data[12])<<8) | imu_data[13];
 
 			mag[0] = (((int16_t)mag_data[0])<<8) | mag_data[1];
 			mag[1] = (((int16_t)mag_data[4])<<8) | mag_data[5];
 			mag[2] = (((int16_t)mag_data[2])<<8) | mag_data[3];
 
+			bar = (((int32_t)bar_data[0])<<12) | (((int32_t)bar_data[1])<<4) | (((int32_t)bar_data[2])>>4);
+
 			snprintf(buffer, sizeof(buffer), 
-				"accel: %7d %7d %7d\n\rgyro:  %7d %7d %7d\n\rmag:   %7d %7d %7d\n\r\n\r", 
-				accel[0], accel[1], accel[2], 
-				gyro[0], gyro[1], gyro[2],
-				mag[0], mag[1], mag[2]
+				"acc: %7d %7d %7d\n\rgyr: %7d %7d %7d\n\rmag: %7d %7d %7d\n\rbar: %7ld\n\r\n\r", 
+				acc[0], acc[1], acc[2], 
+				gyr[0], gyr[1], gyr[2],
+				mag[0], mag[1], mag[2],
+				bar
 			);
 
 			//snprintf(buffer, sizeof(buffer), "%02X %02X %02X %02X %02X %02X\n\r\n\r", mag_data[0], mag_data[1], mag_data[2], mag_data[3], mag_data[4], mag_data[5]);
 
 		} else {
-			snprintf(buffer, sizeof(buffer), "Error %d %d\n\r", status_imu, status_mag);
+			snprintf(buffer, sizeof(buffer), "Error %d %d %d\n\r", status_imu, status_mag, status_bar);
 		}
 
 		CDC_Transmit_FS((uint8_t *)buffer, strlen(buffer));
