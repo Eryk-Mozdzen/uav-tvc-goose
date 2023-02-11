@@ -53,6 +53,8 @@ add_executable(${TARGET}
 	"USB/usbd_desc.c"
 
 	"src/main.c"
+	"src/sensors.c"
+	"src/usb.c"
 )
 
 target_compile_definitions(${TARGET} PRIVATE
