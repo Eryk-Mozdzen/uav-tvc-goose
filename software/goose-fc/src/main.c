@@ -2,8 +2,12 @@
 #include "FreeRTOS.h"
 #include "task.h"
 
-#include "usb.h"
+#include "usb_device.h"
+
+#include "logger.h"
 #include "sensors.h"
+#include "queue_element.h"
+#include <string.h>
 
 void Init() {
 
@@ -30,6 +34,8 @@ void Init() {
 
 	HAL_RCC_OscConfig(&oscillator);
 	HAL_RCC_ClockConfig(&clock, FLASH_LATENCY_3);
+
+	USB_DEVICE_Init();
 }
 
 void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim) {
@@ -60,23 +66,36 @@ void blink(void *param) {
 void telemetry(void *param) {
 	(void)param;
 
-	float3_t acc;
-	float3_t gyr;
-	float3_t mag;
-	float bar;
+	queue_element_t reading;
 
 	while(1) {
-		xQueueReceive(acc_queue, &acc, portMAX_DELAY);
-		xQueueReceive(gyr_queue, &gyr, portMAX_DELAY);
-		xQueueReceive(mag_queue, &mag, portMAX_DELAY);
-		xQueueReceive(bar_queue, &bar, portMAX_DELAY);
+		xQueueReceive(sensor_queue, &reading, portMAX_DELAY);
 
-		USB_print("acc: %+10.2f %+10.2f %+10.2f\n\rgyr: %+10.2f %+10.2f %+10.2f\n\rmag: %+10.2f %+10.2f %+10.2f\n\rbar: %+10.2f\n\r\n\r", 
-			(double)acc.x, (double)acc.y, (double)acc.z, 
-			(double)gyr.x, (double)gyr.y, (double)gyr.z,
-			(double)mag.x, (double)mag.y, (double)mag.z,
-			(double)bar
-		);
+		switch(reading.type) {
+			case SENSOR_ACCELEROMETER: {
+				float3_t acc;
+				memcpy(&acc, reading.data, sizeof(float3_t));
+				LOG(LOG_DEBUG, "acc: %+10.2f %+10.2f %+10.2f\n\r", (double)acc.x, (double)acc.y, (double)acc.z);
+			} break;
+			case SENSOR_GYROSCOPE: {
+				float3_t gyr;
+				memcpy(&gyr, reading.data, sizeof(float3_t));
+				LOG(LOG_DEBUG, "gyr: %+10.2f %+10.2f %+10.2f\n\r", (double)gyr.x, (double)gyr.y, (double)gyr.z);
+			} break;
+			case SENSOR_MAGNETOMETER: {
+				float3_t mag;
+				memcpy(&mag, reading.data, sizeof(float3_t));
+				LOG(LOG_DEBUG, "mag: %+10.2f %+10.2f %+10.2f\n\r", (double)mag.x, (double)mag.y, (double)mag.z);
+			} break;
+			case SENSOR_BAROMETER: {
+				float bar;
+				memcpy(&bar, reading.data, sizeof(float));
+				LOG(LOG_DEBUG, "bar: %+10.2f\n\r", (double)bar);
+			} break;
+			default: {
+				LOG(LOG_ERROR, "unknown\n\r");
+			} break;
+		}
 	}
 }
 
@@ -84,7 +103,6 @@ int main() {
 
 	Init();
 
-	USB_Init();
 	Sensors_Init();
 
 	xTaskCreate(blink, "blink", 1024, NULL, 4, NULL);

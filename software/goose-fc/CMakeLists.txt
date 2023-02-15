@@ -51,10 +51,12 @@ add_executable(${TARGET}
 	"USB/usbd_cdc_if.c"
 	"USB/usbd_conf.c"
 	"USB/usbd_desc.c"
+	"USB/usb_device.c"
 
 	"src/main.c"
-	"src/sensors.c"
-	"src/usb.c"
+	"src/sensors/sensors.c"
+	"src/communication/logger.c"
+	
 )
 
 target_compile_definitions(${TARGET} PRIVATE
@@ -79,6 +81,8 @@ target_include_directories(${TARGET} PRIVATE
 	"USB"
 
 	"src"
+	"src/sensors"
+	"src/communication"
 )
 
 target_compile_options(${TARGET} PRIVATE

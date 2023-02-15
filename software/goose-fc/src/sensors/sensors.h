@@ -8,10 +8,14 @@ typedef struct {
 	float x, y, z;
 } float3_t;
 
-extern QueueHandle_t acc_queue;
-extern QueueHandle_t gyr_queue;
-extern QueueHandle_t mag_queue;
-extern QueueHandle_t bar_queue;
+typedef enum {
+	SENSOR_ACCELEROMETER,
+	SENSOR_GYROSCOPE,
+	SENSOR_MAGNETOMETER,
+	SENSOR_BAROMETER
+} sensor_t;
+
+extern QueueHandle_t sensor_queue;
 
 void Sensors_Init();
 

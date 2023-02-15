@@ -6,16 +6,16 @@
 #include "semphr.h"
 #include "queue.h"
 
+#include "queue_element.h"
+#include <string.h>
+
 #define IMU_ADDRESS		0x68
 #define MAG_ADDRESS		0x1E
 #define BAR_ADDRESS		0x77
 
 I2C_HandleTypeDef hi2c1;
 SemaphoreHandle_t bus_lock;
-QueueHandle_t acc_queue;
-QueueHandle_t gyr_queue;
-QueueHandle_t mag_queue;
-QueueHandle_t bar_queue;
+QueueHandle_t sensor_queue;
 
 void write_reg(const uint8_t device, const uint8_t reg, uint8_t src) {
 	xSemaphoreTake(bus_lock, portMAX_DELAY);
@@ -40,6 +40,8 @@ void read_imu(void *param) {
 
 	uint8_t buffer[14];
 
+	queue_element_t reading;
+
 	while(1) {
 		vTaskDelayUntil(&time, 100);
 
@@ -55,7 +57,9 @@ void read_imu(void *param) {
 			.z = acc_raw_z
 		};
 
-		xQueueSend(acc_queue, &acc, 0);
+		reading.type = SENSOR_ACCELEROMETER;
+		memcpy(reading.data, &acc, sizeof(float3_t));
+		xQueueSend(sensor_queue, &reading, 0);
 
 		const int16_t gyr_raw_x = (((int16_t)buffer[8])<<8) | buffer[9];
 		const int16_t gyr_raw_y = (((int16_t)buffer[10])<<8) | buffer[11];
@@ -67,7 +71,9 @@ void read_imu(void *param) {
 			.z = gyr_raw_z
 		};
 
-		xQueueSend(gyr_queue, &gyr, 0);
+		reading.type = SENSOR_GYROSCOPE;
+		memcpy(reading.data, &gyr, sizeof(float3_t));
+		xQueueSend(sensor_queue, &reading, 0);
 	}
 }
 
@@ -81,6 +87,8 @@ void read_mag(void *param) {
 	TickType_t time = xTaskGetTickCount();
 
 	uint8_t buffer[6];
+
+	queue_element_t reading;
 
 	while(1) {
 		vTaskDelayUntil(&time, 100);
@@ -97,7 +105,9 @@ void read_mag(void *param) {
 			.z = raw_z
 		};
 
-		xQueueSend(mag_queue, &mag, 0);
+		reading.type = SENSOR_MAGNETOMETER;
+		memcpy(reading.data, &mag, sizeof(float3_t));
+		xQueueSend(sensor_queue, &reading, 0);
 	}
 }
 
@@ -111,6 +121,8 @@ void read_bar(void *param) {
 
 	uint8_t buffer[3];
 
+	queue_element_t reading;
+
 	while(1) {
 		vTaskDelayUntil(&time, 100);
 		
@@ -120,17 +132,16 @@ void read_bar(void *param) {
 
 		const float bar = raw;
 
-		xQueueSend(bar_queue, &bar, 0);
+		reading.type = SENSOR_BAROMETER;
+		memcpy(reading.data, &bar, sizeof(float));
+		xQueueSend(sensor_queue, &reading, 0);
 	}
 }
 
 void Sensors_Init() {
 
 	bus_lock = xSemaphoreCreateBinary();
-	acc_queue = xQueueCreate(16, sizeof(float3_t));
-	gyr_queue = xQueueCreate(16, sizeof(float3_t));
-	mag_queue = xQueueCreate(16, sizeof(float3_t));
-	bar_queue = xQueueCreate(16, sizeof(float));
+	sensor_queue = xQueueCreate(16, sizeof(queue_element_t));
 
 	hi2c1.Instance = I2C1;
 	hi2c1.Init.ClockSpeed = 100000;
@@ -145,7 +156,7 @@ void Sensors_Init() {
 
 	xSemaphoreGive(bus_lock);
 
-	xTaskCreate(read_imu, "read IMU", 256, NULL, 4, NULL);
-	xTaskCreate(read_mag, "read MAG", 256, NULL, 4, NULL);
-	xTaskCreate(read_bar, "read BAR", 256, NULL, 4, NULL);
+	xTaskCreate(read_imu, "IMU reader", 256, NULL, 4, NULL);
+	xTaskCreate(read_mag, "MAG reader", 256, NULL, 4, NULL);
+	xTaskCreate(read_bar, "BAR reader", 256, NULL, 4, NULL);
 }
