@@ -3,11 +3,9 @@
 
 #include <stdint.h>
 
-#define QUEUE_ELEMENT_SIZE		3*sizeof(float)
-
 typedef struct {
 	uint8_t type;
-	uint8_t data[QUEUE_ELEMENT_SIZE];
+	void *data;
 } queue_element_t;
 
 #endif

@@ -2,10 +2,10 @@
 #include "FreeRTOS.h"
 #include "task.h"
 
-#include "usb_device.h"
-
 #include "logger.h"
 #include "sensors.h"
+#include "communication.h"
+
 #include "queue_element.h"
 #include <string.h>
 
@@ -34,8 +34,6 @@ void Init() {
 
 	HAL_RCC_OscConfig(&oscillator);
 	HAL_RCC_ClockConfig(&clock, FLASH_LATENCY_3);
-
-	USB_DEVICE_Init();
 }
 
 void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim) {
@@ -96,6 +94,8 @@ void telemetry(void *param) {
 				LOG(LOG_ERROR, "unknown\n\r");
 			} break;
 		}
+
+		vPortFree(reading.data);
 	}
 }
 
@@ -103,6 +103,7 @@ int main() {
 
 	Init();
 
+	Communication_Init();
 	Sensors_Init();
 
 	xTaskCreate(blink, "blink", 1024, NULL, 4, NULL);

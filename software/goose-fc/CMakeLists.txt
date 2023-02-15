@@ -56,6 +56,7 @@ add_executable(${TARGET}
 	"src/main.c"
 	"src/sensors/sensors.c"
 	"src/communication/logger.c"
+	"src/communication/communication.c"
 	
 )
 

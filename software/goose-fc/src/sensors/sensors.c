@@ -6,6 +6,7 @@
 #include "semphr.h"
 #include "queue.h"
 
+#include "logger.h"
 #include "queue_element.h"
 #include <string.h>
 
@@ -13,19 +14,26 @@
 #define MAG_ADDRESS		0x1E
 #define BAR_ADDRESS		0x77
 
+static SemaphoreHandle_t bus_lock;
+
 I2C_HandleTypeDef hi2c1;
-SemaphoreHandle_t bus_lock;
 QueueHandle_t sensor_queue;
 
 void write_reg(const uint8_t device, const uint8_t reg, uint8_t src) {
 	xSemaphoreTake(bus_lock, portMAX_DELAY);
-	HAL_I2C_Mem_Write(&hi2c1, device<<1, reg, 1, &src, 1, 100);
+	HAL_StatusTypeDef status = HAL_I2C_Mem_Write(&hi2c1, device<<1, reg, 1, &src, 1, 100);
+	if(status!=HAL_OK) {
+		LOG(LOG_ERROR, "sensors: unable to write into 0x%02X device\n\r", device);
+	}
 	xSemaphoreGive(bus_lock);
 }
 
 void read_regs(const uint8_t device, const uint8_t reg, uint8_t *dest, const uint8_t len) {
 	xSemaphoreTake(bus_lock, portMAX_DELAY);
-	HAL_I2C_Mem_Read(&hi2c1, device<<1, reg, 1, dest, len, 100);
+	HAL_StatusTypeDef status = HAL_I2C_Mem_Read(&hi2c1, device<<1, reg, 1, dest, len, 100);
+	if(status!=HAL_OK) {
+		LOG(LOG_ERROR, "sensors: unable to read from 0x%02X device\n\r", device);
+	}
 	xSemaphoreGive(bus_lock);
 }
 
@@ -58,6 +66,7 @@ void read_imu(void *param) {
 		};
 
 		reading.type = SENSOR_ACCELEROMETER;
+		reading.data = pvPortMalloc(sizeof(float3_t));
 		memcpy(reading.data, &acc, sizeof(float3_t));
 		xQueueSend(sensor_queue, &reading, 0);
 
@@ -72,6 +81,7 @@ void read_imu(void *param) {
 		};
 
 		reading.type = SENSOR_GYROSCOPE;
+		reading.data = pvPortMalloc(sizeof(float3_t));
 		memcpy(reading.data, &gyr, sizeof(float3_t));
 		xQueueSend(sensor_queue, &reading, 0);
 	}
@@ -106,6 +116,7 @@ void read_mag(void *param) {
 		};
 
 		reading.type = SENSOR_MAGNETOMETER;
+		reading.data = pvPortMalloc(sizeof(float3_t));
 		memcpy(reading.data, &mag, sizeof(float3_t));
 		xQueueSend(sensor_queue, &reading, 0);
 	}
@@ -133,6 +144,7 @@ void read_bar(void *param) {
 		const float bar = raw;
 
 		reading.type = SENSOR_BAROMETER;
+		reading.data = pvPortMalloc(sizeof(float));
 		memcpy(reading.data, &bar, sizeof(float));
 		xQueueSend(sensor_queue, &reading, 0);
 	}
