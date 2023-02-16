@@ -47,6 +47,7 @@ add_executable(${TARGET}
 	"HAL/stm32f4xx_hal_it.c"
 	"HAL/stm32f4xx_hal_msp.c"
 	"HAL/stm32f4xx_hal_timebase.c"
+	"HAL/hal_callbacks.c"
 
 	"USB/usbd_cdc_if.c"
 	"USB/usbd_conf.c"

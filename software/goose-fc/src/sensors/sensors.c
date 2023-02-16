@@ -17,43 +17,66 @@
 static SemaphoreHandle_t bus_lock;
 
 I2C_HandleTypeDef hi2c1;
+DMA_HandleTypeDef hdma_i2c1_rx;
 QueueHandle_t sensor_queue;
+TaskHandle_t sensorTaskToNotify;
+
+TaskHandle_t imuReaderTask;
+TaskHandle_t magReaderTask;
 
 void write_reg(const uint8_t device, const uint8_t reg, uint8_t src) {
 	xSemaphoreTake(bus_lock, portMAX_DELAY);
+	taskENTER_CRITICAL();
 	HAL_StatusTypeDef status = HAL_I2C_Mem_Write(&hi2c1, device<<1, reg, 1, &src, 1, 100);
+	taskEXIT_CRITICAL();
 	if(status!=HAL_OK) {
 		LOG(LOG_ERROR, "sensors: unable to write into 0x%02X device\n\r", device);
 	}
 	xSemaphoreGive(bus_lock);
 }
 
-void read_regs(const uint8_t device, const uint8_t reg, uint8_t *dest, const uint8_t len) {
+uint8_t read_regs(const uint8_t device, const uint8_t reg, uint8_t *dest, const uint8_t len) {
 	xSemaphoreTake(bus_lock, portMAX_DELAY);
-	HAL_StatusTypeDef status = HAL_I2C_Mem_Read(&hi2c1, device<<1, reg, 1, dest, len, 100);
+	
+	sensorTaskToNotify = xTaskGetCurrentTaskHandle();
+
+	HAL_StatusTypeDef status = HAL_I2C_Mem_Read_DMA(&hi2c1, device<<1, reg, 1, dest, len);
+
 	if(status!=HAL_OK) {
 		LOG(LOG_ERROR, "sensors: unable to read from 0x%02X device\n\r", device);
+		xSemaphoreGive(bus_lock);
+		return 1;
 	}
+	
+	if(!ulTaskNotifyTakeIndexed(0, pdTRUE, 100)) {
+		LOG(LOG_ERROR, "sensors: timeout while reading from 0x%02X device\n\r", device);
+		xSemaphoreGive(bus_lock);
+		return 2;
+	}
+	
 	xSemaphoreGive(bus_lock);
+	return 0;
 }
 
 void read_imu(void *param) {
 	(void)param;
 
-	write_reg(IMU_ADDRESS, 0x6B, 0x00);
+	write_reg(IMU_ADDRESS, 0x68, 0x07);		// reset
+	write_reg(IMU_ADDRESS, 0x38, 0x01);		// data ready interrupt enable
+	write_reg(IMU_ADDRESS, 0x6B, 0x00);		
 	write_reg(IMU_ADDRESS, 0x1C, 0x10);
 	write_reg(IMU_ADDRESS, 0x1B, 0x10);
-
-	TickType_t time = xTaskGetTickCount();
 
 	uint8_t buffer[14];
 
 	queue_element_t reading;
 
 	while(1) {
-		vTaskDelayUntil(&time, 100);
+		ulTaskNotifyTakeIndexed(1, pdTRUE, portMAX_DELAY);
 
-		read_regs(IMU_ADDRESS, 0x3B, buffer, sizeof(buffer));
+		if(read_regs(IMU_ADDRESS, 0x3B, buffer, sizeof(buffer))) {
+			continue;
+		}
 
 		const int16_t acc_raw_x = (((int16_t)buffer[0])<<8) | buffer[1];
 		const int16_t acc_raw_y = (((int16_t)buffer[2])<<8) | buffer[3];
@@ -90,24 +113,31 @@ void read_imu(void *param) {
 void read_mag(void *param) {
 	(void)param;
 
-	write_reg(MAG_ADDRESS, 0x00, 0x70);
-	write_reg(MAG_ADDRESS, 0x01, 0xE0);
-	write_reg(MAG_ADDRESS, 0x02, 0x00);
-
-	TickType_t time = xTaskGetTickCount();
+	write_reg(MAG_ADDRESS, 0x00, 0x78);		// avrage over 8 samples, data output rate 75Hz, normal measurement mode
+	write_reg(MAG_ADDRESS, 0x01, 0x20);		// range +/-1.3 Gauss, gain 1090, valid range [-2048; 2047]
+	write_reg(MAG_ADDRESS, 0x02, 0x00);		// continous operation mode
 
 	uint8_t buffer[6];
 
 	queue_element_t reading;
 
 	while(1) {
-		vTaskDelayUntil(&time, 100);
+		ulTaskNotifyTakeIndexed(1, pdTRUE, portMAX_DELAY);
 
-		read_regs(MAG_ADDRESS, 0x03, buffer, sizeof(buffer));
+		if(read_regs(MAG_ADDRESS, 0x03, buffer, sizeof(buffer))) {
+			continue;
+		}
 
 		const int16_t raw_x = (((int16_t)buffer[0])<<8) | buffer[1];
 		const int16_t raw_y = (((int16_t)buffer[4])<<8) | buffer[5];
 		const int16_t raw_z = (((int16_t)buffer[2])<<8) | buffer[3];
+
+		if((raw_x>2047 || raw_x<-2048) || (raw_y>2047 || raw_y<-2048) || (raw_z>2047 || raw_z<-2048)) {
+			LOG(LOG_WARNING, "mag: value out of valid range [%10d %10d %10d]\n\r", raw_x, raw_y, raw_z);
+		}
+
+		// calibration
+		// scaling
 
 		const float3_t mag = {
 			.x = raw_x,
@@ -137,7 +167,9 @@ void read_bar(void *param) {
 	while(1) {
 		vTaskDelayUntil(&time, 100);
 		
-		read_regs(BAR_ADDRESS, 0xF7, buffer, sizeof(buffer));
+		if(read_regs(BAR_ADDRESS, 0xF7, buffer, sizeof(buffer))) {
+			continue;
+		}
 
 		const int32_t raw = (((int32_t)buffer[0])<<12) | (((int32_t)buffer[1])<<4) | (((int32_t)buffer[2])>>4);
 
@@ -155,6 +187,31 @@ void Sensors_Init() {
 	bus_lock = xSemaphoreCreateBinary();
 	sensor_queue = xQueueCreate(16, sizeof(queue_element_t));
 
+	__HAL_RCC_GPIOB_CLK_ENABLE();
+	__HAL_RCC_GPIOA_CLK_ENABLE();
+
+	GPIO_InitTypeDef GPIO_InitStruct = {0};
+	GPIO_InitStruct.Pin = GPIO_PIN_15;
+	GPIO_InitStruct.Mode = GPIO_MODE_IT_RISING;
+	GPIO_InitStruct.Pull = GPIO_NOPULL;
+	HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
+
+	GPIO_InitStruct.Pin = GPIO_PIN_5;
+	GPIO_InitStruct.Mode = GPIO_MODE_IT_FALLING;
+	GPIO_InitStruct.Pull = GPIO_PULLUP;
+	HAL_GPIO_Init(GPIOB, &GPIO_InitStruct);
+
+	HAL_NVIC_SetPriority(EXTI9_5_IRQn, 6, 0);
+	HAL_NVIC_EnableIRQ(EXTI9_5_IRQn);
+
+	HAL_NVIC_SetPriority(EXTI15_10_IRQn, 6, 0);
+	HAL_NVIC_EnableIRQ(EXTI15_10_IRQn);
+
+	__HAL_RCC_DMA1_CLK_ENABLE();
+
+	HAL_NVIC_SetPriority(DMA1_Stream0_IRQn, 6, 0);
+	HAL_NVIC_EnableIRQ(DMA1_Stream0_IRQn);
+
 	hi2c1.Instance = I2C1;
 	hi2c1.Init.ClockSpeed = 100000;
 	hi2c1.Init.DutyCycle = I2C_DUTYCYCLE_2;
@@ -168,7 +225,7 @@ void Sensors_Init() {
 
 	xSemaphoreGive(bus_lock);
 
-	xTaskCreate(read_imu, "IMU reader", 256, NULL, 4, NULL);
-	xTaskCreate(read_mag, "MAG reader", 256, NULL, 4, NULL);
+	xTaskCreate(read_imu, "IMU reader", 256, NULL, 4, &imuReaderTask);
+	xTaskCreate(read_mag, "MAG reader", 256, NULL, 4, &magReaderTask);
 	xTaskCreate(read_bar, "BAR reader", 256, NULL, 4, NULL);
 }

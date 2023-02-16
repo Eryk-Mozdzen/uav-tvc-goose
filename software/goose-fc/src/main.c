@@ -36,12 +36,6 @@ void Init() {
 	HAL_RCC_ClockConfig(&clock, FLASH_LATENCY_3);
 }
 
-void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim) {
-	if(htim->Instance==TIM11) {
-		HAL_IncTick();
-	}
-}
-
 void blink(void *param) {
 	(void)param;
 
@@ -61,7 +55,7 @@ void blink(void *param) {
 	}
 }
 
-void telemetry(void *param) {
+void print(void *param) {
 	(void)param;
 
 	queue_element_t reading;
@@ -73,22 +67,22 @@ void telemetry(void *param) {
 			case SENSOR_ACCELEROMETER: {
 				float3_t acc;
 				memcpy(&acc, reading.data, sizeof(float3_t));
-				LOG(LOG_DEBUG, "acc: %+10.2f %+10.2f %+10.2f\n\r", (double)acc.x, (double)acc.y, (double)acc.z);
+				LOG(LOG_INFO, "acc: %+10.2f %+10.2f %+10.2f\n\r", (double)acc.x, (double)acc.y, (double)acc.z);
 			} break;
 			case SENSOR_GYROSCOPE: {
 				float3_t gyr;
 				memcpy(&gyr, reading.data, sizeof(float3_t));
-				LOG(LOG_DEBUG, "gyr: %+10.2f %+10.2f %+10.2f\n\r", (double)gyr.x, (double)gyr.y, (double)gyr.z);
+				LOG(LOG_INFO, "gyr: %+10.2f %+10.2f %+10.2f\n\r", (double)gyr.x, (double)gyr.y, (double)gyr.z);
 			} break;
 			case SENSOR_MAGNETOMETER: {
 				float3_t mag;
 				memcpy(&mag, reading.data, sizeof(float3_t));
-				LOG(LOG_DEBUG, "mag: %+10.2f %+10.2f %+10.2f\n\r", (double)mag.x, (double)mag.y, (double)mag.z);
+				LOG(LOG_INFO, "mag: %+10.2f %+10.2f %+10.2f\n\r", (double)mag.x, (double)mag.y, (double)mag.z);
 			} break;
 			case SENSOR_BAROMETER: {
 				float bar;
 				memcpy(&bar, reading.data, sizeof(float));
-				LOG(LOG_DEBUG, "bar: %+10.2f\n\r", (double)bar);
+				LOG(LOG_INFO, "bar: %+10.2f\n\r", (double)bar);
 			} break;
 			default: {
 				LOG(LOG_ERROR, "unknown\n\r");
@@ -103,11 +97,20 @@ int main() {
 
 	Init();
 
+	__HAL_RCC_GPIOC_CLK_ENABLE();
+	GPIO_InitTypeDef gpio = {
+		.Pin = GPIO_PIN_6,
+		.Mode = GPIO_MODE_OUTPUT_PP,
+		.Pull = GPIO_NOPULL,
+		.Speed = GPIO_SPEED_FREQ_HIGH
+	};
+	HAL_GPIO_Init(GPIOC, &gpio);
+
 	Communication_Init();
 	Sensors_Init();
 
 	xTaskCreate(blink, "blink", 1024, NULL, 4, NULL);
-	xTaskCreate(telemetry, "telemetry", 1024, NULL, 4, NULL);
+	xTaskCreate(print, "print", 1024, NULL, 4, NULL);
 
 	vTaskStartScheduler();
 
