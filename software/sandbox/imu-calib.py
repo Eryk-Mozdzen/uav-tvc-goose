@@ -14,7 +14,7 @@ while True:
 	if len(line)<4:
 		continue
 
-	if line[0]!='MAG':
+	if line[0]!='\r\x1b[38;5;14mmag:':
 		continue
 
 	x = float(line[1])

@@ -3,69 +3,44 @@
 #include "stm32f4xx_hal.h"
 #include "FreeRTOS.h"
 #include "task.h"
-#include "semphr.h"
 #include "queue.h"
 
+#include "sensor_bus.h"
+#include "hmc5883l.h"
+#include "bmp280.h"
 #include "logger.h"
 #include "queue_element.h"
-#include <string.h>
 
 #define IMU_ADDRESS		0x68
-#define MAG_ADDRESS		0x1E
-#define BAR_ADDRESS		0x77
 
-static SemaphoreHandle_t bus_lock;
-
-I2C_HandleTypeDef hi2c1;
-DMA_HandleTypeDef hdma_i2c1_rx;
 QueueHandle_t sensor_queue;
-TaskHandle_t sensorTaskToNotify;
 
 TaskHandle_t imuReaderTask;
 TaskHandle_t magReaderTask;
 
-void write_reg(const uint8_t device, const uint8_t reg, uint8_t src) {
-	xSemaphoreTake(bus_lock, portMAX_DELAY);
-	taskENTER_CRITICAL();
-	HAL_StatusTypeDef status = HAL_I2C_Mem_Write(&hi2c1, device<<1, reg, 1, &src, 1, 100);
-	taskEXIT_CRITICAL();
-	if(status!=HAL_OK) {
-		LOG(LOG_ERROR, "sensors: unable to write into 0x%02X device\n\r", device);
-	}
-	xSemaphoreGive(bus_lock);
-}
+extern bmp280_calib_data_t bmp280_calib_data;
 
-uint8_t read_regs(const uint8_t device, const uint8_t reg, uint8_t *dest, const uint8_t len) {
-	xSemaphoreTake(bus_lock, portMAX_DELAY);
-	
-	sensorTaskToNotify = xTaskGetCurrentTaskHandle();
-
-	HAL_StatusTypeDef status = HAL_I2C_Mem_Read_DMA(&hi2c1, device<<1, reg, 1, dest, len);
-
-	if(status!=HAL_OK) {
-		LOG(LOG_ERROR, "sensors: unable to read from 0x%02X device\n\r", device);
-		xSemaphoreGive(bus_lock);
-		return 1;
-	}
-	
-	if(!ulTaskNotifyTakeIndexed(0, pdTRUE, 100)) {
-		LOG(LOG_ERROR, "sensors: timeout while reading from 0x%02X device\n\r", device);
-		xSemaphoreGive(bus_lock);
-		return 2;
-	}
-	
-	xSemaphoreGive(bus_lock);
-	return 0;
-}
-
-void read_imu(void *param) {
+void imu_reader(void *param) {
 	(void)param;
 
-	write_reg(IMU_ADDRESS, 0x68, 0x07);		// reset
-	write_reg(IMU_ADDRESS, 0x38, 0x01);		// data ready interrupt enable
-	write_reg(IMU_ADDRESS, 0x6B, 0x00);		
-	write_reg(IMU_ADDRESS, 0x1C, 0x10);
-	write_reg(IMU_ADDRESS, 0x1B, 0x10);
+	__HAL_RCC_GPIOA_CLK_ENABLE();
+
+	GPIO_InitTypeDef GPIO_InitStruct = {0};
+	GPIO_InitStruct.Pin = GPIO_PIN_15;
+	GPIO_InitStruct.Mode = GPIO_MODE_IT_RISING;
+	GPIO_InitStruct.Pull = GPIO_NOPULL;
+	HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
+
+	HAL_NVIC_SetPriority(EXTI15_10_IRQn, 6, 0);
+	HAL_NVIC_EnableIRQ(EXTI15_10_IRQn);
+
+	SensorBus_WriteReg(IMU_ADDRESS, 0x68, 0x07);		// reset
+	SensorBus_WriteReg(IMU_ADDRESS, 0x38, 0x01);		// data ready interrupt enable
+	SensorBus_WriteReg(IMU_ADDRESS, 0x6B, 0x00);		
+	SensorBus_WriteReg(IMU_ADDRESS, 0x1C, 0x10);
+	SensorBus_WriteReg(IMU_ADDRESS, 0x1B, 0x10);
+
+	LOG(LOG_INFO, "IMU initialized\n\r");
 
 	uint8_t buffer[14];
 
@@ -74,7 +49,7 @@ void read_imu(void *param) {
 	while(1) {
 		ulTaskNotifyTakeIndexed(1, pdTRUE, portMAX_DELAY);
 
-		if(read_regs(IMU_ADDRESS, 0x3B, buffer, sizeof(buffer))) {
+		if(SensorBus_ReadRegs(IMU_ADDRESS, 0x3B, buffer, sizeof(buffer))) {
 			continue;
 		}
 
@@ -110,12 +85,33 @@ void read_imu(void *param) {
 	}
 }
 
-void read_mag(void *param) {
+void mag_reader(void *param) {
 	(void)param;
 
-	write_reg(MAG_ADDRESS, 0x00, 0x78);		// avrage over 8 samples, data output rate 75Hz, normal measurement mode
-	write_reg(MAG_ADDRESS, 0x01, 0x20);		// range +/-1.3 Gauss, gain 1090, valid range [-2048; 2047]
-	write_reg(MAG_ADDRESS, 0x02, 0x00);		// continous operation mode
+	__HAL_RCC_GPIOB_CLK_ENABLE();
+
+	GPIO_InitTypeDef GPIO_InitStruct = {0};
+	GPIO_InitStruct.Pin = GPIO_PIN_5;
+	GPIO_InitStruct.Mode = GPIO_MODE_IT_FALLING;
+	GPIO_InitStruct.Pull = GPIO_PULLUP;
+	HAL_GPIO_Init(GPIOB, &GPIO_InitStruct);
+
+	HAL_NVIC_SetPriority(EXTI9_5_IRQn, 6, 0);
+	HAL_NVIC_EnableIRQ(EXTI9_5_IRQn);
+
+	SensorBus_WriteReg(HMC5883L_ADDR, HMC5883L_REG_CONFIG_A, 
+		HMC5883L_CONFIG_A_MEAS_NORMAL |
+		HMC5883L_CONFIG_A_RATE_75 |
+		HMC5883L_CONFIG_A_SAMPLES_8
+	);
+	SensorBus_WriteReg(HMC5883L_ADDR, HMC5883L_REG_CONFIG_B, 
+		HMC5883L_CONFIG_B_RANGE_1_3GA
+	);
+	SensorBus_WriteReg(HMC5883L_ADDR, HMC5883L_REG_MODE, 
+		HMC5883L_MODE_CONTINOUS
+	);
+
+	LOG(LOG_INFO, "MAG initialized\n\r");
 
 	uint8_t buffer[6];
 
@@ -124,7 +120,7 @@ void read_mag(void *param) {
 	while(1) {
 		ulTaskNotifyTakeIndexed(1, pdTRUE, portMAX_DELAY);
 
-		if(read_regs(MAG_ADDRESS, 0x03, buffer, sizeof(buffer))) {
+		if(SensorBus_ReadRegs(HMC5883L_ADDR, HMC5883L_REG_DATA_X_MSB, buffer, sizeof(buffer))) {
 			continue;
 		}
 
@@ -136,13 +132,12 @@ void read_mag(void *param) {
 			LOG(LOG_WARNING, "mag: value out of valid range [%10d %10d %10d]\n\r", raw_x, raw_y, raw_z);
 		}
 
-		// calibration
-		// scaling
+		const float gain = 1090.f;
 
 		const float3_t mag = {
-			.x = raw_x,
-			.y = raw_y,
-			.z = raw_z
+			.x = (raw_x +  87)/gain,
+			.y = (raw_y + 143)/gain,
+			.z = (raw_z -   0)/gain
 		};
 
 		reading.type = SENSOR_MAGNETOMETER;
@@ -152,80 +147,81 @@ void read_mag(void *param) {
 	}
 }
 
-void read_bar(void *param) {
+void bar_reader(void *param) {
 	(void)param;
 
-	write_reg(BAR_ADDRESS, 0xE0, 0xB6);
-	write_reg(BAR_ADDRESS, 0xF4, 0xFF);
+	SensorBus_WriteReg(BMP280_ADDR, BMP280_REG_RESET, BMP280_RESET_VALUE);
+	SensorBus_WriteReg(BMP280_ADDR, BMP280_REG_CTRL_MEAS, 
+		BMP280_CTRL_TEMP_OVERSAMPLING_2 |
+		BMP280_CTRL_PRESS_OVERSAMPLING_16 |
+		BMP280_CTRL_MODE_NORMAL
+	);
+	SensorBus_WriteReg(BMP280_ADDR, BMP280_REG_CONFIG,
+		BMP280_CONFIG_STANDBY_0_5MS |
+		BMP280_CONFIG_FILTER_OFF |
+		BMP280_CONFIG_SPI_3WIRE_DISABLE
+	);
+
+	{
+		uint8_t calib[24] = {0};
+
+		if(!SensorBus_ReadRegs(BMP280_ADDR, BMP280_REG_CALIB00, calib, sizeof(calib))) {
+			
+			bmp280_calib_data.dig_T1 = (((uint16_t)calib[1])<<8) | calib[0];
+			bmp280_calib_data.dig_T2 = (((int16_t)calib[3])<<8) | calib[2];
+			bmp280_calib_data.dig_T3 = (((int16_t)calib[5])<<8) | calib[4];
+
+			bmp280_calib_data.dig_P1 = (((uint16_t)calib[7])<<8) | calib[6];
+			bmp280_calib_data.dig_P2 = (((int16_t)calib[9])<<8) | calib[8];
+			bmp280_calib_data.dig_P3 = (((int16_t)calib[11])<<8) | calib[10];
+			bmp280_calib_data.dig_P4 = (((int16_t)calib[13])<<8) | calib[12];
+			bmp280_calib_data.dig_P5 = (((int16_t)calib[15])<<8) | calib[14];
+			bmp280_calib_data.dig_P6 = (((int16_t)calib[17])<<8) | calib[16];
+			bmp280_calib_data.dig_P7 = (((int16_t)calib[19])<<8) | calib[18];
+			bmp280_calib_data.dig_P8 = (((int16_t)calib[21])<<8) | calib[20];
+			bmp280_calib_data.dig_P9 = (((int16_t)calib[23])<<8) | calib[22];
+
+			LOG(LOG_INFO, "BAR succesfully read calibration values\n\r");
+		} else {
+			LOG(LOG_ERROR, "BAR error in calibration values\n\r");
+		}
+	}
+
+	LOG(LOG_INFO, "BAR initialized\n\r");
 
 	TickType_t time = xTaskGetTickCount();
 
-	uint8_t buffer[3];
+	uint8_t buffer[6];
 
 	queue_element_t reading;
 
 	while(1) {
 		vTaskDelayUntil(&time, 100);
 		
-		if(read_regs(BAR_ADDRESS, 0xF7, buffer, sizeof(buffer))) {
+		if(SensorBus_ReadRegs(BMP280_ADDR, BMP280_REG_PRESS_MSB, buffer, sizeof(buffer))) {
 			continue;
 		}
 
-		const int32_t raw = (((int32_t)buffer[0])<<12) | (((int32_t)buffer[1])<<4) | (((int32_t)buffer[2])>>4);
+		const int32_t temp_raw  = (((int32_t)buffer[3])<<12) | (((int32_t)buffer[4])<<4) | (((int32_t)buffer[5])>>4);
+		const int32_t press_raw = (((int32_t)buffer[0])<<12) | (((int32_t)buffer[1])<<4) | (((int32_t)buffer[2])>>4);
 
-		const float bar = raw;
+		const float temp  = bmp280_compensate_T_int32(temp_raw)/100.f;		// *C
+		const float press = bmp280_compensate_P_int64(press_raw)/256.f;		// Pa
 
 		reading.type = SENSOR_BAROMETER;
 		reading.data = pvPortMalloc(sizeof(float));
-		memcpy(reading.data, &bar, sizeof(float));
+		memcpy(reading.data, &press, sizeof(float));
 		xQueueSend(sensor_queue, &reading, 0);
 	}
 }
 
 void Sensors_Init() {
 
-	bus_lock = xSemaphoreCreateBinary();
 	sensor_queue = xQueueCreate(16, sizeof(queue_element_t));
 
-	__HAL_RCC_GPIOB_CLK_ENABLE();
-	__HAL_RCC_GPIOA_CLK_ENABLE();
+	SensorBus_Init();
 
-	GPIO_InitTypeDef GPIO_InitStruct = {0};
-	GPIO_InitStruct.Pin = GPIO_PIN_15;
-	GPIO_InitStruct.Mode = GPIO_MODE_IT_RISING;
-	GPIO_InitStruct.Pull = GPIO_NOPULL;
-	HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
-
-	GPIO_InitStruct.Pin = GPIO_PIN_5;
-	GPIO_InitStruct.Mode = GPIO_MODE_IT_FALLING;
-	GPIO_InitStruct.Pull = GPIO_PULLUP;
-	HAL_GPIO_Init(GPIOB, &GPIO_InitStruct);
-
-	HAL_NVIC_SetPriority(EXTI9_5_IRQn, 6, 0);
-	HAL_NVIC_EnableIRQ(EXTI9_5_IRQn);
-
-	HAL_NVIC_SetPriority(EXTI15_10_IRQn, 6, 0);
-	HAL_NVIC_EnableIRQ(EXTI15_10_IRQn);
-
-	__HAL_RCC_DMA1_CLK_ENABLE();
-
-	HAL_NVIC_SetPriority(DMA1_Stream0_IRQn, 6, 0);
-	HAL_NVIC_EnableIRQ(DMA1_Stream0_IRQn);
-
-	hi2c1.Instance = I2C1;
-	hi2c1.Init.ClockSpeed = 100000;
-	hi2c1.Init.DutyCycle = I2C_DUTYCYCLE_2;
-	hi2c1.Init.OwnAddress1 = 0;
-	hi2c1.Init.AddressingMode = I2C_ADDRESSINGMODE_7BIT;
-	hi2c1.Init.DualAddressMode = I2C_DUALADDRESS_DISABLE;
-	hi2c1.Init.OwnAddress2 = 0;
-	hi2c1.Init.GeneralCallMode = I2C_GENERALCALL_DISABLE;
-	hi2c1.Init.NoStretchMode = I2C_NOSTRETCH_DISABLE;
-	HAL_I2C_Init(&hi2c1);
-
-	xSemaphoreGive(bus_lock);
-
-	xTaskCreate(read_imu, "IMU reader", 256, NULL, 4, &imuReaderTask);
-	xTaskCreate(read_mag, "MAG reader", 256, NULL, 4, &magReaderTask);
-	xTaskCreate(read_bar, "BAR reader", 256, NULL, 4, NULL);
+	//xTaskCreate(imu_reader, "IMU reader", 256, NULL, 4, &imuReaderTask);
+	xTaskCreate(mag_reader, "MAG reader", 256, NULL, 4, &magReaderTask);
+	xTaskCreate(bar_reader, "BAR reader", 256, NULL, 4, NULL);
 }

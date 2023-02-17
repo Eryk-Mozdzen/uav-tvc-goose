@@ -2,6 +2,7 @@
 #define QUEUE_ELEMENT_H
 
 #include <stdint.h>
+#include <string.h>
 
 typedef struct {
 	uint8_t type;

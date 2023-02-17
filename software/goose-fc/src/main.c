@@ -7,7 +7,6 @@
 #include "communication.h"
 
 #include "queue_element.h"
-#include <string.h>
 
 void Init() {
 
@@ -77,12 +76,12 @@ void print(void *param) {
 			case SENSOR_MAGNETOMETER: {
 				float3_t mag;
 				memcpy(&mag, reading.data, sizeof(float3_t));
-				LOG(LOG_INFO, "mag: %+10.2f %+10.2f %+10.2f\n\r", (double)mag.x, (double)mag.y, (double)mag.z);
+				LOG(LOG_INFO, "mag: %+10.2f %+10.2f %+10.2f Ga\n\r", (double)mag.x, (double)mag.y, (double)mag.z);
 			} break;
 			case SENSOR_BAROMETER: {
 				float bar;
 				memcpy(&bar, reading.data, sizeof(float));
-				LOG(LOG_INFO, "bar: %+10.2f\n\r", (double)bar);
+				LOG(LOG_INFO, "bar: %+10.2f Pa\n\r", (double)bar);
 			} break;
 			default: {
 				LOG(LOG_ERROR, "unknown\n\r");
@@ -96,15 +95,6 @@ void print(void *param) {
 int main() {
 
 	Init();
-
-	__HAL_RCC_GPIOC_CLK_ENABLE();
-	GPIO_InitTypeDef gpio = {
-		.Pin = GPIO_PIN_6,
-		.Mode = GPIO_MODE_OUTPUT_PP,
-		.Pull = GPIO_NOPULL,
-		.Speed = GPIO_SPEED_FREQ_HIGH
-	};
-	HAL_GPIO_Init(GPIOC, &gpio);
 
 	Communication_Init();
 	Sensors_Init();
