@@ -66,12 +66,12 @@ void print(void *param) {
 			case SENSOR_ACCELEROMETER: {
 				float3_t acc;
 				memcpy(&acc, reading.data, sizeof(float3_t));
-				LOG(LOG_INFO, "acc: %+10.2f %+10.2f %+10.2f\n\r", (double)acc.x, (double)acc.y, (double)acc.z);
+				LOG(LOG_INFO, "acc: %+10.2f %+10.2f %+10.2f m/s2\n\r", (double)acc.x, (double)acc.y, (double)acc.z);
 			} break;
 			case SENSOR_GYROSCOPE: {
 				float3_t gyr;
 				memcpy(&gyr, reading.data, sizeof(float3_t));
-				LOG(LOG_INFO, "gyr: %+10.2f %+10.2f %+10.2f\n\r", (double)gyr.x, (double)gyr.y, (double)gyr.z);
+				LOG(LOG_INFO, "gyr: %+10.2f %+10.2f %+10.2f rad/s\n\r", (double)gyr.x, (double)gyr.y, (double)gyr.z);
 			} break;
 			case SENSOR_MAGNETOMETER: {
 				float3_t mag;
@@ -84,7 +84,7 @@ void print(void *param) {
 				LOG(LOG_INFO, "bar: %+10.2f Pa\n\r", (double)bar);
 			} break;
 			default: {
-				LOG(LOG_ERROR, "unknown\n\r");
+				LOG(LOG_WARNING, "unknown\n\r");
 			} break;
 		}
 
@@ -99,7 +99,7 @@ int main() {
 	Communication_Init();
 	Sensors_Init();
 
-	xTaskCreate(blink, "blink", 1024, NULL, 4, NULL);
+	xTaskCreate(blink, "blink", 1024, NULL, 1, NULL);
 	xTaskCreate(print, "print", 1024, NULL, 4, NULL);
 
 	vTaskStartScheduler();

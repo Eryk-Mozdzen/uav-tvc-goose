@@ -20,8 +20,6 @@ QueueHandle_t rx_msg_queue;
 void transmitter(void *param) {
 	(void)param;
 
-	transmitterTask = xTaskGetCurrentTaskHandle();
-
 	queue_element_t tx_msg;
 
 	while(1) {
@@ -30,8 +28,9 @@ void transmitter(void *param) {
 		switch(tx_msg.type) {
 			case TX_LOG: {
 
-				CDC_Transmit_FS(tx_msg.data, strlen(tx_msg.data));
-				ulTaskNotifyTakeIndexed(0, pdTRUE, 1000);
+				do {
+					CDC_Transmit_FS(tx_msg.data, strlen(tx_msg.data));
+				} while(!ulTaskNotifyTakeIndexed(0, pdTRUE, 500));
 
 			} break;
 			case TX_TELEMETRY: {
@@ -65,6 +64,6 @@ void Communication_Init() {
 
 	USB_DEVICE_Init();
 
-	xTaskCreate(transmitter, "TX", 512, NULL, 4, NULL);
-	//xTaskCreate(receiver, "RX", 512, NULL, 4, NULL);
+	xTaskCreate(transmitter, "TX", 512, NULL, 3, &transmitterTask);
+	//xTaskCreate(receiver, "RX", 512, NULL, 3, NULL);
 }

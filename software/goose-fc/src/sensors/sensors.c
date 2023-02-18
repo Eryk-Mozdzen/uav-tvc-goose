@@ -8,10 +8,9 @@
 #include "sensor_bus.h"
 #include "hmc5883l.h"
 #include "bmp280.h"
+#include "mpu6050.h"
 #include "logger.h"
 #include "queue_element.h"
-
-#define IMU_ADDRESS		0x68
 
 QueueHandle_t sensor_queue;
 
@@ -34,13 +33,46 @@ void imu_reader(void *param) {
 	HAL_NVIC_SetPriority(EXTI15_10_IRQn, 6, 0);
 	HAL_NVIC_EnableIRQ(EXTI15_10_IRQn);
 
-	SensorBus_WriteReg(IMU_ADDRESS, 0x68, 0x07);		// reset
-	SensorBus_WriteReg(IMU_ADDRESS, 0x38, 0x01);		// data ready interrupt enable
-	SensorBus_WriteReg(IMU_ADDRESS, 0x6B, 0x00);		
-	SensorBus_WriteReg(IMU_ADDRESS, 0x1C, 0x10);
-	SensorBus_WriteReg(IMU_ADDRESS, 0x1B, 0x10);
+	SensorBus_WriteReg(MPU6050_ADDR, MPU6050_REG_PWR_MGMT_1,
+		MPU6050_PWR_MGMT_1_DEVICE_RESET
+	);
+	vTaskDelay(100);
+	SensorBus_WriteReg(MPU6050_ADDR, MPU6050_REG_SIGNAL_PATH_RESET, 
+		MPU6050_SIGNAL_PATH_RESET_GYRO |
+		MPU6050_SIGNAL_PATH_RESET_ACCEL |
+		MPU6050_SIGNAL_PATH_RESET_TEMP
+	);
+	vTaskDelay(100);
+	SensorBus_WriteReg(MPU6050_ADDR, MPU6050_REG_INT_ENABLE,
+		MPU6050_INT_ENABLE_FIFO_OVERLOW_DISABLE | 
+		MPU6050_INT_ENABLE_I2C_MST_INT_DISABLE |
+		MPU6050_INT_ENABLE_DATA_RDY_ENABLE
+	);
+	SensorBus_WriteReg(MPU6050_ADDR, MPU6050_REG_INT_PIN_CFG,
+		MPU6050_INT_PIN_CFG_LEVEL_ACTIVE_HIGH |
+		MPU6050_INT_PIN_CFG_PUSH_PULL |
+		MPU6050_INT_PIN_CFG_PULSE |
+		MPU6050_INT_PIN_CFG_STATUS_CLEAR_AFTER_ANY |
+		MPU6050_INT_PIN_CFG_FSYNC_DISABLE |
+		MPU6050_INT_PIN_CFG_I2C_BYPASS_DISABLE
+	);
+	SensorBus_WriteReg(MPU6050_ADDR, MPU6050_REG_PWR_MGMT_1,
+		MPU6050_PWR_MGMT_1_TEMP_DIS |
+		MPU6050_PWR_MGMT_1_CLOCK_INTERNAL
+	);
+	SensorBus_WriteReg(MPU6050_ADDR, MPU6050_REG_CONFIG, 
+		MPU6050_CONFIG_EXT_SYNC_DISABLED |
+		MPU6050_CONFIG_DLPF_SETTING_6
+	);
+	SensorBus_WriteReg(MPU6050_ADDR, MPU6050_REG_ACCEL_CONFIG,
+		MPU6050_ACCEL_CONFIG_RANGE_4G
+	);
+	SensorBus_WriteReg(MPU6050_ADDR, MPU6050_REG_GYRO_CONFIG,
+		MPU6050_GYRO_CONFIG_RANGE_500DPS
+	);
+	SensorBus_WriteReg(MPU6050_ADDR, MPU6050_REG_SMPLRT_DIV, 4);
 
-	LOG(LOG_INFO, "IMU initialized\n\r");
+	LOG(LOG_INFO, "imu: initialization complete\n\r");
 
 	uint8_t buffer[14];
 
@@ -49,7 +81,7 @@ void imu_reader(void *param) {
 	while(1) {
 		ulTaskNotifyTakeIndexed(1, pdTRUE, portMAX_DELAY);
 
-		if(SensorBus_ReadRegs(IMU_ADDRESS, 0x3B, buffer, sizeof(buffer))) {
+		if(SensorBus_ReadRegs(MPU6050_ADDR, MPU6050_REG_ACCEL_XOUT_H, buffer, sizeof(buffer))) {
 			continue;
 		}
 
@@ -57,10 +89,13 @@ void imu_reader(void *param) {
 		const int16_t acc_raw_y = (((int16_t)buffer[2])<<8) | buffer[3];
 		const int16_t acc_raw_z = (((int16_t)buffer[4])<<8) | buffer[5];
 
+		const float acc_gain = 8192.f;
+		const float g_to_ms2 = 9.81f;
+
 		const float3_t acc = {
-			.x = acc_raw_x,
-			.y = acc_raw_y,
-			.z = acc_raw_z
+			.x = g_to_ms2*acc_raw_x/acc_gain,
+			.y = g_to_ms2*acc_raw_y/acc_gain,
+			.z = g_to_ms2*acc_raw_z/acc_gain
 		};
 
 		reading.type = SENSOR_ACCELEROMETER;
@@ -72,10 +107,13 @@ void imu_reader(void *param) {
 		const int16_t gyr_raw_y = (((int16_t)buffer[10])<<8) | buffer[11];
 		const int16_t gyr_raw_z = (((int16_t)buffer[12])<<8) | buffer[13];
 
+		const float gyr_gain = 65.5f;
+		const float dps_to_rads = 0.017453292519943f;
+
 		const float3_t gyr = {
-			.x = gyr_raw_x,
-			.y = gyr_raw_y,
-			.z = gyr_raw_z
+			.x = dps_to_rads*gyr_raw_x/gyr_gain,
+			.y = dps_to_rads*gyr_raw_y/gyr_gain,
+			.z = dps_to_rads*gyr_raw_z/gyr_gain
 		};
 
 		reading.type = SENSOR_GYROSCOPE;
@@ -111,7 +149,7 @@ void mag_reader(void *param) {
 		HMC5883L_MODE_CONTINOUS
 	);
 
-	LOG(LOG_INFO, "MAG initialized\n\r");
+	LOG(LOG_INFO, "mag: initialization complete\n\r");
 
 	uint8_t buffer[6];
 
@@ -158,7 +196,7 @@ void bar_reader(void *param) {
 	);
 	SensorBus_WriteReg(BMP280_ADDR, BMP280_REG_CONFIG,
 		BMP280_CONFIG_STANDBY_0_5MS |
-		BMP280_CONFIG_FILTER_OFF |
+		BMP280_CONFIG_FILTER_X16 |
 		BMP280_CONFIG_SPI_3WIRE_DISABLE
 	);
 
@@ -181,13 +219,13 @@ void bar_reader(void *param) {
 			bmp280_calib_data.dig_P8 = (((int16_t)calib[21])<<8) | calib[20];
 			bmp280_calib_data.dig_P9 = (((int16_t)calib[23])<<8) | calib[22];
 
-			LOG(LOG_INFO, "BAR succesfully read calibration values\n\r");
+			LOG(LOG_INFO, "bar: succesfully read calibration values\n\r");
 		} else {
-			LOG(LOG_ERROR, "BAR error in calibration values\n\r");
+			LOG(LOG_ERROR, "bar: error in calibration values\n\r");
 		}
 	}
 
-	LOG(LOG_INFO, "BAR initialized\n\r");
+	LOG(LOG_INFO, "bar: initialization complete\n\r");
 
 	TickType_t time = xTaskGetTickCount();
 
@@ -221,7 +259,7 @@ void Sensors_Init() {
 
 	SensorBus_Init();
 
-	//xTaskCreate(imu_reader, "IMU reader", 256, NULL, 4, &imuReaderTask);
-	xTaskCreate(mag_reader, "MAG reader", 256, NULL, 4, &magReaderTask);
-	xTaskCreate(bar_reader, "BAR reader", 256, NULL, 4, NULL);
+	xTaskCreate(imu_reader, "IMU reader", 256, NULL, 2, &imuReaderTask);
+	xTaskCreate(mag_reader, "MAG reader", 256, NULL, 2, &magReaderTask);
+	xTaskCreate(bar_reader, "BAR reader", 256, NULL, 2, NULL);
 }
