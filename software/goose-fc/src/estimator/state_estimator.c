@@ -81,33 +81,25 @@ static void estimator(void *param) {
 		float3_t attitude = {
 			.x = atan2f(acceleration.y, acceleration.z),
 			.y = atan2f(-acceleration.x, sqrtf(acceleration.y*acceleration.y + acceleration.z*acceleration.z)),
-			.z = atan2f(magnetic_field.x, magnetic_field.y)
+			.z = atan2f(magnetic_field.y, magnetic_field.x)
 		};
 
 		const float cos_roll = cosf(attitude.y);
 		const float sin_roll = sinf(attitude.y);
 		const float cos_pitch = cosf(attitude.x);
 		const float sin_pitch = sinf(attitude.x);
-		attitude.z = atan2f(-magnetic_field.y*cos_roll + magnetic_field.z*sin_roll, magnetic_field.x*cos_pitch + magnetic_field.y*sin_pitch*sin_roll + magnetic_field.z*sin_pitch*cos_roll);
-
-		while(attitude.x>2*pi)	attitude.x -=2*pi;
-		while(attitude.x<-2*pi)	attitude.x +=2*pi;
-		while(attitude.y>2*pi)	attitude.y -=2*pi;
-		while(attitude.y<-2*pi)	attitude.y +=2*pi;
-		while(attitude.z>2*pi)	attitude.z -=2*pi;
-		while(attitude.z<-2*pi)	attitude.z +=2*pi;
+		attitude.z = atan2f(
+			-magnetic_field.y*cos_roll + magnetic_field.z*sin_roll, 
+			magnetic_field.x*cos_pitch + magnetic_field.y*sin_pitch*sin_roll + magnetic_field.z*sin_pitch*cos_roll
+		);
 
 		const float rad_to_deg = 180.f/pi;
 
 		//LOG(LOG_DEBUG, "acc: %+10.2f %+10.2f %+10.2f m/s2\n\r", (double)acceleration.x, (double)acceleration.y, (double)acceleration.z);
 		//LOG(LOG_DEBUG, "gyr: %+10.2f %+10.2f %+10.2f rad/s\n\r", (double)gyration.x, (double)gyration.y, (double)gyration.z);
-		//LOG(LOG_DEBUG, "mag: %+10.2f %+10.2f %+10.2f Ga\n\r", (double)magnetic_field.x, (double)magnetic_field.y, (double)magnetic_field.z);
+		//LOG(LOG_DEBUG, "mag: %+10.2f %+10.2f %+10.2f\n\r", (double)magnetic_field.x, (double)magnetic_field.y, (double)magnetic_field.z);
 
-		LOG(LOG_DEBUG, "rpy: %7.2f %7.2f %7.2f\n\r", 
-			(double)(attitude.x*rad_to_deg), 
-			(double)(attitude.y*rad_to_deg), 
-			(double)(attitude.z*rad_to_deg)
-		);
+		LOG(LOG_DEBUG, "rpy: %7.2f %7.2f %7.2f\n\r", (double)(attitude.x*rad_to_deg), (double)(attitude.y*rad_to_deg), (double)(attitude.z*rad_to_deg));
 	}
 }
 
