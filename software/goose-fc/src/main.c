@@ -5,8 +5,7 @@
 #include "logger.h"
 #include "sensors.h"
 #include "communication.h"
-
-#include "queue_element.h"
+#include "state_estimator.h"
 
 void Init() {
 
@@ -54,43 +53,17 @@ void blink(void *param) {
 	}
 }
 
-void print(void *param) {
+/*void print(void *param) {
 	(void)param;
 
-	queue_element_t reading;
+	state_t state;
 
 	while(1) {
-		xQueueReceive(sensor_queue, &reading, portMAX_DELAY);
+		xQueueReceive(state_queue, &state, portMAX_DELAY);
 
-		switch(reading.type) {
-			case SENSOR_ACCELEROMETER: {
-				float3_t acc;
-				memcpy(&acc, reading.data, sizeof(float3_t));
-				LOG(LOG_INFO, "acc: %+10.2f %+10.2f %+10.2f m/s2\n\r", (double)acc.x, (double)acc.y, (double)acc.z);
-			} break;
-			case SENSOR_GYROSCOPE: {
-				float3_t gyr;
-				memcpy(&gyr, reading.data, sizeof(float3_t));
-				LOG(LOG_INFO, "gyr: %+10.2f %+10.2f %+10.2f rad/s\n\r", (double)gyr.x, (double)gyr.y, (double)gyr.z);
-			} break;
-			case SENSOR_MAGNETOMETER: {
-				float3_t mag;
-				memcpy(&mag, reading.data, sizeof(float3_t));
-				LOG(LOG_INFO, "mag: %+10.2f %+10.2f %+10.2f Ga\n\r", (double)mag.x, (double)mag.y, (double)mag.z);
-			} break;
-			case SENSOR_BAROMETER: {
-				float bar;
-				memcpy(&bar, reading.data, sizeof(float));
-				LOG(LOG_INFO, "bar: %+10.2f Pa\n\r", (double)bar);
-			} break;
-			default: {
-				LOG(LOG_WARNING, "unknown\n\r");
-			} break;
-		}
-
-		vPortFree(reading.data);
+		LOG(LOG_INFO, "RPY: %+7.2f %+7.2f %+7.2f m/s2\n\r", (double)state.attitude.x, (double)state.attitude.y, (double)state.attitude.z);
 	}
-}
+}*/
 
 int main() {
 
@@ -98,9 +71,10 @@ int main() {
 
 	Communication_Init();
 	Sensors_Init();
+	StateEstimator_Init();
 
 	xTaskCreate(blink, "blink", 1024, NULL, 1, NULL);
-	xTaskCreate(print, "print", 1024, NULL, 4, NULL);
+	//xTaskCreate(blink, "print", 1024, NULL, 4, NULL);
 
 	vTaskStartScheduler();
 

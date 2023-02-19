@@ -60,7 +60,7 @@ add_executable(${TARGET}
 	"src/sensors/bmp280.c"
 	"src/communication/logger.c"
 	"src/communication/communication.c"
-	
+	"src/estimator/state_estimator.c"
 )
 
 target_compile_definitions(${TARGET} PRIVATE
@@ -87,6 +87,7 @@ target_include_directories(${TARGET} PRIVATE
 	"src"
 	"src/sensors"
 	"src/communication"
+	"src/estimator"
 )
 
 target_compile_options(${TARGET} PRIVATE
