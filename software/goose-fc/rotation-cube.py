@@ -65,7 +65,7 @@ with serial.Serial(port='/dev/ttyACM0', baudrate=115200) as ser:
 
 		roll  = -float(line[1])*math.pi/180
 		pitch = -float(line[2])*math.pi/180
-		yaw   = -float(line[3])*math.pi/180 + math.pi/2
+		yaw   = -float(line[3])*math.pi/180
 
 		rotation_matrix = np.matmul(np.matmul(rot_z(yaw), rot_y(pitch)), rot_x(roll))
 

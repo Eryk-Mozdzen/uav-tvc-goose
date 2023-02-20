@@ -170,16 +170,18 @@ void mag_reader(void *param) {
 			LOG(LOG_WARNING, "mag: value out of valid range [%10d %10d %10d]\n\r", raw_x, raw_y, raw_z);
 		}
 
-		const float3_t offset = {.x = 52.44753f, .y = -90.84259f, .z = -59.98251f};
-		const float3_t scale = {.x = 479.91019f, .y = 453.80916f, .z = 483.45765f};
+		const float gain = 1090.f;
+		const float3_t offset = {.x = 0.04157f, .y = -0.10032f, .z = -0.06273f};
+		const float3_t scale = {.x = 1.98471f, .y = 2.07220f, .z = 2.31329f};
+
+		//const float3_t offset = {.x = 0, .y = 0, .z = 0};
+		//const float3_t scale = {.x = 1, .y = 1, .z = 1};
 
 		const float3_t mag = {
-			.x = (raw_x - offset.x)/scale.x,
-			.y = (raw_y - offset.y)/scale.y,
-			.z = (raw_z - offset.z)/scale.z
+			.x = (raw_x/gain - offset.x)*scale.x,
+			.y = (raw_y/gain - offset.y)*scale.y,
+			.z = (raw_z/gain - offset.z)*scale.z
 		};
-
-		//const float3_t mag = {.x = raw_x, .y = raw_y, .z = raw_z};
 
 		reading.type = SENSOR_MAGNETOMETER;
 		reading.data = pvPortMalloc(sizeof(float3_t));

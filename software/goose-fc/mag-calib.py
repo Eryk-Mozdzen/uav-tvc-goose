@@ -4,52 +4,121 @@ import math
 import cv2
 import numpy as np
 
-def draw_point3d(img, point, scale):
-	center = [320, 240]
+class Calibration:
+	def __init__(self, min_dist):
+		self.samples = []
+		self.__min_dist = min_dist
 
-	point_xy = (
-		int(point[0]*scale + center[0]),
-		int(point[1]*scale + center[1])
-	)
-	
-	point_yz = (
-		int(point[1]*scale + center[0]),
-		int(point[2]*scale + center[1])
-	)
+		self.__offset = [0, 0, 0]
+		self.__scale = [1, 1, 1]
 
-	point_zx = (
-		int(point[2]*scale + center[0]),
-		int(point[0]*scale + center[1])
-	)
+	def __is_far_enough(self, mag):
+		for sample in self.samples:
+			diff = [
+				mag[0] - sample[0],
+				mag[1] - sample[1],
+				mag[2] - sample[2],
+			]
+			dist = math.sqrt(diff[0]**2 + diff[1]**2 + diff[2]**2)
 
-	cv2.circle(img, center, 5, (255, 255, 255), -1)
-	cv2.circle(img, point_xy, 1, (255, 0, 0), -1)
-	cv2.circle(img, point_yz, 1, (0, 255, 0), -1)
-	cv2.circle(img, point_zx, 1, (0, 0, 255), -1)
+			if dist < self.__min_dist:
+				return False
+		
+		return True
 
-def show_calibrated(samples, scale, offset):
-	img = np.zeros(shape=(480, 640, 3), dtype=np.uint8)
+	def __get_mean(self, dataset):
+		sum = 0
 
-	mean_len = 0
-	for sample in samples:
+		for element in dataset:
+			sum +=element
 
-		calibrated = [
-			(sample[0] - offset[0])/scale[0],
-			(sample[1] - offset[1])/scale[1],
-			(sample[2] - offset[2])/scale[2],
+		return sum/len(dataset)
+
+	def add_sample(self, mag):
+		if not self.__is_far_enough(mag):
+			return False
+
+		self.samples.append(mag)
+
+		if len(self.samples)<2:
+			return False
+
+		self.__offset = [
+			self.__get_mean([sample[0] for sample in self.samples]),
+			self.__get_mean([sample[1] for sample in self.samples]),
+			self.__get_mean([sample[2] for sample in self.samples])
 		]
 
-		mean_len +=math.sqrt(calibrated[0]**2 + calibrated[1]**2 + calibrated[2]**2)
+		magic_number = 8.57
 
-		draw_point3d(img, calibrated, 150)
+		self.__scale = [
+			self.__get_mean([np.abs(sample[0] - self.__offset[0]) for sample in self.samples])*magic_number,
+			self.__get_mean([np.abs(sample[1] - self.__offset[1]) for sample in self.samples])*magic_number,
+			self.__get_mean([np.abs(sample[2] - self.__offset[2]) for sample in self.samples])*magic_number
+		]
 
-	cv2.imshow("mag calibrated", img)
-	print(f'mean calibrated len: {mean_len/len(samples): 10.5f}')
+		return True
+
+	def get_params(self):
+		return self.__offset, self.__scale
+
+	def get_calibrated(self, mag):
+		offset, scale = self.get_params()
+
+		return [
+			(mag[0] - offset[0])*scale[0],
+			(mag[1] - offset[1])*scale[1],
+			(mag[2] - offset[2])*scale[2],
+		]
+
+class Viewer:
+	def __init__(self, name, scale, width=640, height=420):
+		self.name = name
+		self.width = width
+		self.height = height
+
+		self.backgroud = np.zeros(shape=(height, width, 3), dtype=np.uint8)
+		self.img = np.copy(self.backgroud)
+
+		self.scale = scale
+
+	def draw_point(self, point):
+		center = [int(self.width/2), int(self.height/2)]
+
+		if math.isnan(point[0]) or math.isnan(point[1]) or math.isnan(point[2]):
+			return
+
+		point_xy = (
+			int(point[0]*self.scale + center[0]),
+			int(point[1]*self.scale + center[1])
+		)
+		
+		point_yz = (
+			int(point[1]*self.scale + center[0]),
+			int(point[2]*self.scale + center[1])
+		)
+
+		point_zx = (
+			int(point[2]*self.scale + center[0]),
+			int(point[0]*self.scale + center[1])
+		)
+
+		cv2.circle(self.img, point_xy, 3, (255, 0, 0), -1)
+		cv2.circle(self.img, point_yz, 3, (0, 255, 0), -1)
+		cv2.circle(self.img, point_zx, 3, (0, 0, 255), -1)
+		cv2.circle(self.img, center, self.scale, (255, 255, 255), 1)
+
+	def render(self, clear):
+		cv2.imshow(self.name, self.img)
+
+		if clear:
+			self.img = np.copy(self.backgroud)
 
 with serial.Serial(port='/dev/ttyACM0', baudrate=115200) as ser:
 
-	samples = []
-	background = np.zeros(shape=(480, 640, 3), dtype=np.uint8)
+	calibration = Calibration(min_dist=0.1)
+	viewer_raw   = Viewer(name="mag raw",		 scale=250)
+	viewer_calib = Viewer(name="mag calibrated", scale=125)
 
 	while True:
 		line = re.sub(' +', ' ', ser.readline().decode('ascii').rstrip()).split(' ')
@@ -63,77 +132,31 @@ with serial.Serial(port='/dev/ttyACM0', baudrate=115200) as ser:
 			float(line[3])
 		]
 
-		collect = True
-
-		for sample in samples:
-			diff = [
-				mag[0] - sample[0],
-				mag[1] - sample[1],
-				mag[2] - sample[2],
-			]
-			dist = math.sqrt(diff[0]**2 + diff[1]**2 + diff[2]**2)
-
-			if dist < 50:
-				collect = False
-				break
-
 		if cv2.waitKey(1) == ord('x'):
 			break
 
-		if not collect:
+		if not calibration.add_sample(mag):
 			continue
 
-		samples.append(mag)
+		viewer_raw.draw_point(mag)
+		viewer_raw.render(clear=False)
 
-		print(line)
+		mean_len = 0
 
-		draw_point3d(background, mag, 0.25)
+		for sample in calibration.samples:
+			calibrated = calibration.get_calibrated(sample)
+			
+			mean_len +=math.sqrt(calibrated[0]**2 + calibrated[1]**2 + calibrated[2]**2)
+			
+			viewer_calib.draw_point(calibrated)
+		
+		mean_len /=len(calibration.samples)
+		
+		viewer_calib.render(clear=True)
+		
+		offset, scale = calibration.get_params()
 
-		cv2.imshow("mag raw", background)
-
-		if len(samples)<2:
-			continue
-
-		mean = [0, 0, 0]
-		for sample in samples:
-			mean[0] +=sample[0]
-			mean[1] +=sample[1]
-			mean[2] +=sample[2]
-		mean[0] /=len(samples)
-		mean[1] /=len(samples)
-		mean[2] /=len(samples)
-
-		print(f'mean:  {mean[0] : 10.5f} {mean[1] : 10.5f} {mean[2] : 10.5f}')
-
-		#max = [0, 0, 0]
-		#for sample in samples:
-		#	max[0] = np.maximum(max[0], np.abs(sample[0]))
-		#	max[1] = np.maximum(max[1], np.abs(sample[1]))
-		#	max[2] = np.maximum(max[2], np.abs(sample[2]))
-		#scale = [
-		#	1/max[0],
-		#	1/max[1],
-		#	1/max[2]
-		#]
-
-		mean_abs = [0, 0, 0]
-		for sample in samples:
-			mean_abs[0] +=np.abs(sample[0] - mean[0])
-			mean_abs[1] +=np.abs(sample[1] - mean[1])
-			mean_abs[2] +=np.abs(sample[2] - mean[2])
-		mean_abs[0] /=len(samples)
-		mean_abs[1] /=len(samples)
-		mean_abs[2] /=len(samples)
-
-		frac = ((3*math.pi**2)/(8*(3*math.pi - 4)))**1.7
-		#frac = 1
-
-		scale = [
-			mean_abs[0]/frac,
-			mean_abs[1]/frac,
-			mean_abs[2]/frac,
-		]
-
-		print(f'scale: {scale[0] : 10.5f} {scale[1] : 10.5f} {scale[2] : 10.5f}')
-
-		show_calibrated(samples, scale, mean)
+		print(line[1:])
+		print(f'offset: {offset[0] : 10.5f} {offset[1] : 10.5f} {offset[2] : 10.5f}')
+		print(f'scale:  {scale[0] : 10.5f} {scale[1] : 10.5f} {scale[2] : 10.5f}')
+		print(f'len:    {mean_len: 10.5f}')
