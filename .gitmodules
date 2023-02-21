@@ -13,3 +13,6 @@
 [submodule "software/third-party/stm32_mw_usb_device"]
 	path = software/third-party/stm32_mw_usb_device
 	url = git@github.com:STMicroelectronics/stm32_mw_usb_device.git
+[submodule "software/third-party/etl"]
+	path = software/third-party/etl
+	url = git@github.com:ETLCPP/etl.git

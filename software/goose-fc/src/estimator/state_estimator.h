@@ -23,6 +23,9 @@ typedef struct {
 
 extern QueueHandle_t state_queue;
 
+#ifdef __cplusplus
+extern "C"
+#endif
 void StateEstimator_Init();
 
 #endif

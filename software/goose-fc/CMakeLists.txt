@@ -4,9 +4,13 @@ set(CMAKE_TOOLCHAIN_FILE "arm-none-eabi.cmake")
 
 project(goose-fc)
 
-enable_language(C ASM)
+enable_language(ASM C CXX)
+
+set(CMAKE_CXX_STANDARD 20)
 
 set(TARGET ${CMAKE_PROJECT_NAME}.elf)
+
+add_subdirectory("../third-party/etl" "etl")
 
 add_executable(${TARGET}
 	"../third-party/stm32f4xx_hal_driver/Src/stm32f4xx_ll_usb.c"
@@ -60,7 +64,7 @@ add_executable(${TARGET}
 	"src/sensors/bmp280.c"
 	"src/communication/logger.c"
 	"src/communication/communication.c"
-	"src/estimator/state_estimator.c"
+	"src/estimator/state_estimator.cpp"
 )
 
 target_compile_definitions(${TARGET} PRIVATE
@@ -124,6 +128,7 @@ target_link_options(${TARGET} PRIVATE
 
 target_link_libraries(${TARGET} 
 	m
+	etl::etl
 )
 
 add_custom_command(

@@ -1,6 +1,10 @@
 #ifndef LOGGER_H
 #define LOGGER_H
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 typedef enum {
 	LOG_DEBUG = 7,
 	LOG_INFO = 14,
@@ -9,5 +13,9 @@ typedef enum {
 } log_type_t;
 
 void LOG(const log_type_t type, const char *format, ...);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif
