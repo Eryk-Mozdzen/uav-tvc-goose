@@ -81,13 +81,13 @@ void estimator(void *param) {
 		0, 0, 0, 0,  0,  1
 	};
 
-	const Matrix<6, 1> B = {
-		dt,
-		dt,
-		dt,
-		0,
-		0,
-		0
+	const Matrix<6, 3> B = {
+		dt, 0,  0,
+		0,  dt, 0,
+		0,  0,  dt,
+		0,  0,  0,
+		0,  0,  0,
+		0,  0,  0
 	};
 
 	const Matrix<3, 6> H = {
@@ -126,7 +126,7 @@ void estimator(void *param) {
 			magnetic_field.x*cos_pitch + magnetic_field.y*sin_pitch*sin_roll + magnetic_field.z*sin_pitch*cos_roll
 		);
 
-		kalman.predict({gyration.x, gyration.y, gyration.z});
+		kalman.predict({gyration.y, gyration.x, gyration.z});
 
 		kalman.update({roll, pitch, yaw});
 
