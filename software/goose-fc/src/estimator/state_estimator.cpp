@@ -9,6 +9,7 @@
 #include "queue_element.h"
 #include "matrix.h"
 #include "kalman_filter.h"
+#include "extended_kalman_filter.h"
 
 QueueHandle_t state_queue;
 
@@ -48,28 +49,45 @@ void handle_readings() {
 	}
 }
 
-float3_t normalize(const float3_t vec) {
-	const float len = sqrtf(acceleration.x*acceleration.x + acceleration.y*acceleration.y + acceleration.z*acceleration.z);
+float3_t normalize(float3_t vec) {
+	const float len = sqrtf(vec.x*vec.x + vec.y*vec.y + vec.z*vec.z);
 	
 	if(len<0.01f)
 		return vec;
 
-	float3_t norm = vec;
-	norm.x /=len;
-	norm.y /=len;
-	norm.z /=len;
+	vec.x /=len;
+	vec.y /=len;
+	vec.z /=len;
 	
-	return norm;
+	return vec;
 }
 
-void estimator(void *param) {
-	(void)param;
+float3_t get_attitude(float3_t acc, float3_t mag) {
+	acc = normalize(acc);
+	mag = normalize(mag);
 
-	TickType_t time = xTaskGetTickCount();
+	const float roll  = atan2f(acc.y, acc.z);
+	const float pitch = atan2f(-acc.x, sqrtf(acc.y*acc.y + acc.z*acc.z));
 
-	constexpr float pi = 3.1415f;
-	constexpr float rad_to_deg = 180.f/pi;
+	const float cos_roll = cosf(roll);
+	const float sin_roll = sinf(roll);
+	const float cos_pitch = cosf(pitch);
+	const float sin_pitch = sinf(pitch);
 
+	const float yaw = atan2f(
+		-mag.y*cos_roll + mag.z*sin_roll, 
+		mag.x*cos_pitch + mag.y*sin_pitch*sin_roll + mag.z*sin_pitch*cos_roll
+	);
+
+	float3_t attitude;
+	attitude.x = roll;
+	attitude.y = pitch;
+	attitude.z = yaw;
+	
+	return attitude;
+}
+
+KalmanFilter<6, 3, 3> get_kf() {
 	constexpr float dt = 0.01;
 
 	constexpr Matrix<6, 6> F = {
@@ -99,46 +117,93 @@ void estimator(void *param) {
 	constexpr Matrix<6, 6> Q = Matrix<6, 6>::identity()*0.005f;
 	constexpr Matrix<3, 3> R = Matrix<3, 3>::identity()*1.f;
 
-	KalmanFilter kalman(F, B, H, Q, R, {0, 0, 0, 0, 0, 0});
+	return KalmanFilter(F, B, H, Q, R, {0, 0, 0, 0, 0, 0});
+}
+
+ExtendedKalmanFilter<6, 3, 3> get_ekf() {
+
+	constexpr float dt = 0.01;
+
+	const std::function<Matrix<6, 1>(const Matrix<6, 1>, const Matrix<3, 1>)> f = [](const Matrix<6, 1> x, const Matrix<3, 1> u) {
+
+		const float roll = x(0, 0);
+		const float pitch = x(1, 0);
+		const float yaw = x(2, 0);
+
+		const float cos_roll = cosf(roll);
+		const float sin_roll = sinf(roll);
+		const float tan_roll = tanf(roll);
+		const float cos_pitch = cosf(pitch);
+		const float sin_pitch = sinf(pitch);
+		const float tan_pitch = tanf(pitch);
+
+		const float wx = u(0, 0);
+		const float wy = u(1, 0);
+		const float wz = u(2, 0);
+
+		const Matrix<6, 1> x_new = {
+			roll + dt*(wx + wy*sin_roll*tan_pitch + wz*cos_roll*tan_pitch),
+			pitch + dt*(wy*cos_roll - wz*sin_roll),
+			yaw + dt*wz,
+			wx,
+			wy,
+			wz
+		};
+		
+		return x_new;
+	};
+
+	const std::function<Matrix<3, 1>(const Matrix<6, 1>)> h = [](const Matrix<6, 1> x) {
+		const Matrix<3, 1> z;
+		
+		return z;
+	};
+
+	const std::function<Matrix<6, 6>(const Matrix<6, 1>, const Matrix<3, 1>)> d_dx_f = [](const Matrix<6, 1> x, const Matrix<3, 1> u) {
+		const float wx = u(0, 0);
+		const float wy = u(1, 0);
+		const float wz = u(2, 0);
+		
+		const Matrix<6, 6> F;
+		
+		return F;
+	};
+
+	const std::function<Matrix<3, 6>(const Matrix<6, 1>)> d_dx_h = [](const Matrix<6, 1> x) {
+		const Matrix<3, 6> H;
+		
+		return H;
+	};
+
+	constexpr Matrix<6, 6> Q = Matrix<6, 6>::identity()*0.005f;
+	constexpr Matrix<3, 3> R = Matrix<3, 3>::identity()*1.f;
+
+	return ExtendedKalmanFilter(f, h, d_dx_f, d_dx_h, Q, R, {0, 0, 0, 0, 0, 0});
+}
+
+void estimator(void *param) {
+	(void)param;
+
+	TickType_t time = xTaskGetTickCount();
+
+	constexpr float pi = 3.1415f;
+	constexpr float rad_to_deg = 180.f/pi;
+
+	KalmanFilter kf = get_kf();
 
 	while(1) {
 		xTaskDelayUntil(&time, 10);
 
 		handle_readings();
 
-		float tmp = acceleration.x;
-		acceleration.x = -acceleration.y;
-		acceleration.y = -tmp;
+		kf.predict({gyration.x, gyration.y, gyration.z});
 
-		acceleration = normalize(acceleration);
-		magnetic_field = normalize(magnetic_field);
+		const float3_t observation = get_attitude(acceleration, magnetic_field);
+		kf.update({observation.x, observation.y, observation.z});
 
-		const float roll  = atan2f(acceleration.y, acceleration.z);
-		const float pitch = atan2f(-acceleration.x, sqrtf(acceleration.y*acceleration.y + acceleration.z*acceleration.z));
+		const Matrix<6, 1> kf_attitude = kf.getState();
 
-		const float cos_roll = cosf(pitch);
-		const float sin_roll = sinf(pitch);
-		const float cos_pitch = cosf(roll);
-		const float sin_pitch = sinf(roll);
-
-		const float yaw = atan2f(
-			-magnetic_field.y*cos_roll + magnetic_field.z*sin_roll, 
-			magnetic_field.x*cos_pitch + magnetic_field.y*sin_pitch*sin_roll + magnetic_field.z*sin_pitch*cos_roll
-		);
-
-		kalman.predict({gyration.y, gyration.x, gyration.z});
-
-		kalman.update({roll, pitch, yaw});
-
-		const Matrix<6, 1> attitude = kalman.getState();
-
-		//LOG(LOG_DEBUG, "acc: %+10.2f %+10.2f %+10.2f m/s2\n\r", (double)acceleration.x, (double)acceleration.y, (double)acceleration.z);
-		//LOG(LOG_DEBUG, "gyr: %+10.2f %+10.2f %+10.2f rad/s\n\r", (double)gyration.x, (double)gyration.y, (double)gyration.z);
-		//LOG(LOG_DEBUG, "mag: %+10.2f %+10.2f %+10.2f\n\r", (double)magnetic_field.x, (double)magnetic_field.y, (double)magnetic_field.z);
-
-		//LOG(LOG_DEBUG, "rpy: %7.2f %7.2f %7.2f\n\r", (double)(attitude.x*rad_to_deg), (double)(attitude.y*rad_to_deg), (double)(attitude.z*rad_to_deg));
-
-		LOG(LOG_DEBUG, "rpy: %7.2f %7.2f %7.2f\n\r", (double)(attitude(0, 0)*rad_to_deg), (double)(attitude(1, 0)*rad_to_deg), (double)(attitude(2, 0)*rad_to_deg));
+		LOG(LOG_DEBUG, "kf: %7.2f %7.2f %7.2f\n\r", (double)(kf_attitude(0, 0)*rad_to_deg), (double)(kf_attitude(1, 0)*rad_to_deg), (double)(kf_attitude(2, 0)*rad_to_deg));
 	}
 }
 

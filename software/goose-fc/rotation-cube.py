@@ -43,14 +43,14 @@ def draw_line(img, p1, p2, color):
 	cv2.line(img, a, b, color, 2)
 
 points = [
-	[[-50], [-25], [+5]],
-	[[+50], [-25], [+5]],
-	[[+50], [+25], [+5]],
-	[[-50], [+25], [+5]],
-	[[-50], [-25], [-5]],
-	[[+50], [-25], [-5]],
-	[[+50], [+25], [-5]],
-	[[-50], [+25], [-5]]
+	[[-25], [-25], [+5]],
+	[[+25], [-25], [+5]],
+	[[+25], [+25], [+5]],
+	[[-25], [+25], [+5]],
+	[[-25], [-25], [-5]],
+	[[+25], [-25], [-5]],
+	[[+25], [+25], [-5]],
+	[[-25], [+25], [-5]]
 ]
 
 background = np.zeros(shape=(480, 640, 3), dtype=np.uint8)
@@ -63,11 +63,11 @@ with serial.Serial(port='/dev/ttyACM0', baudrate=115200) as ser:
 		if len(line)!=4:
 			continue
 
-		roll  = -float(line[1])*math.pi/180
-		pitch = -float(line[2])*math.pi/180
-		yaw   = -float(line[3])*math.pi/180
+		roll  = float(line[1])*math.pi/180
+		pitch = float(line[2])*math.pi/180
+		yaw   = float(line[3])*math.pi/180
 
-		rotation_matrix = np.matmul(np.matmul(rot_z(yaw), rot_y(pitch)), rot_x(roll))
+		rotation_matrix = np.matmul(np.matmul(rot_z(-yaw), rot_y(-pitch)), rot_x(roll))
 
 		rotated = [np.matmul(rotation_matrix, point) for point in points]
 
