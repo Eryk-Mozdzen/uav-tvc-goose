@@ -67,12 +67,12 @@ void estimator(void *param) {
 
 	TickType_t time = xTaskGetTickCount();
 
-	const float pi = 3.1415f;
-	const float rad_to_deg = 180.f/pi;
+	constexpr float pi = 3.1415f;
+	constexpr float rad_to_deg = 180.f/pi;
 
-	const float dt = 0.01;
+	constexpr float dt = 0.01;
 
-	const Matrix<6, 6> F = {
+	constexpr Matrix<6, 6> F = {
 		1, 0, 0, dt, 0,  0,
 		0, 1, 0, 0,  dt, 0,
 		0, 0, 1, 0,  0,  dt, 
@@ -81,7 +81,7 @@ void estimator(void *param) {
 		0, 0, 0, 0,  0,  1
 	};
 
-	const Matrix<6, 3> B = {
+	constexpr Matrix<6, 3> B = {
 		dt, 0,  0,
 		0,  dt, 0,
 		0,  0,  dt,
@@ -90,16 +90,16 @@ void estimator(void *param) {
 		0,  0,  0
 	};
 
-	const Matrix<3, 6> H = {
+	constexpr Matrix<3, 6> H = {
 		1, 0, 0, 0, 0, 0,
 		0, 1, 0, 0, 0, 0,
 		0, 0, 1, 0, 0, 0
 	};
 
-	const Matrix<6, 6> Q = Matrix<6, 6>::identity()*0.005f;
-	const Matrix<3, 3> R = Matrix<3, 3>::identity()*1.f;
+	constexpr Matrix<6, 6> Q = Matrix<6, 6>::identity()*0.005f;
+	constexpr Matrix<3, 3> R = Matrix<3, 3>::identity()*1.f;
 
-	KalmanFilter kalman(F, B, H, Q, R, {0, 0, 0});
+	KalmanFilter kalman(F, B, H, Q, R, {0, 0, 0, 0, 0, 0});
 
 	while(1) {
 		xTaskDelayUntil(&time, 10);

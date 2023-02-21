@@ -70,6 +70,7 @@ add_executable(${TARGET}
 target_compile_definitions(${TARGET} PRIVATE
 	STM32F411xE
 	USE_HAL
+	ETL_NO_STL
 )
 
 target_include_directories(${TARGET} PRIVATE
@@ -95,8 +96,8 @@ target_include_directories(${TARGET} PRIVATE
 )
 
 target_compile_options(${TARGET} PRIVATE
-	-O0
-	-g3
+	#-O0 -g3 -DDEBUG
+	-Os
 
 	-Wextra
 	-Wpedantic
@@ -105,11 +106,11 @@ target_compile_options(${TARGET} PRIVATE
 	-ffunction-sections
 	-fdata-sections
 	-fstack-usage
+	-fno-common
 	
 	-mcpu=cortex-m4
 	-mfloat-abi=hard
 	-mfpu=fpv4-sp-d16
-
 	-specs=nosys.specs
 )
 
@@ -122,7 +123,6 @@ target_link_options(${TARGET} PRIVATE
 	-mcpu=cortex-m4
 	-mfpu=fpv4-sp-d16
 	-mfloat-abi=hard
-
 	-specs=nosys.specs
 )
 

@@ -23,7 +23,7 @@ class KalmanFilter {
 			const Matrix<X_DIM, X_DIM> q,
 			const Matrix<Z_DIM, Z_DIM> r,
 			Matrix<X_DIM, 1> x_init
-		) : F{f}, B{b}, H{h}, Q{q}, R{r}, P{0}, x{x_init} {
+		) : F{f}, B{b}, H{h}, Q{q}, R{r}, x{x_init} {
 
 		}
 

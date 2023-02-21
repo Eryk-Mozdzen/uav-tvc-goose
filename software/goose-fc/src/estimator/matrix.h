@@ -1,24 +1,21 @@
 #pragma once
 
 #include <cmath>
-#include "etl/array.h"
-//#include "etl/initializer_list.h"
-#include <initializer_list>
 
 template<int N, int M>
 class Matrix {
-	etl::array<float, N*M> elements;
+	float elements[N*M];
 
 public:
 
-	constexpr Matrix() = default;
+	constexpr Matrix() : elements{0} {
 
-	constexpr Matrix(std::initializer_list<float> list) : elements{} {
-		int i = 0;
-		for(const float& elem : list) {
-			elements[i++] = elem;
-		}
 	}
+
+	template<typename... U>
+    constexpr Matrix(U... list) : elements{static_cast<float>(list)...} {
+        static_assert(sizeof...(list)==N*M, "wrong size");
+    }
 	
 	constexpr float& operator()(const int row, const int col) {
 		return elements[row*M + col];
@@ -29,7 +26,7 @@ public:
 	}
 
 	constexpr Matrix<N, M> operator+(const Matrix<N, M> &second) const {
-		Matrix<N, M> result = {0};
+		Matrix<N, M> result;
 		for(int i=0; i<N*M; i++)
 			result.elements[i] = elements[i] + second.elements[i];
 		return result;
@@ -41,7 +38,7 @@ public:
 	}
 
 	constexpr Matrix<N, M> operator-(const Matrix<N, M> &second) const {
-		Matrix<N, M> result = {0};
+		Matrix<N, M> result;
 		for(int i=0; i<N*M; i++)
 			result.elements[i] = elements[i] - second.elements[i];
 		return result;
@@ -49,7 +46,7 @@ public:
 
 	template<int K>
 	constexpr Matrix<N, K> operator*(const Matrix<M, K> &second) const {
-		Matrix<N, K> result = {0};
+		Matrix<N, K> result;
 
 		for(int i=0; i<N; i++)
 			for(int j=0; j<K; j++)
@@ -67,7 +64,7 @@ public:
 	}
 
 	constexpr Matrix<M, N> transposition() const {
-		Matrix<M, N> result = {0};
+		Matrix<M, N> result;
 
 		for(int i=0; i<N; i++)
 			for(int j=0; j<M; j++)
@@ -96,8 +93,8 @@ public:
 		}
 	}
 
-	static constexpr Matrix<N, N> identity() {
-		Matrix<N, N> result = {0};
+	constexpr static Matrix<N, N> identity() {
+		Matrix<N, N> result;
 
 		for(int i=0; i<N; i++)
 			result(i, i) = 1;
@@ -107,7 +104,7 @@ public:
 
 	constexpr Matrix<N, N> inverse() const {
 
-		Matrix<N, 2*N> combined = {0};
+		Matrix<N, 2*N> combined;
 
 		for(int i=0; i<N; i++) {
 			for(int j=0; j<N; j++)
@@ -156,7 +153,7 @@ public:
 			}
 		}
 
-		Matrix<N, N> inverse = {0};
+		Matrix<N, N> inverse;
 
 		for(int i=0; i<N; i++)
 			for(int j=0; j<N; j++)
@@ -168,7 +165,7 @@ public:
 
 template<int N, int M>
 constexpr Matrix<N, M> operator*(const Matrix<N, M> &matrix, const float &number) {
-	Matrix<N, M> result = {0};
+	Matrix<N, M> result;
 	for(int i=0; i<N; i++)
 		for(int j=0; j<M; j++)
 			result(i, j) = matrix(i, j)*number;

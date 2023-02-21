@@ -53,18 +53,6 @@ void blink(void *param) {
 	}
 }
 
-/*void print(void *param) {
-	(void)param;
-
-	state_t state;
-
-	while(1) {
-		xQueueReceive(state_queue, &state, portMAX_DELAY);
-
-		LOG(LOG_INFO, "RPY: %+7.2f %+7.2f %+7.2f m/s2\n\r", (double)state.attitude.x, (double)state.attitude.y, (double)state.attitude.z);
-	}
-}*/
-
 int main() {
 
 	Init();
@@ -74,7 +62,6 @@ int main() {
 	StateEstimator_Init();
 
 	xTaskCreate(blink, "blink", 1024, NULL, 1, NULL);
-	//xTaskCreate(blink, "print", 1024, NULL, 4, NULL);
 
 	vTaskStartScheduler();
 
