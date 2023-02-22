@@ -1,0 +1,18 @@
+[submodule "software/third-party/cmsis_core"]
+	path = software/third-party/cmsis_core
+	url = git@github.com:STMicroelectronics/cmsis_core.git
+[submodule "software/third-party/cmsis_device_f4"]
+	path = software/third-party/cmsis_device_f4
+	url = git@github.com:STMicroelectronics/cmsis_device_f4.git
+[submodule "software/third-party/stm32f4xx_hal_driver"]
+	path = software/third-party/stm32f4xx_hal_driver
+	url = git@github.com:STMicroelectronics/stm32f4xx_hal_driver.git
+[submodule "software/third-party/FreeRTOS-Kernel"]
+	path = software/third-party/FreeRTOS-Kernel
+	url = git@github.com:FreeRTOS/FreeRTOS-Kernel.git
+[submodule "software/third-party/stm32_mw_usb_device"]
+	path = software/third-party/stm32_mw_usb_device
+	url = git@github.com:STMicroelectronics/stm32_mw_usb_device.git
+[submodule "software/third-party/etl"]
+	path = software/third-party/etl
+	url = git@github.com:ETLCPP/etl.git
