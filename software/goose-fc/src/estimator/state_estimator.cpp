@@ -63,6 +63,27 @@ float3_t normalize(float3_t vec) {
 	return vec;
 }
 
+float3_t mag_remove_z(float3_t mag, const ExtendedKalmanFilter<7, 3, 6> &ekf) {
+	const Matrix<7, 1> state = ekf.getState();
+	const Quaternion q = Quaternion(state(0, 0), state(1, 0), state(2, 0), state(3, 0)).getNormalized();
+	const Matrix<3, 3> rot = q.getRotation();
+
+	Matrix<3, 1> b_mag = {mag.x, mag.y, mag.z};
+	Matrix<3, 1> w_mag = rot*b_mag;
+
+	w_mag(2, 0) = 0.f;
+	const float len = std::sqrt(w_mag(0, 0)*w_mag(0, 0) + w_mag(1, 0)*w_mag(1, 0));
+	w_mag(0, 0) /=len;
+	w_mag(1, 0) /=len;
+
+	b_mag = rot.transposition()*w_mag;
+
+	mag.x = b_mag(0, 0);
+	mag.y = b_mag(1, 0);
+	mag.z = b_mag(2, 0);
+	return mag;
+}
+
 void estimator(void *param) {
 	(void)param;
 
@@ -149,7 +170,7 @@ void estimator(void *param) {
 		return C;
 	};
 
-	constexpr Matrix<7, 7> Q = Matrix<7, 7>::identity()*0.00001f;
+	constexpr Matrix<7, 7> Q = Matrix<7, 7>::identity()*0.0001f;
 	constexpr Matrix<6, 6> R = Matrix<6, 6>::identity()*1.f;
 	constexpr Matrix<7, 1> x_init = {1, 0, 0, 0, 0, 0, 0};
 
@@ -165,7 +186,9 @@ void estimator(void *param) {
 		const float3_t acc = normalize(acceleration);
 		const float3_t mag = normalize(magnetic_field);
 
-		ekf.update({acc.x, acc.y, acc.z, mag.x, mag.y, mag.z});
+		const float3_t mag_without_z = mag_remove_z(mag, ekf);
+
+		ekf.update({acc.x, acc.y, acc.z, mag_without_z.x, mag_without_z.y, mag_without_z.z});
 
 		const Matrix<7, 1> state = ekf.getState();
 		const Quaternion q = Quaternion(state(0, 0), state(1, 0), state(2, 0), state(3, 0)).getNormalized();
