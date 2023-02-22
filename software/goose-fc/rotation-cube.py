@@ -3,28 +3,15 @@ import numpy as np
 import serial
 import re
 
-def rot_x(angle):
-	mat = [
-		[1, 0,  0],
-		[0, math.cos(angle), -math.sin(angle)],
-		[0, math.sin(angle),  math.cos(angle)]
-	]
-	return mat
+def quaternion_to_rotation(w, i, j, k):
+	s = 1/(w*w + i*i + j*j + k*k)
 
-def rot_y(angle):
 	mat = [
-		[ math.cos(angle), 0, math.sin(angle)],
-		[0,	1,  0],
-		[-math.sin(angle), 0, math.cos(angle)]
+		[1 - 2*s*(j*j + k*k), 2*s*(i*j - k*w), 	  2*s*(i*k + j*w)],
+		[2*s*(i*j + k*w),	 1 - 2*s*(i*i + k*k), 2*s*(j*k - i*w)],
+		[2*s*(i*k - j*w),	 2*s*(j*k + i*w),	  1 - 2*s*(i*i + j*j)]
 	]
-	return mat
 
-def rot_z(angle):
-	mat = [
-		[math.cos(angle), -math.sin(angle), 0],
-		[math.sin(angle),  math.cos(angle), 0],
-		[0, 0,  1],
-	]
 	return mat
 
 def projection(point):
@@ -42,6 +29,8 @@ def draw_line(img, p1, p2, color):
 	b = projection(p2)
 	cv2.line(img, a, b, color, 2)
 
+print_one = True
+
 points = [
 	[[-25], [-25], [+5]],
 	[[+25], [-25], [+5]],
@@ -55,34 +44,49 @@ points = [
 
 background = np.zeros(shape=(480, 640, 3), dtype=np.uint8)
 
-with serial.Serial(port='/dev/ttyACM0', baudrate=115200) as ser:
+while True:
 
-	while True:
-		line = re.sub(' +', ' ', ser.readline().decode('ascii').rstrip()).split(' ')
+	try:
 
-		if len(line)!=4:
-			continue
+		with serial.Serial(port='/dev/ttyACM0', baudrate=115200) as ser:
 
-		roll  = float(line[1])*math.pi/180
-		pitch = float(line[2])*math.pi/180
-		yaw   = float(line[3])*math.pi/180
+			print_one = True
 
-		rotation_matrix = np.matmul(np.matmul(rot_z(-yaw), rot_y(-pitch)), rot_x(roll))
+			while True:
+				line = re.sub(' +', ' ', ser.readline().decode('ascii').rstrip()).split(' ')
 
-		rotated = [np.matmul(rotation_matrix, point) for point in points]
+				if len(line)!=5:
+					continue
 
-		img = np.copy(background)
+				if not 'quat' in line[0]:
+					continue
 
-		for m in range(4):
-			draw_line(img, rotated[m  ], rotated[(m+1)%4  ], (0, 0, 255))
-			draw_line(img, rotated[m+4], rotated[(m+1)%4+4], (255, 0, 0))
-			draw_line(img, rotated[m  ], rotated[ m+4     ], (0, 255, 0))
+				w = float(line[1])
+				i = float(line[2])
+				j = float(line[3])
+				k = float(line[4])
 
-		cv2.putText(img, f'roll:  {roll *180/math.pi: 3.0f} deg', (10, 20), cv2.FONT_HERSHEY_PLAIN, 1, 255)
-		cv2.putText(img, f'pitch:{pitch*180/math.pi: 3.0f} deg', (10, 40), cv2.FONT_HERSHEY_PLAIN, 1, 255)
-		cv2.putText(img, f'yaw:  {yaw  *180/math.pi: 3.0f} deg', (10, 60), cv2.FONT_HERSHEY_PLAIN, 1, 255)
+				rotation_matrix = quaternion_to_rotation(w, i, j, k)
 
-		cv2.imshow("rotation cube", img)
+				rotated = [np.matmul(rotation_matrix, point) for point in points]
 
-		if cv2.waitKey(1) == ord('x'):
-			break
+				img = np.copy(background)
+
+				for m in range(4):
+					draw_line(img, rotated[m  ], rotated[(m+1)%4  ], (0, 0, 255))
+					draw_line(img, rotated[m+4], rotated[(m+1)%4+4], (255, 0, 0))
+					draw_line(img, rotated[m  ], rotated[ m+4     ], (0, 255, 0))
+
+				cv2.imshow("rotation cube", img)
+
+				if cv2.waitKey(1) == ord('x'):
+					quit()
+	
+	except serial.serialutil.SerialException:
+		if print_one:
+			print_one = False
+			print('\x1b[38;5;9m')
+			print('connection lost')
+
+	except KeyboardInterrupt:
+		quit()

@@ -65,6 +65,7 @@ add_executable(${TARGET}
 	"src/communication/logger.c"
 	"src/communication/communication.c"
 	"src/estimator/state_estimator.cpp"
+	"src/estimator/quaternion.cpp"
 )
 
 target_compile_definitions(${TARGET} PRIVATE

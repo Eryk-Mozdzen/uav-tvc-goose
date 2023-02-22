@@ -1,6 +1,7 @@
 #pragma once
 
 #include <cmath>
+#include "logger.h"
 
 template<int N, int M>
 class Matrix {
@@ -113,7 +114,7 @@ public:
 		}
 
 		for(int i=0; i<N; i++) {
-			/*T maxVal = 0.001;
+			float maxVal = 0.001f;
 			int maxRow = i;
 
 			for(int j=i; j<N; j++) {
@@ -123,10 +124,12 @@ public:
 				}
 			}
 
-			if(maxVal<0.002)
-				return {0};
+			if(maxVal<0.002f) {
+				LOG(LOG_WARNING, "mat: can't inverse %dx%d matrix\n\r", N, N);
+				return Matrix<N, N>();
+			}
 
-			combined.swapRows(maxRow, i);*/
+			combined.swapRows(maxRow, i);
 
 			const float joint = combined(i, i);
 
@@ -164,7 +167,7 @@ public:
 };
 
 template<int N, int M>
-constexpr Matrix<N, M> operator*(const Matrix<N, M> &matrix, const float &number) {
+constexpr Matrix<N, M> operator*(const float &number, const Matrix<N, M> &matrix) {
 	Matrix<N, M> result;
 	for(int i=0; i<N; i++)
 		for(int j=0; j<M; j++)

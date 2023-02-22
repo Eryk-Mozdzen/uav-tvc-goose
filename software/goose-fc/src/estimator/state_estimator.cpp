@@ -10,6 +10,7 @@
 #include "matrix.h"
 #include "kalman_filter.h"
 #include "extended_kalman_filter.h"
+#include "quaternion.h"
 
 QueueHandle_t state_queue;
 
@@ -62,125 +63,6 @@ float3_t normalize(float3_t vec) {
 	return vec;
 }
 
-float3_t get_attitude(float3_t acc, float3_t mag) {
-	acc = normalize(acc);
-	mag = normalize(mag);
-
-	const float roll  = atan2f(acc.y, acc.z);
-	const float pitch = atan2f(-acc.x, sqrtf(acc.y*acc.y + acc.z*acc.z));
-
-	const float cos_roll = cosf(roll);
-	const float sin_roll = sinf(roll);
-	const float cos_pitch = cosf(pitch);
-	const float sin_pitch = sinf(pitch);
-
-	const float yaw = atan2f(
-		-mag.y*cos_roll + mag.z*sin_roll, 
-		mag.x*cos_pitch + mag.y*sin_pitch*sin_roll + mag.z*sin_pitch*cos_roll
-	);
-
-	float3_t attitude;
-	attitude.x = roll;
-	attitude.y = pitch;
-	attitude.z = yaw;
-	
-	return attitude;
-}
-
-KalmanFilter<6, 3, 3> get_kf() {
-	constexpr float dt = 0.01;
-
-	constexpr Matrix<6, 6> F = {
-		1, 0, 0, dt, 0,  0,
-		0, 1, 0, 0,  dt, 0,
-		0, 0, 1, 0,  0,  dt, 
-		0, 0, 0, 1,  0,  0, 
-		0, 0, 0, 0,  1,  0,
-		0, 0, 0, 0,  0,  1
-	};
-
-	constexpr Matrix<6, 3> B = {
-		dt, 0,  0,
-		0,  dt, 0,
-		0,  0,  dt,
-		0,  0,  0,
-		0,  0,  0,
-		0,  0,  0
-	};
-
-	constexpr Matrix<3, 6> H = {
-		1, 0, 0, 0, 0, 0,
-		0, 1, 0, 0, 0, 0,
-		0, 0, 1, 0, 0, 0
-	};
-
-	constexpr Matrix<6, 6> Q = Matrix<6, 6>::identity()*0.005f;
-	constexpr Matrix<3, 3> R = Matrix<3, 3>::identity()*1.f;
-
-	return KalmanFilter(F, B, H, Q, R, {0, 0, 0, 0, 0, 0});
-}
-
-ExtendedKalmanFilter<6, 3, 3> get_ekf() {
-
-	constexpr float dt = 0.01;
-
-	const std::function<Matrix<6, 1>(const Matrix<6, 1>, const Matrix<3, 1>)> f = [](const Matrix<6, 1> x, const Matrix<3, 1> u) {
-
-		const float roll = x(0, 0);
-		const float pitch = x(1, 0);
-		const float yaw = x(2, 0);
-
-		const float cos_roll = cosf(roll);
-		const float sin_roll = sinf(roll);
-		const float tan_roll = tanf(roll);
-		const float cos_pitch = cosf(pitch);
-		const float sin_pitch = sinf(pitch);
-		const float tan_pitch = tanf(pitch);
-
-		const float wx = u(0, 0);
-		const float wy = u(1, 0);
-		const float wz = u(2, 0);
-
-		const Matrix<6, 1> x_new = {
-			roll + dt*(wx + wy*sin_roll*tan_pitch + wz*cos_roll*tan_pitch),
-			pitch + dt*(wy*cos_roll - wz*sin_roll),
-			yaw + dt*wz,
-			wx,
-			wy,
-			wz
-		};
-		
-		return x_new;
-	};
-
-	const std::function<Matrix<3, 1>(const Matrix<6, 1>)> h = [](const Matrix<6, 1> x) {
-		const Matrix<3, 1> z;
-		
-		return z;
-	};
-
-	const std::function<Matrix<6, 6>(const Matrix<6, 1>, const Matrix<3, 1>)> d_dx_f = [](const Matrix<6, 1> x, const Matrix<3, 1> u) {
-		const float wx = u(0, 0);
-		const float wy = u(1, 0);
-		const float wz = u(2, 0);
-		
-		const Matrix<6, 6> F;
-		
-		return F;
-	};
-
-	const std::function<Matrix<3, 6>(const Matrix<6, 1>)> d_dx_h = [](const Matrix<6, 1> x) {
-		const Matrix<3, 6> H;
-		
-		return H;
-	};
-
-	constexpr Matrix<6, 6> Q = Matrix<6, 6>::identity()*0.005f;
-	constexpr Matrix<3, 3> R = Matrix<3, 3>::identity()*1.f;
-
-	return ExtendedKalmanFilter(f, h, d_dx_f, d_dx_h, Q, R, {0, 0, 0, 0, 0, 0});
-}
-
 void estimator(void *param) {
 	(void)param;
 
@@ -189,21 +71,106 @@ void estimator(void *param) {
 	constexpr float pi = 3.1415f;
 	constexpr float rad_to_deg = 180.f/pi;
 
-	KalmanFilter kf = get_kf();
+	constexpr float dt = 0.01;
+
+	const auto f = [](const Matrix<7, 1> state, const Matrix<3, 1> gyr) {
+		const Quaternion q(state(0, 0), state(1, 0), state(2, 0), state(3, 0));
+
+		const Matrix<7, 7> A = {
+			1, 0, 0, 0,  0.5f*dt*q.i,  0.5f*dt*q.j,  0.5f*dt*q.k,
+			0, 1, 0, 0, -0.5f*dt*q.w,  0.5f*dt*q.k, -0.5f*dt*q.j,
+			0, 0, 1, 0, -0.5f*dt*q.k, -0.5f*dt*q.w,  0.5f*dt*q.i,
+			0, 0, 0, 1,  0.5f*dt*q.j, -0.5f*dt*q.i, -0.5f*dt*q.w,
+
+			0, 0, 0, 0,  1,			   0, 		     0,
+			0, 0, 0, 0,  0,			   1,		     0,
+			0, 0, 0, 0,  0,			   0,   		 1
+		};
+
+		const Matrix<7, 3> B = {
+			-q.i, -q.j, -q.k,
+			 q.w, -q.k,  q.j,
+			 q.k,  q.w, -q.i,
+			-q.j,  q.i,  q.w,
+			 0,    0,    0,
+			 0,    0,    0,
+			 0,    0,    0
+		};
+
+		return A*state + 0.5f*dt*B*gyr;
+	};
+
+	const auto h = [](const Matrix<7, 1> state) {
+		const Quaternion q(state(0, 0), state(1, 0), state(2, 0), state(3, 0));
+
+		const Matrix<6, 7> C = {
+			 2.f*q.j, -2.f*q.k,  2.f*q.w, -2.f*q.i, 0, 0, 0,
+			-2.f*q.i, -2.f*q.w, -2.f*q.k, -2.f*q.j, 0, 0, 0,
+			-2.f*q.w,  2.f*q.i,  2.f*q.j, -2.f*q.k, 0, 0, 0,
+
+			-2.f*q.k, -2.f*q.j, -2.f*q.i, -2.f*q.w, 0, 0, 0,
+			-2.f*q.w,  2.f*q.i, -2.f*q.j,  2.f*q.k, 0, 0, 0,
+			 2.f*q.i,  2.f*q.w, -2.f*q.k, -2.f*q.j, 0, 0, 0
+		};
+
+		return C*state;
+	};
+
+	const auto f_tangent = [](const Matrix<7, 1> state, const Matrix<3, 1> gyr) {
+		const Quaternion q(state(0, 0), state(1, 0), state(2, 0), state(3, 0));
+
+		const Matrix<7, 7> A = {
+			1, 0, 0, 0,  0.5f*dt*q.i,  0.5f*dt*q.j,  0.5f*dt*q.k,
+			0, 1, 0, 0, -0.5f*dt*q.w,  0.5f*dt*q.k, -0.5f*dt*q.j,
+			0, 0, 1, 0, -0.5f*dt*q.k, -0.5f*dt*q.w,  0.5f*dt*q.i,
+			0, 0, 0, 1,  0.5f*dt*q.j, -0.5f*dt*q.i, -0.5f*dt*q.w,
+
+			0, 0, 0, 0,  1,			   0, 		     0,
+			0, 0, 0, 0,  0,			   1,		     0,
+			0, 0, 0, 0,  0,			   0,   		 1
+		};
+
+		return A;
+	};
+
+	const auto h_tangent = [](const Matrix<7, 1> state) {
+		const Quaternion q(state(0, 0), state(1, 0), state(2, 0), state(3, 0));
+
+		const Matrix<6, 7> C = {
+			 2.f*q.j, -2.f*q.k,  2.f*q.w, -2.f*q.i, 0, 0, 0,
+			-2.f*q.i, -2.f*q.w, -2.f*q.k, -2.f*q.j, 0, 0, 0,
+			-2.f*q.w,  2.f*q.i,  2.f*q.j, -2.f*q.k, 0, 0, 0,
+
+			-2.f*q.k, -2.f*q.j, -2.f*q.i, -2.f*q.w, 0, 0, 0,
+			-2.f*q.w,  2.f*q.i, -2.f*q.j,  2.f*q.k, 0, 0, 0,
+			 2.f*q.i,  2.f*q.w, -2.f*q.k, -2.f*q.j, 0, 0, 0
+		};
+
+		return C;
+	};
+
+	constexpr Matrix<7, 7> Q = Matrix<7, 7>::identity()*0.00001f;
+	constexpr Matrix<6, 6> R = Matrix<6, 6>::identity()*1.f;
+	constexpr Matrix<7, 1> x_init = {1, 0, 0, 0, 0, 0, 0};
+
+	ExtendedKalmanFilter<7, 3, 6> ekf(f, h, f_tangent, h_tangent, Q, R, x_init);
 
 	while(1) {
 		xTaskDelayUntil(&time, 10);
 
 		handle_readings();
 
-		kf.predict({gyration.x, gyration.y, gyration.z});
+		ekf.predict({gyration.x, gyration.y, gyration.z});
 
-		const float3_t observation = get_attitude(acceleration, magnetic_field);
-		kf.update({observation.x, observation.y, observation.z});
+		const float3_t acc = normalize(acceleration);
+		const float3_t mag = normalize(magnetic_field);
 
-		const Matrix<6, 1> kf_attitude = kf.getState();
+		ekf.update({acc.x, acc.y, acc.z, mag.x, mag.y, mag.z});
 
-		LOG(LOG_DEBUG, "kf: %7.2f %7.2f %7.2f\n\r", (double)(kf_attitude(0, 0)*rad_to_deg), (double)(kf_attitude(1, 0)*rad_to_deg), (double)(kf_attitude(2, 0)*rad_to_deg));
+		const Matrix<7, 1> state = ekf.getState();
+		const Quaternion q = Quaternion(state(0, 0), state(1, 0), state(2, 0), state(3, 0)).getNormalized();
+
+		LOG(LOG_DEBUG, "quat: %+10.5f %+10.5f %+10.5f %+10.5f\n\r", (double)(q.w), (double)(q.i), (double)(q.j), (double)(q.k));
 	}
 }
 
