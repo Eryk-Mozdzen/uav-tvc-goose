@@ -1,21 +1,38 @@
-#ifndef COMMUNICATION_H
-#define COMMUNICATION_H
+#pragma once
 
 #include "FreeRTOS.h"
 #include "queue.h"
 
-typedef struct {
-	float roll, pitch, yaw, throttle;
-} controls_t;
+#define COM		Communication::getInstance()
 
-typedef enum {
-	TX_LOG,
-	TX_TELEMETRY
-} tx_msg_t;
+class Communication {
+		QueueHandle_t tx_queue;
+		QueueHandle_t rx_queue;
+		
+		struct TX {
+			enum {
+				LOG,
+				TELEMETRY
+			};
+		};
+		
+		Communication();
 
-extern QueueHandle_t tx_msg_queue;
-extern QueueHandle_t rx_msg_queue;
+	public:
+		enum LOG {
+			DEBUG = 7,
+			INFO = 14,
+			WARNING = 11,
+			ERROR = 9
+		};
 
-void Communication_Init();
+		Communication(Communication &) = delete;
+		void operator=(const Communication &) = delete;
 
-#endif
+		void run();
+		void log(const LOG type, const char *format, ...);
+
+		static Communication& getInstance();
+};
+
+void transmitterTaskFcn(void *param);

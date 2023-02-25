@@ -1,31 +1,29 @@
-#ifndef STATE_ESTIMATOR_H
-#define STATE_ESTIMATOR_H
+#pragma once
 
-#include "sensors.h"
+#include "extended_kalman_filter.h"
+#include "vector.h"
+#include "quaternion.h"
+#include "queue_element.h"
 
-typedef struct {
-	float3_t acceleration;
-	float3_t gyration;
-	float3_t magnetic_field;
-	float pressure;
-	float voltage;
-	float current;
+class StateEstimator {
+		static constexpr float dt = 0.005;
 
-	float3_t attitude;
-	float3_t linear_acceleration;
-	float altitude;
-} telemetry_t;
+		ExtendedKalmanFilter<7, 3, 6> ekf;
 
-typedef struct {
-	float3_t attitude;
-	float altitude;
-} state_t;
+		Vector acceleration;
+		Vector magnetic_field;
 
-extern QueueHandle_t state_queue;
+		bool acc_ready;
+		bool mag_ready;
 
-#ifdef __cplusplus
-extern "C"
-#endif
-void StateEstimator_Init();
+		Vector remove_earth_declination(Vector mag) const;
 
-#endif
+	public:
+		StateEstimator();
+
+		void handleReading(queue_element_t reading);
+
+		Quaternion getAttitude() const;
+};
+
+void estimatorTaskFcn(void *param);

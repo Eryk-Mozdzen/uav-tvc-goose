@@ -6,7 +6,7 @@
 
 typedef struct {
 	uint8_t type;
-	void *data;
+	uint8_t data[128];
 } queue_element_t;
 
 #endif

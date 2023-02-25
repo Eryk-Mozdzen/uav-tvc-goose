@@ -9,7 +9,7 @@ void HAL_MspInit() {
 }
 
 void HAL_I2C_MspInit(I2C_HandleTypeDef* hi2c) {
-	GPIO_InitTypeDef GPIO_InitStruct = {0};
+	GPIO_InitTypeDef GPIO_InitStruct;
 	
 	if(hi2c->Instance==I2C1) {
 		__HAL_RCC_GPIOB_CLK_ENABLE();
