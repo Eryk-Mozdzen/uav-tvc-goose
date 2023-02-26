@@ -1,13 +1,17 @@
 #include "sensor_bus.h"
 
-#include "communication.h"
+#include "stm32f4xx_hal.h"
+#include "FreeRTOS.h"
+#include "task.h"
+
+#include "transmitter.h"
 
 I2C_HandleTypeDef hi2c1;
 DMA_HandleTypeDef hdma_i2c1_rx;
 TaskHandle_t task_to_notify;
 
-SensorBus::SensorBus() {
-	lock = xSemaphoreCreateBinary();
+SensorBus::SensorBus() : lock{"sensor bus lock"} {
+
 }
 
 void SensorBus::init() {
@@ -29,9 +33,9 @@ void SensorBus::init() {
 	hi2c1.Init.NoStretchMode = I2C_NOSTRETCH_DISABLE;
 	HAL_I2C_Init(&hi2c1);
 
-	xSemaphoreGive(lock);
+	lock.give();
 
-	COM.log(Communication::INFO, "bus: initialization complete\n\r");
+	Transmitter::log(Transmitter::INFO, "bus: initialization complete\n\r");
 }
 
 void SensorBus::slaveRecovery() {
@@ -53,7 +57,7 @@ void SensorBus::slaveRecovery() {
 
 	HAL_GPIO_WritePin(GPIOB, GPIO_PIN_8, GPIO_PIN_RESET);
 
-	COM.log(Communication::INFO, "bus: performing recovery from slaves...\n\r");
+	Transmitter::log(Transmitter::INFO, "bus: performing recovery from slaves...\n\r");
 
 	int ones = 0;
 	while(ones<=10) {
@@ -69,24 +73,24 @@ void SensorBus::slaveRecovery() {
 }
 
 void SensorBus::write(const uint8_t device, const uint8_t reg, uint8_t src) {
-	xSemaphoreTake(lock, portMAX_DELAY);
+	lock.take(portMAX_DELAY);
 
 	taskENTER_CRITICAL();
 	const HAL_StatusTypeDef status = HAL_I2C_Mem_Write(&hi2c1, device<<1, reg, 1, &src, 1, 100);
 	taskEXIT_CRITICAL();
 
 	switch(status) {
-		case HAL_ERROR:		COM.log(Communication::ERROR, "bus: write into 0x%02X device ended with HAL_ERROR\n\r", device);	break;
-		case HAL_BUSY:		COM.log(Communication::ERROR, "bus: write into 0x%02X device ended with HAL_BUSY\n\r", device);		break;
-		case HAL_TIMEOUT:	COM.log(Communication::ERROR, "bus: write into 0x%02X device ended with HAL_TIMEOUT\n\r", device);	break;
+		case HAL_ERROR:		Transmitter::log(Transmitter::ERROR, "bus: write into 0x%02X device ended with HAL_ERROR\n\r", device);		break;
+		case HAL_BUSY:		Transmitter::log(Transmitter::ERROR, "bus: write into 0x%02X device ended with HAL_BUSY\n\r", device);		break;
+		case HAL_TIMEOUT:	Transmitter::log(Transmitter::ERROR, "bus: write into 0x%02X device ended with HAL_TIMEOUT\n\r", device);	break;
 		case HAL_OK: break;
 	}
 
-	xSemaphoreGive(lock);
+	lock.give();
 }
 
 int SensorBus::read(const uint8_t device, const uint8_t reg, uint8_t *dest, const uint8_t len) {
-	xSemaphoreTake(lock, portMAX_DELAY);
+	lock.take(portMAX_DELAY);
 
 	task_to_notify = xTaskGetCurrentTaskHandle();
 
@@ -96,23 +100,23 @@ int SensorBus::read(const uint8_t device, const uint8_t reg, uint8_t *dest, cons
 
 	if(status!=HAL_OK) {
 		switch(status) {
-		case HAL_ERROR:		COM.log(Communication::ERROR, "bus: read from 0x%02X device ended with HAL_ERROR\n\r", device);		break;
-		case HAL_BUSY:		COM.log(Communication::ERROR, "bus: read from 0x%02X device ended with HAL_BUSY\n\r", device);		break;
-		case HAL_TIMEOUT:	COM.log(Communication::ERROR, "bus: read from 0x%02X device ended with HAL_TIMEOUT\n\r", device);	break;
-		case HAL_OK: break;
-	}
+			case HAL_ERROR:		Transmitter::log(Transmitter::ERROR, "bus: read from 0x%02X device ended with HAL_ERROR\n\r", device);		break;
+			case HAL_BUSY:		Transmitter::log(Transmitter::ERROR, "bus: read from 0x%02X device ended with HAL_BUSY\n\r", device);		break;
+			case HAL_TIMEOUT:	Transmitter::log(Transmitter::ERROR, "bus: read from 0x%02X device ended with HAL_TIMEOUT\n\r", device);	break;
+			case HAL_OK: break;
+		}
 
-		xSemaphoreGive(lock);
+		lock.give();
 		return 1;
 	}
 
 	if(!ulTaskNotifyTakeIndexed(0, pdTRUE, 100)) {
-		COM.log(Communication::ERROR, "bus: timeout while reading from 0x%02X device\n\r", device);
-		xSemaphoreGive(lock);
+		Transmitter::log(Transmitter::ERROR, "bus: timeout while reading from 0x%02X device\n\r", device);
+		lock.give();
 		return 2;
 	}
 
-	xSemaphoreGive(lock);
+	lock.give();
 	return 0;
 }
 

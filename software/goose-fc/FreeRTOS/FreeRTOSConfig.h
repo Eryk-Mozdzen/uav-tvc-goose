@@ -18,8 +18,8 @@
 #include <stdint.h>
 #endif
 
-#define configSUPPORT_STATIC_ALLOCATION		0
-#define configSUPPORT_DYNAMIC_ALLOCATION	1
+#define configSUPPORT_STATIC_ALLOCATION		1
+#define configSUPPORT_DYNAMIC_ALLOCATION	0
 #define configUSE_TASK_FPU_SUPPORT			2
 
 #define configUSE_PREEMPTION				1

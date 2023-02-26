@@ -1,18 +1,10 @@
 #include "stm32f4xx_hal.h"
 #include "FreeRTOS.h"
-#include "task.h"
 
-#include "mpu6050.h"
-#include "bmp280.h"
-#include "hmc5883l.h"
+#include "TaskCPP.h"
+
+#include "transmitter.h"
 #include "sensor_bus.h"
-#include "communication.h"
-#include "state_estimator.h"
-#include "queue_element.h"
-
-TaskHandle_t transmitter_task;
-TaskHandle_t imu_task;
-TaskHandle_t mag_task;
 
 void Init() {
 
@@ -41,40 +33,38 @@ void Init() {
 	HAL_NVIC_SetPriorityGrouping(NVIC_PRIORITYGROUP_4);
 }
 
-void blink(void *param) {
-	(void)param;
+class Blink : public TaskClassS<512> {
+	public:
 
-	__HAL_RCC_GPIOB_CLK_ENABLE();
-	GPIO_InitTypeDef gpio;
-	gpio.Pin = GPIO_PIN_10;
-	gpio.Mode = GPIO_MODE_OUTPUT_PP;
-	gpio.Pull = GPIO_NOPULL;
-	gpio.Speed = GPIO_SPEED_FREQ_LOW;
-	HAL_GPIO_Init(GPIOB, &gpio);
+		Blink() : TaskClassS{"blink", TaskPrio_Idle} {
 
-	while(1) {
-		HAL_GPIO_TogglePin(GPIOB, GPIO_PIN_10);
-		vTaskDelay(500);
-	}
-}
+		}
+
+		void task() {
+			__HAL_RCC_GPIOB_CLK_ENABLE();
+			GPIO_InitTypeDef gpio;
+			gpio.Pin = GPIO_PIN_10;
+			gpio.Mode = GPIO_MODE_OUTPUT_PP;
+			gpio.Pull = GPIO_NOPULL;
+			gpio.Speed = GPIO_SPEED_FREQ_LOW;
+			HAL_GPIO_Init(GPIOB, &gpio);
+
+			while(1) {
+				HAL_GPIO_TogglePin(GPIOB, GPIO_PIN_10);
+				vTaskDelay(500);
+			}
+		}
+};
+
+Blink blink;
 
 int main() {
 
 	Init();
 
-	COM.log(Communication::INFO, "hard reset\n\r");
+	Transmitter::log(Transmitter::INFO, "hardware reset\n\r");
 
 	SensorBus::getInstance().init();
-	
-	QueueHandle_t sensor_queue = xQueueCreate(16, sizeof(queue_element_t));
-
-	xTaskCreate(transmitterTaskFcn,	"TX",			512,	NULL,		  3, &transmitter_task);
-	xTaskCreate(estimatorTaskFcn,	"estimator",	1024,	sensor_queue, 4, NULL);
-	xTaskCreate(imuTaskFcn,			"IMU reader",	512,	sensor_queue, 2, &imu_task);
-	xTaskCreate(magTaskFcn,			"MAG reader",	512,	sensor_queue, 2, &mag_task);
-	xTaskCreate(barTaskFcn,			"BAR reader",	512,	sensor_queue, 2, NULL);
-
-	xTaskCreate(blink, "blink", 1024, NULL, 1, NULL);
 
 	vTaskStartScheduler();
 

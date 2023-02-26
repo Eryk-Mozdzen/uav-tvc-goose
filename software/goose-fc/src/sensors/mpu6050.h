@@ -1,8 +1,9 @@
 #pragma once
 
+#include "TaskCPP.h"
 #include "vector.h"
 
-class MPU6050 {
+class MPU6050 : public TaskClassS<512> {
 		Vector gyration;	
 		Vector acceleration;
 
@@ -15,6 +16,6 @@ class MPU6050 {
 		bool readData();
 		Vector getGyration() const;
 		Vector getAcceleration() const;
-};
 
-void imuTaskFcn(void *param);
+		void task();
+};

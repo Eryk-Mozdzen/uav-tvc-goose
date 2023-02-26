@@ -1,12 +1,9 @@
 #pragma once
 
-#include "stm32f4xx_hal.h"
-#include "FreeRTOS.h"
-#include "task.h"
-#include "semphr.h"
+#include "MutexCPP.h"
 
 class SensorBus {
-		SemaphoreHandle_t lock;
+		Mutex lock;
 
 		SensorBus();
 		void slaveRecovery();

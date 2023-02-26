@@ -16,3 +16,6 @@
 [submodule "software/third-party/etl"]
 	path = software/third-party/etl
 	url = git@github.com:ETLCPP/etl.git
+[submodule "software/third-party/FreeRTOScpp"]
+	path = software/third-party/FreeRTOScpp
+	url = git@github.com:richard-damon/FreeRTOScpp.git

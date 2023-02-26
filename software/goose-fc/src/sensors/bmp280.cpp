@@ -1,12 +1,8 @@
 #include "bmp280.h"
 
-#include <cstdlib>
+#include "QueueCPP.h"
 
-#include "FreeRTOS.h"
-#include "task.h"
-#include "queue.h"
-
-#include "communication.h"
+#include "transmitter.h"
 #include "queue_element.h"
 #include "sensors.h"
 #include "sensor_bus.h"
@@ -88,6 +84,10 @@
 #define BMP280_CONFIG_SPI_3WIRE_DISABLE			(0x00<<0)
 #define BMP280_CONFIG_SPI_3WIRE_ENABLE			(0x01<<0)
 
+extern Queue<queue_element_t, 16> sensor_queue;
+
+BMP280 barometer;
+
 // Returns temperature in DegC, resolution is 0.01 DegC. Output value of “5123” equals 51.23 DegC.
 // t_fine carries fine temperature as global value
 BMP280::BMP280_S32_t BMP280::bmp280_compensate_T_int32(BMP280_S32_t adc_T) {
@@ -126,7 +126,7 @@ BMP280::BMP280_U32_t BMP280::bmp280_compensate_P_int64(BMP280_S32_t adc_P) {
 	return (BMP280_U32_t)p;
 }
 
-BMP280::BMP280() : pressure{0}, temperature{0} {
+BMP280::BMP280() : TaskClassS{"BMP280 reader", TaskPrio_Low}, pressure{0}, temperature{0} {
 
 	memset(&calib, 0, sizeof(Calibration));
 }
@@ -146,6 +146,8 @@ void BMP280::init() {
 		BMP280_CONFIG_FILTER_X16 |
 		BMP280_CONFIG_SPI_3WIRE_DISABLE
 	);
+
+	Transmitter::log(Transmitter::INFO, "bar: initialization complete\n\r");
 }
 
 bool BMP280::readCalibrationData() {
@@ -153,7 +155,7 @@ bool BMP280::readCalibrationData() {
 	uint8_t buffer[24] = {0};
 
 	if(SensorBus::getInstance().read(BMP280_ADDR, BMP280_REG_CALIB00, buffer, sizeof(buffer))) {
-		COM.log(Communication::ERROR, "bar: error in calibration values\n\r");
+		Transmitter::log(Transmitter::ERROR, "bar: error in calibration values\n\r");
 		return false;
 	}
 	
@@ -171,7 +173,7 @@ bool BMP280::readCalibrationData() {
 	calib.dig_P8 = (((int16_t)buffer[21])<<8) | buffer[20];
 	calib.dig_P9 = (((int16_t)buffer[23])<<8) | buffer[22];
 
-	COM.log(Communication::INFO, "bar: succesfully read calibration values\n\r");
+	Transmitter::log(Transmitter::INFO, "bar: succesfully read calibration values\n\r");
 
 	return true;
 }
@@ -200,29 +202,26 @@ float BMP280::getTemperature() const {
 	return temperature;
 }
 
-void barTaskFcn(void *param) {
-	QueueHandle_t sensor_queue = static_cast<QueueHandle_t>(param);
+void BMP280::task() {
 
-	BMP280 barometer;
-
-	barometer.init();
-	barometer.readCalibrationData();
+	init();
+	readCalibrationData();
 
 	TickType_t time = xTaskGetTickCount();
 
 	while(1) {
 		vTaskDelayUntil(&time, 100);
 		
-		if(!barometer.readData()) {
+		if(!readData()) {
 			continue;
 		}
 
-		const float press = barometer.getPressure();
+		const float press = getPressure();
 
 		queue_element_t reading;
 		reading.type = Sensors::BAROMETER;
 		memcpy(reading.data, &press, sizeof(float));
 
-		xQueueSend(sensor_queue, &reading, 0);
+		sensor_queue.add(reading, 0);
 	}
 }

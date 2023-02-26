@@ -4,8 +4,9 @@
 #include "vector.h"
 #include "quaternion.h"
 #include "queue_element.h"
+#include "TaskCPP.h"
 
-class StateEstimator {
+class StateEstimator : TaskClassS<1024> {
 		static constexpr float dt = 0.005;
 
 		ExtendedKalmanFilter<7, 3, 6> ekf;
@@ -24,6 +25,6 @@ class StateEstimator {
 		void handleReading(queue_element_t reading);
 
 		Quaternion getAttitude() const;
-};
 
-void estimatorTaskFcn(void *param);
+		void task();
+};

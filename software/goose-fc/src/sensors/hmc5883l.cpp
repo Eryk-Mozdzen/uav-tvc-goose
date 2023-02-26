@@ -1,11 +1,9 @@
 #include "hmc5883l.h"
 
 #include "stm32f4xx_hal.h"
-#include "FreeRTOS.h"
-#include "task.h"
-#include "queue.h"
+#include "QueueCPP.h"
 
-#include "communication.h"
+#include "transmitter.h"
 #include "queue_element.h"
 #include "sensors.h"
 #include "sensor_bus.h"
@@ -55,7 +53,12 @@
 #define HMC5883L_MODE_SINGLE			(0x01<<0)
 #define HMC5883L_MODE_IDLE				(0x02<<0)
 
-HMC5883L::HMC5883L() {
+extern Queue<queue_element_t, 16> sensor_queue;
+TaskHandle_t mag_task;
+
+HMC5883L magnetometer;
+
+HMC5883L::HMC5883L() : TaskClassS{"HMC5883L reader", TaskPrio_Low} {
 	
 }
 
@@ -85,7 +88,7 @@ void HMC5883L::init() {
 		HMC5883L_MODE_CONTINOUS
 	);
 
-	COM.log(Communication::INFO, "mag: initialization complete\n\r");
+	Transmitter::log(Transmitter::INFO, "mag: initialization complete\n\r");
 }
 
 bool HMC5883L::readData() {
@@ -100,7 +103,7 @@ bool HMC5883L::readData() {
 	const int16_t raw_z = (((int16_t)buffer[2])<<8) | buffer[3];
 
 	if((raw_x>2047 || raw_x<-2048) || (raw_y>2047 || raw_y<-2048) || (raw_z>2047 || raw_z<-2048)) {
-		COM.log(Communication::WARNING, "mag: value out of valid range [%10d %10d %10d]\n\r", raw_x, raw_y, raw_z);
+		Transmitter::log(Transmitter::WARNING, "mag: value out of valid range [%10d %10d %10d]\n\r", raw_x, raw_y, raw_z);
 	}
 	
 	constexpr float gain = 1090.f;
@@ -123,25 +126,23 @@ Vector HMC5883L::getMagneticField() const {
 	return magnetic_field;
 }
 
-void magTaskFcn(void *param) {
-	QueueHandle_t sensor_queue = static_cast<QueueHandle_t>(param);
+void HMC5883L::task() {
+	mag_task = getTaskHandle();
 
-	HMC5883L magnetometer;
-
-	magnetometer.init();
+	init();
 
 	while(1) {
 		ulTaskNotifyTakeIndexed(1, pdTRUE, portMAX_DELAY);
 
-		if(!magnetometer.readData()) {
+		if(!readData()) {
 			continue;
 		}
 
-		const Vector mag = magnetometer.getMagneticField();
+		const Vector mag = getMagneticField();
 
 		queue_element_t reading;
 		reading.type = Sensors::MAGNETOMETER;
 		memcpy(reading.data, &mag, sizeof(Vector));
-		xQueueSend(sensor_queue, &reading, 0);
+		sensor_queue.add(reading, 0);
 	}
 }

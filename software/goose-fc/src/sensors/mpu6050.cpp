@@ -1,11 +1,9 @@
 #include "mpu6050.h"
 
 #include "stm32f4xx_hal.h"
-#include "FreeRTOS.h"
-#include "task.h"
-#include "queue.h"
+#include "QueueCPP.h"
 
-#include "communication.h"
+#include "transmitter.h"
 #include "queue_element.h"
 #include "sensors.h"
 #include "sensor_bus.h"
@@ -203,7 +201,12 @@
 
 #define MPU6050_WHO_AM_I_VALUE						(0x68<<0)
 
-MPU6050::MPU6050() {
+extern Queue<queue_element_t, 16> sensor_queue;
+TaskHandle_t imu_task;
+
+MPU6050 imu;
+
+MPU6050::MPU6050() : TaskClassS{"MPU6050 reader", TaskPrio_Low} {
 
 }
 
@@ -268,7 +271,7 @@ void MPU6050::init() {
 
 	SensorBus::getInstance().write(MPU6050_ADDR, MPU6050_REG_SMPLRT_DIV, 4);
 
-	COM.log(Communication::INFO, "imu: initialization complete\n\r");
+	Transmitter::log(Transmitter::INFO, "imu: initialization complete\n\r");
 }
 
 bool MPU6050::readData() {
@@ -307,31 +310,29 @@ Vector MPU6050::getAcceleration() const {
 	return acceleration;
 }
 
-void imuTaskFcn(void *param) {
-	QueueHandle_t sensor_queue = static_cast<QueueHandle_t>(param);
+void MPU6050::task() {
+	imu_task = getTaskHandle();
 
-	MPU6050 imu;
-
-	imu.init();
+	init();
 
 	queue_element_t reading;
 
 	while(1) {
 		ulTaskNotifyTakeIndexed(1, pdTRUE, portMAX_DELAY);
 
-		if(!imu.readData()) {
+		if(!readData()) {
 			continue;
 		}
 
-		const Vector acc = imu.getAcceleration();
-		const Vector gyr = imu.getGyration();
+		const Vector acc = getAcceleration();
+		const Vector gyr = getGyration();
 
 		reading.type = Sensors::ACCELEROMETER;
 		memcpy(reading.data, &acc, sizeof(Vector));
-		xQueueSend(sensor_queue, &reading, 0);
+		sensor_queue.add(reading, 0);
 
 		reading.type = Sensors::GYROSCOPE;
 		memcpy(reading.data, &gyr, sizeof(Vector));
-		xQueueSend(sensor_queue, &reading, 0);
+		sensor_queue.add(reading, 0);
 	}
 }

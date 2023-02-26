@@ -1,8 +1,9 @@
 #pragma once
 
+#include "TaskCPP.h"
 #include <cstdint>
 
-class BMP280 {
+class BMP280 : public TaskClassS<512> {
 
 	struct Calibration {
 		uint16_t dig_T1;
@@ -43,6 +44,6 @@ class BMP280 {
 		bool readData();
 		float getPressure() const;
 		float getTemperature() const;
-};
 
-void barTaskFcn(void *param);
+		void task();
+};

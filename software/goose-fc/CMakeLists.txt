@@ -44,7 +44,7 @@ add_executable(${TARGET}
 	"startup/startup_stm32f411xe.s"
 
 	"FreeRTOS/ARM_CM4F/port.c"
-	"FreeRTOS/MemMang/heap_4.c"
+	#"FreeRTOS/MemMang/heap_4.c"
 	"FreeRTOS/freertos_exceptions.c"
 
 	"HAL/stm32f4xx_hal_it.c"
@@ -59,11 +59,12 @@ add_executable(${TARGET}
 	"USB/usb_device.c"
 
 	"src/main.cpp"
+	"src/queues.cpp"
 	"src/sensors/sensor_bus.cpp"
 	"src/sensors/bmp280.cpp"
 	"src/sensors/mpu6050.cpp"
 	"src/sensors/hmc5883l.cpp"
-	"src/communication/communication.cpp"
+	"src/communication/transmitter.cpp"
 	"src/estimator/state_estimator.cpp"
 	"src/utils/quaternion.cpp"
 	"src/utils/vector.cpp"
@@ -84,6 +85,8 @@ target_include_directories(${TARGET} PRIVATE
 
 	"../third-party/stm32_mw_usb_device/Core/Inc"
 	"../third-party/stm32_mw_usb_device/Class/CDC/Inc"
+
+	"../third-party/FreeRTOScpp"
 	
 	"FreeRTOS/ARM_CM4F"
 	"FreeRTOS/MemMang"

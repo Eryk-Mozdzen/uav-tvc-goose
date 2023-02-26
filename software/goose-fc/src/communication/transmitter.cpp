@@ -1,4 +1,4 @@
-#include "communication.h"
+#include "transmitter.h"
 
 #include "stm32f4xx_hal.h"
 #include "FreeRTOS.h"
@@ -17,40 +17,51 @@ extern "C" {
 #include <cstdarg>
 #include <cstring>
 
-Communication::Communication() {
-	tx_queue = xQueueCreate(16, sizeof(queue_element_t));
-	rx_queue = xQueueCreate(16, sizeof(queue_element_t));
+extern Queue<queue_element_t, 16> tx_queue;
 
+TaskHandle_t transmitter_task;
+
+Transmitter transmitter;
+
+Transmitter::Transmitter() : TaskClassS{"TX", TaskPrio_Mid} {
+	
+}
+
+void Transmitter::init() {
 	USB_DEVICE_Init();
 }
 
-void Communication::run() {
+void Transmitter::task() {
+	transmitter_task = getTaskHandle();
+
+	init();
+
 	queue_element_t tx_msg;
 
 	while(1) {
-		xQueueReceive(Communication::tx_queue, &tx_msg, portMAX_DELAY);
+		tx_queue.pop(tx_msg, portMAX_DELAY);
 
 		switch(tx_msg.type) {
-			case Communication::TX::LOG: {
+			case TX::LOG: {
 
 				do {
 					CDC_Transmit_FS(tx_msg.data, strlen((const char *)(tx_msg.data)));
 				} while(!ulTaskNotifyTakeIndexed(0, pdTRUE, 500));
 
 			} break;
-			case Communication::TX::TELEMETRY: {
+			case TX::TELEMETRY: {
 
 				// TODO
 
 			} break;
 			default: {
-				Communication::log(LOG::WARNING, "TX unable to resolve type: %d\n\r", tx_msg.type);
+				log(LOG::WARNING, "TX unable to resolve type: %d\n\r", tx_msg.type);
 			} break;
 		}
 	}
 }
 
-void Communication::log(const LOG type, const char *format, ...) {
+void Transmitter::log(const LOG type, const char *format, ...) {
 	va_list args;
     va_start(args, format);
 
@@ -67,17 +78,5 @@ void Communication::log(const LOG type, const char *format, ...) {
 
 	memcpy(tx_msg.data, buffer, size);
 
-	xQueueSend(tx_queue, &tx_msg, 0);
-}
-
-Communication& Communication::getInstance() {
-	static Communication instance;
-
-	return instance;
-}
-
-void transmitterTaskFcn(void *param) {
-	(void)param;
-
-	Communication::getInstance().run();
+	tx_queue.add(tx_msg, 0);
 }

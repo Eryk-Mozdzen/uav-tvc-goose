@@ -18,9 +18,9 @@ def projection(point):
 	view_plane_dist = 400
 	view_center_dist = 100
 
-	s = view_plane_dist/(view_center_dist + point[0][0])
+	s = view_plane_dist/(view_center_dist - point[1][0])
 	
-	x = int(point[1][0]*s) + 320
+	x = int(point[0][0]*s) + 320
 	y = int(point[2][0]*s) + 240
 	return (x, y)
 

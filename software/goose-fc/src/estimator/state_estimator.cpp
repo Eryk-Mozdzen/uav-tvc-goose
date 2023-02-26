@@ -2,13 +2,17 @@
 
 #include <cmath>
 
-#include "communication.h"
+#include "transmitter.h"
 #include "sensors.h"
 #include "queue_element.h"
 #include "matrix.h"
 #include "vector.h"
 
-StateEstimator::StateEstimator() : ekf{
+extern Queue<queue_element_t, 16> sensor_queue;
+
+StateEstimator estimator;
+
+StateEstimator::StateEstimator() : TaskClassS{"State Estimator", TaskPrio_High}, ekf{
 
 		[](const Matrix<7, 1> state, const Matrix<3, 1> gyr) {
 			(void)gyr;
@@ -119,7 +123,7 @@ void StateEstimator::handleReading(queue_element_t reading) {
 			
 		} break;
 		default: {
-			COM.log(Communication::WARNING, "est: unknown sensor reading\n\r");
+			Transmitter::log(Transmitter::WARNING, "est: unknown sensor reading\n\r");
 		} break;
 	}
 
@@ -127,7 +131,7 @@ void StateEstimator::handleReading(queue_element_t reading) {
 		const float len = acceleration.getLength()/9.81f;
 
 		if(len>1.03f || len<0.97f) {
-			COM.log(Communication::INFO, "est: linear acceleration detected, total length: %f\n\r", (double)len);
+			Transmitter::log(Transmitter::INFO, "est: linear acceleration detected, total length: %f\n\r", (double)len);
 			acc_ready = false;
 		}
 	}
@@ -167,24 +171,21 @@ Quaternion StateEstimator::getAttitude() const {
 	return q;
 }
 
-void estimatorTaskFcn(void *param) {
-	QueueHandle_t sensor_queue = static_cast<QueueHandle_t>(param);
-
-	StateEstimator estimator;
+void StateEstimator::task() {
 
 	TickType_t time = xTaskGetTickCount();
 
 	while(1) {
-		xTaskDelayUntil(&time, 5);
+		xTaskDelayUntil(&time, 10);
 
 		queue_element_t reading;
 
-		while(xQueueReceive(sensor_queue, &reading, 0)) {
-			estimator.handleReading(reading);
+		while(sensor_queue.pop(reading, 0)) {
+			handleReading(reading);
 		}
 
-		const Quaternion q = estimator.getAttitude();
+		const Quaternion q = getAttitude();
 
-		COM.log(Communication::DEBUG, "quat: %+10.5f %+10.5f %+10.5f %+10.5f\n\r", (double)(q.w), (double)(q.i), (double)(q.j), (double)(q.k));
+		Transmitter::log(Transmitter::DEBUG, "quat: %+10.5f %+10.5f %+10.5f %+10.5f\n\r", (double)(q.w), (double)(q.i), (double)(q.j), (double)(q.k));
 	}
 }
