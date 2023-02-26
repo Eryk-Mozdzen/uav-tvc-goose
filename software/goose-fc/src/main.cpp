@@ -67,6 +67,4 @@ int main() {
 	SensorBus::getInstance().init();
 
 	vTaskStartScheduler();
-
-	return 0;
 }

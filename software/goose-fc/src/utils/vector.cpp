@@ -1,5 +1,9 @@
 #include "vector.h"
 
+const Vector Vector::X(1, 0, 0);
+const Vector Vector::Y(0, 1, 0);
+const Vector Vector::Z(0, 0, 1);
+
 Vector::Vector() : x{0}, y{0}, z{0} {
 
 }
