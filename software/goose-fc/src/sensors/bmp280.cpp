@@ -1,10 +1,9 @@
-#include "bmp280.h"
+#include "TaskCPP.h"
 
-#include "QueueCPP.h"
+#include <cstring>
 
-#include "transmitter.h"
-#include "queue_element.h"
-#include "sensors.h"
+#include "logger.h"
+#include "transport.h"
 #include "sensor_bus.h"
 
 #define BMP280_ADDR				0x77
@@ -84,7 +83,50 @@
 #define BMP280_CONFIG_SPI_3WIRE_DISABLE			(0x00<<0)
 #define BMP280_CONFIG_SPI_3WIRE_ENABLE			(0x01<<0)
 
-extern Queue<queue_element_t, 16> sensor_queue;
+class BMP280 : public TaskClassS<1024> {
+
+	struct Calibration {
+		uint16_t dig_T1;
+		int16_t dig_T2;
+		int16_t dig_T3;
+
+		uint16_t dig_P1;
+		int16_t dig_P2;
+		int16_t dig_P3;
+		int16_t dig_P4;
+		int16_t dig_P5;
+		int16_t dig_P6;
+		int16_t dig_P7;
+		int16_t dig_P8;
+		int16_t dig_P9;
+	};
+
+	Calibration calib;
+
+	float pressure;	
+	float temperature;
+
+	using BMP280_U32_t = uint32_t;
+	using BMP280_S32_t = int32_t;
+	using BMP280_S64_t = int64_t;
+
+	BMP280_S32_t t_fine;
+	BMP280_S32_t bmp280_compensate_T_int32(BMP280_S32_t adc_T);
+	BMP280_U32_t bmp280_compensate_P_int64(BMP280_S32_t adc_P);
+
+	public:
+
+		BMP280();
+
+		void init();
+		bool readCalibrationData();
+
+		bool readData();
+		float getPressure() const;
+		float getTemperature() const;
+
+		void task();
+};
 
 BMP280 barometer;
 
@@ -147,7 +189,7 @@ void BMP280::init() {
 		BMP280_CONFIG_SPI_3WIRE_DISABLE
 	);
 
-	Transmitter::log(Transmitter::INFO, "bar: initialization complete\n\r");
+	Logger::getInstance().log(Logger::INFO, "bar: initialization complete\n\r");
 }
 
 bool BMP280::readCalibrationData() {
@@ -155,7 +197,7 @@ bool BMP280::readCalibrationData() {
 	uint8_t buffer[24] = {0};
 
 	if(SensorBus::getInstance().read(BMP280_ADDR, BMP280_REG_CALIB00, buffer, sizeof(buffer))) {
-		Transmitter::log(Transmitter::ERROR, "bar: error in calibration values\n\r");
+		Logger::getInstance().log(Logger::ERROR, "bar: error in calibration values\n\r");
 		return false;
 	}
 	
@@ -173,7 +215,7 @@ bool BMP280::readCalibrationData() {
 	calib.dig_P8 = (((int16_t)buffer[21])<<8) | buffer[20];
 	calib.dig_P9 = (((int16_t)buffer[23])<<8) | buffer[22];
 
-	Transmitter::log(Transmitter::INFO, "bar: succesfully read calibration values\n\r");
+	Logger::getInstance().log(Logger::INFO, "bar: succesfully read calibration values\n\r");
 
 	return true;
 }
@@ -218,10 +260,6 @@ void BMP280::task() {
 
 		const float press = getPressure();
 
-		queue_element_t reading;
-		reading.type = Sensors::BAROMETER;
-		memcpy(reading.data, &press, sizeof(float));
-
-		sensor_queue.add(reading, 0);
+		Transport::getInstance().sensor_queue.add(Transport::Sensors::BAROMETER, press, 0);
 	}
 }

@@ -1,11 +1,8 @@
-#include "mpu6050.h"
-
 #include "stm32f4xx_hal.h"
-#include "QueueCPP.h"
+#include "TaskCPP.h"
 
-#include "transmitter.h"
-#include "queue_element.h"
-#include "sensors.h"
+#include "logger.h"
+#include "transport.h"
 #include "sensor_bus.h"
 
 #define MPU6050_ADDR		0x68
@@ -201,7 +198,23 @@
 
 #define MPU6050_WHO_AM_I_VALUE						(0x68<<0)
 
-extern Queue<queue_element_t, 16> sensor_queue;
+class MPU6050 : public TaskClassS<1024> {
+	Vector gyration;	
+	Vector acceleration;
+
+public:
+
+	MPU6050();
+
+	void init();
+
+	bool readData();
+	Vector getGyration() const;
+	Vector getAcceleration() const;
+
+	void task();
+};
+
 TaskHandle_t imu_task;
 
 MPU6050 imu;
@@ -271,7 +284,7 @@ void MPU6050::init() {
 
 	SensorBus::getInstance().write(MPU6050_ADDR, MPU6050_REG_SMPLRT_DIV, 4);
 
-	Transmitter::log(Transmitter::INFO, "imu: initialization complete\n\r");
+	Logger::getInstance().log(Logger::INFO, "imu: initialization complete\n\r");
 }
 
 bool MPU6050::readData() {
@@ -315,8 +328,6 @@ void MPU6050::task() {
 
 	init();
 
-	queue_element_t reading;
-
 	while(1) {
 		ulTaskNotifyTakeIndexed(1, pdTRUE, portMAX_DELAY);
 
@@ -327,12 +338,7 @@ void MPU6050::task() {
 		const Vector acc = getAcceleration();
 		const Vector gyr = getGyration();
 
-		reading.type = Sensors::ACCELEROMETER;
-		memcpy(reading.data, &acc, sizeof(Vector));
-		sensor_queue.add(reading, 0);
-
-		reading.type = Sensors::GYROSCOPE;
-		memcpy(reading.data, &gyr, sizeof(Vector));
-		sensor_queue.add(reading, 0);
+		Transport::getInstance().sensor_queue.add(Transport::Sensors::ACCELEROMETER, acc, 0);
+		Transport::getInstance().sensor_queue.add(Transport::Sensors::GYROSCOPE, gyr, 0);
 	}
 }

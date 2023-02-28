@@ -1,8 +1,0 @@
-#pragma once
-
-enum Sensors {
-	ACCELEROMETER,
-	GYROSCOPE,
-	MAGNETOMETER,
-	BAROMETER
-};

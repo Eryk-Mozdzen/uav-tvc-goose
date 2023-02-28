@@ -1,7 +1,7 @@
 #pragma once
 
 #include <cmath>
-#include "transmitter.h"
+#include "logger.h"
 
 template<int N, int M>
 class Matrix {
@@ -125,7 +125,7 @@ public:
 			}
 
 			if(maxVal<0.002f) {
-				Transmitter::log(Transmitter::WARNING, "mat: can't inverse %dx%d matrix\n\r", N, N);
+				Logger::getInstance().log(Logger::WARNING, "mat: can't inverse %dx%d matrix\n\r", N, N);
 				return Matrix<N, N>();
 			}
 

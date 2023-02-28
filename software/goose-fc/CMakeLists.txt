@@ -8,8 +8,6 @@ enable_language(ASM C CXX)
 
 set(TARGET ${CMAKE_PROJECT_NAME}.elf)
 
-add_subdirectory("../third-party/etl" "etl")
-
 add_executable(${TARGET}
 	"../third-party/stm32f4xx_hal_driver/Src/stm32f4xx_ll_usb.c"
 	"../third-party/stm32f4xx_hal_driver/Src/stm32f4xx_hal_i2c.c"
@@ -59,21 +57,22 @@ add_executable(${TARGET}
 	"USB/usb_device.c"
 
 	"src/main.cpp"
-	"src/queues.cpp"
 	"src/sensors/sensor_bus.cpp"
 	"src/sensors/bmp280.cpp"
 	"src/sensors/mpu6050.cpp"
 	"src/sensors/hmc5883l.cpp"
 	"src/communication/transmitter.cpp"
+	"src/communication/logger.cpp"
+	"src/communication/message.cpp"
 	"src/estimator/state_estimator.cpp"
 	"src/utils/quaternion.cpp"
 	"src/utils/vector.cpp"
+	"src/transport/transport.cpp"
 )
 
 target_compile_definitions(${TARGET} PRIVATE
 	STM32F411xE
 	USE_HAL
-	ETL_NO_STL
 )
 
 target_include_directories(${TARGET} PRIVATE
@@ -99,6 +98,7 @@ target_include_directories(${TARGET} PRIVATE
 	"src/communication"
 	"src/estimator"
 	"src/utils"
+	"src/transport"
 )
 
 target_compile_options(${TARGET} PRIVATE
@@ -185,7 +185,6 @@ target_link_options(${TARGET} PRIVATE
 
 target_link_libraries(${TARGET} 
 	m
-	etl::etl
 )
 
 add_custom_command(

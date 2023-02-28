@@ -1,11 +1,8 @@
-#include "hmc5883l.h"
-
 #include "stm32f4xx_hal.h"
-#include "QueueCPP.h"
+#include "TaskCPP.h"
 
-#include "transmitter.h"
-#include "queue_element.h"
-#include "sensors.h"
+#include "logger.h"
+#include "transport.h"
 #include "sensor_bus.h"
 #include "matrix.h"
 
@@ -53,7 +50,21 @@
 #define HMC5883L_MODE_SINGLE			(0x01<<0)
 #define HMC5883L_MODE_IDLE				(0x02<<0)
 
-extern Queue<queue_element_t, 16> sensor_queue;
+class HMC5883L : public TaskClassS<1024> {
+	Vector magnetic_field;
+
+public:
+
+	HMC5883L();
+
+	void init();
+
+	bool readData();
+	Vector getMagneticField() const;
+
+	void task();
+};
+
 TaskHandle_t mag_task;
 
 HMC5883L magnetometer;
@@ -88,7 +99,7 @@ void HMC5883L::init() {
 		HMC5883L_MODE_CONTINOUS
 	);
 
-	Transmitter::log(Transmitter::INFO, "mag: initialization complete\n\r");
+	Logger::getInstance().log(Logger::INFO, "mag: initialization complete\n\r");
 }
 
 bool HMC5883L::readData() {
@@ -103,7 +114,7 @@ bool HMC5883L::readData() {
 	const int16_t raw_z = (((int16_t)buffer[2])<<8) | buffer[3];
 
 	if((raw_x>2047 || raw_x<-2048) || (raw_y>2047 || raw_y<-2048) || (raw_z>2047 || raw_z<-2048)) {
-		Transmitter::log(Transmitter::WARNING, "mag: value out of valid range [%10d %10d %10d]\n\r", raw_x, raw_y, raw_z);
+		Logger::getInstance().log(Logger::WARNING, "mag: value out of valid range [%10d %10d %10d]\n\r", raw_x, raw_y, raw_z);
 	}
 	
 	constexpr float gain = 1090.f;
@@ -140,9 +151,6 @@ void HMC5883L::task() {
 
 		const Vector mag = getMagneticField();
 
-		queue_element_t reading;
-		reading.type = Sensors::MAGNETOMETER;
-		memcpy(reading.data, &mag, sizeof(Vector));
-		sensor_queue.add(reading, 0);
+		Transport::getInstance().sensor_queue.add(Transport::Sensors::MAGNETOMETER, mag, 0);
 	}
 }

@@ -3,7 +3,7 @@
 
 #include "TaskCPP.h"
 
-#include "transmitter.h"
+#include "logger.h"
 #include "sensor_bus.h"
 
 void Init() {
@@ -34,26 +34,26 @@ void Init() {
 }
 
 class Blink : public TaskClassS<512> {
-	public:
+public:
 
-		Blink() : TaskClassS{"blink", TaskPrio_Idle} {
+	Blink() : TaskClassS{"blink", TaskPrio_Idle} {
 
+	}
+
+	void task() {
+		__HAL_RCC_GPIOB_CLK_ENABLE();
+		GPIO_InitTypeDef gpio;
+		gpio.Pin = GPIO_PIN_10;
+		gpio.Mode = GPIO_MODE_OUTPUT_PP;
+		gpio.Pull = GPIO_NOPULL;
+		gpio.Speed = GPIO_SPEED_FREQ_LOW;
+		HAL_GPIO_Init(GPIOB, &gpio);
+
+		while(1) {
+			HAL_GPIO_TogglePin(GPIOB, GPIO_PIN_10);
+			vTaskDelay(500);
 		}
-
-		void task() {
-			__HAL_RCC_GPIOB_CLK_ENABLE();
-			GPIO_InitTypeDef gpio;
-			gpio.Pin = GPIO_PIN_10;
-			gpio.Mode = GPIO_MODE_OUTPUT_PP;
-			gpio.Pull = GPIO_NOPULL;
-			gpio.Speed = GPIO_SPEED_FREQ_LOW;
-			HAL_GPIO_Init(GPIOB, &gpio);
-
-			while(1) {
-				HAL_GPIO_TogglePin(GPIOB, GPIO_PIN_10);
-				vTaskDelay(500);
-			}
-		}
+	}
 };
 
 Blink blink;
@@ -62,7 +62,7 @@ int main() {
 
 	Init();
 
-	Transmitter::log(Transmitter::INFO, "hardware reset\n\r");
+	Logger::getInstance().log(Logger::INFO, "hardware reset\n\r");
 
 	SensorBus::getInstance().init();
 

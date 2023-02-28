@@ -84,6 +84,10 @@ while True:
 
 				if cv2.waitKey(1) == ord('x'):
 					quit()
+
+	except UnicodeDecodeError:
+		print('\x1b[38;5;9m')
+		print('codec error')
 	
 	except serial.serialutil.SerialException:
 		if print_one:
