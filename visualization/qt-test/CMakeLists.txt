@@ -14,7 +14,9 @@ find_package(Qt5 COMPONENTS Core Quick REQUIRED)
 
 add_executable(${PROJECT_NAME}
 	"src/main.cpp"
-	"src/myclass.cpp"
+	"src/handler.cpp"
+	"src/shared.cpp"
+
 	"qml/qml.qrc"
 )
 
