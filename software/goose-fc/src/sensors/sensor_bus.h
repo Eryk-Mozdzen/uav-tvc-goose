@@ -1,11 +1,22 @@
-#ifndef SENSOR_BUS
-#define SENSOR_BUS
+#pragma once
 
-#include <stdint.h>
+#include "MutexCPP.h"
 
-void SensorBus_Init();
+class SensorBus {
+		Mutex lock;
 
-void SensorBus_WriteReg(const uint8_t device, const uint8_t reg, uint8_t src);
-uint8_t SensorBus_ReadRegs(const uint8_t device, const uint8_t reg, uint8_t *dest, const uint8_t len);
+		SensorBus();
+		void slaveRecovery();
 
-#endif
+	public:
+
+		SensorBus(SensorBus &) = delete;
+		void operator=(const SensorBus &) = delete;
+
+		void init();
+
+		void write(const uint8_t device, const uint8_t reg, uint8_t src);
+		int read(const uint8_t device, const uint8_t reg, uint8_t *dest, const uint8_t len);
+
+		static SensorBus& getInstance();
+};

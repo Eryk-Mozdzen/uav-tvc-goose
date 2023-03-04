@@ -6,11 +6,7 @@ project(goose-fc)
 
 enable_language(ASM C CXX)
 
-set(CMAKE_CXX_STANDARD 20)
-
 set(TARGET ${CMAKE_PROJECT_NAME}.elf)
-
-add_subdirectory("../third-party/etl" "etl")
 
 add_executable(${TARGET}
 	"../third-party/stm32f4xx_hal_driver/Src/stm32f4xx_ll_usb.c"
@@ -46,32 +42,37 @@ add_executable(${TARGET}
 	"startup/startup_stm32f411xe.s"
 
 	"FreeRTOS/ARM_CM4F/port.c"
-	"FreeRTOS/MemMang/heap_4.c"
+	#"FreeRTOS/MemMang/heap_4.c"
+	"FreeRTOS/freertos_exceptions.c"
 
 	"HAL/stm32f4xx_hal_it.c"
 	"HAL/stm32f4xx_hal_msp.c"
 	"HAL/stm32f4xx_hal_timebase.c"
 	"HAL/hal_callbacks.c"
+	"HAL/hal_exceptions.c"
 
 	"USB/usbd_cdc_if.c"
 	"USB/usbd_conf.c"
 	"USB/usbd_desc.c"
 	"USB/usb_device.c"
 
-	"src/main.c"
-	"src/sensors/sensors.c"
-	"src/sensors/sensor_bus.c"
-	"src/sensors/bmp280.c"
-	"src/communication/logger.c"
-	"src/communication/communication.c"
+	"src/main.cpp"
+	"src/sensors/sensor_bus.cpp"
+	"src/sensors/bmp280.cpp"
+	"src/sensors/mpu6050.cpp"
+	"src/sensors/hmc5883l.cpp"
+	"src/communication/transmitter.cpp"
+	"src/communication/logger.cpp"
+	"src/communication/message.cpp"
 	"src/estimator/state_estimator.cpp"
-	"src/estimator/quaternion.cpp"
+	"src/utils/quaternion.cpp"
+	"src/utils/vector.cpp"
+	"src/transport/transport.cpp"
 )
 
 target_compile_definitions(${TARGET} PRIVATE
 	STM32F411xE
 	USE_HAL
-	ETL_NO_STL
 )
 
 target_include_directories(${TARGET} PRIVATE
@@ -83,6 +84,8 @@ target_include_directories(${TARGET} PRIVATE
 
 	"../third-party/stm32_mw_usb_device/Core/Inc"
 	"../third-party/stm32_mw_usb_device/Class/CDC/Inc"
+
+	"../third-party/FreeRTOScpp"
 	
 	"FreeRTOS/ARM_CM4F"
 	"FreeRTOS/MemMang"
@@ -94,42 +97,94 @@ target_include_directories(${TARGET} PRIVATE
 	"src/sensors"
 	"src/communication"
 	"src/estimator"
+	"src/utils"
+	"src/transport"
 )
 
 target_compile_options(${TARGET} PRIVATE
-	#-O0 -g3 -DDEBUG
-	-Os
+	$<$<COMPILE_LANGUAGE:ASM>:
+		#-O0 -g3
+		-Os -g
 
-	-Wextra
-	-Wpedantic
-	-Wdouble-promotion
+		-mthumb 
+		-mhard-float 
+		-mcpu=cortex-m4 
+		-mfpu=fpv4-sp-d16 
+		-specs=nano.specs 
 
-	-ffunction-sections
-	-fdata-sections
-	-fstack-usage
-	-fno-common
-	
-	-mcpu=cortex-m4
-	-mfloat-abi=hard
-	-mfpu=fpv4-sp-d16
-	-specs=nosys.specs
+		-x assembler-with-cpp
+	>
+
+	$<$<COMPILE_LANGUAGE:C>:
+		#-O0 -g3
+		-Os -g
+		-std=c17
+
+		-Wall
+		-Wpedantic
+		-Wdouble-promotion
+
+		-ffunction-sections
+		-fdata-sections
+		-fstack-usage
+
+		-mthumb 
+		-mhard-float 
+		-mcpu=cortex-m4 
+		-mfpu=fpv4-sp-d16 
+		-specs=nano.specs 
+	>
+
+	$<$<COMPILE_LANGUAGE:CXX>:
+		#-O0 -g3
+		-Os -g
+		-std=c++2a
+
+		-Wall
+		-Wextra
+		-Wpedantic
+		-Wdouble-promotion
+		-Werror=return-type
+
+		-ffunction-sections
+		-fdata-sections
+		-fstack-usage
+		-fno-threadsafe-statics
+		-fno-common
+		-fno-exceptions 
+		-fno-rtti 
+
+		-mthumb 
+		-mhard-float 
+		-mcpu=cortex-m4
+		-mfloat-abi=hard
+		-mfpu=fpv4-sp-d16
+		-specs=nosys.specs
+		-specs=nano.specs
+	>
 )
 
 target_link_options(${TARGET} PRIVATE
 	-T ${CMAKE_SOURCE_DIR}/STM32F411RETX_FLASH.ld
 	-Wl,-Map=${CMAKE_PROJECT_NAME}.map
 	-Wl,--gc-sections
+	-Wl,-cref
+	-Wl,--start-group -lc -lm -lstdc++ -lsupc++ -Wl,--end-group
 
 	-mthumb
+	-mhard-float
+	-mfloat-abi=hard
 	-mcpu=cortex-m4
 	-mfpu=fpv4-sp-d16
-	-mfloat-abi=hard
 	-specs=nosys.specs
+	-specs=nano.specs
+
+	-static
+	-u _printf_float
 )
 
 target_link_libraries(${TARGET} 
 	m
-	etl::etl
 )
 
 add_custom_command(

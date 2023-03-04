@@ -18,9 +18,9 @@ def projection(point):
 	view_plane_dist = 400
 	view_center_dist = 100
 
-	s = view_plane_dist/(view_center_dist + point[0][0])
+	s = view_plane_dist/(view_center_dist - point[1][0])
 	
-	x = int(point[1][0]*s) + 320
+	x = int(point[0][0]*s) + 320
 	y = int(point[2][0]*s) + 240
 	return (x, y)
 
@@ -32,14 +32,14 @@ def draw_line(img, p1, p2, color):
 print_one = True
 
 points = [
-	[[-25], [-25], [+5]],
-	[[+25], [-25], [+5]],
-	[[+25], [+25], [+5]],
-	[[-25], [+25], [+5]],
-	[[-25], [-25], [-5]],
-	[[+25], [-25], [-5]],
-	[[+25], [+25], [-5]],
-	[[-25], [+25], [-5]]
+	[[-25], [-50], [+5]],
+	[[+25], [-50], [+5]],
+	[[+25], [+50], [+5]],
+	[[-25], [+50], [+5]],
+	[[-25], [-50], [-5]],
+	[[+25], [-50], [-5]],
+	[[+25], [+50], [-5]],
+	[[-25], [+50], [-5]]
 ]
 
 background = np.zeros(shape=(480, 640, 3), dtype=np.uint8)
@@ -53,18 +53,21 @@ while True:
 			print_one = True
 
 			while True:
-				line = re.sub(' +', ' ', ser.readline().decode('ascii').rstrip()).split(' ')
+				line = ser.readline().decode('ascii').rstrip()
+				parsed = re.sub(' +', ' ', line.rstrip()).split(' ')
 
-				if len(line)!=5:
+				if len(parsed)!=5:
+					print(line)
 					continue
 
-				if not 'quat' in line[0]:
+				if not 'quat' in parsed[0]:
+					print(line)
 					continue
 
-				w = float(line[1])
-				i = float(line[2])
-				j = float(line[3])
-				k = float(line[4])
+				w = float(parsed[1])
+				i = float(parsed[2])
+				j = float(parsed[3])
+				k = float(parsed[4])
 
 				rotation_matrix = quaternion_to_rotation(w, i, j, k)
 
@@ -81,6 +84,10 @@ while True:
 
 				if cv2.waitKey(1) == ord('x'):
 					quit()
+
+	except UnicodeDecodeError:
+		print('\x1b[38;5;9m')
+		print('codec error')
 	
 	except serial.serialutil.SerialException:
 		if print_one:

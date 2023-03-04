@@ -12,6 +12,10 @@ while True:
 			while True:
 				line = ser.readline().decode('ascii').rstrip()
 				print(line)
+
+	except UnicodeDecodeError:
+		print('\x1b[38;5;9m')
+		print('codec error')
 			
 	except serial.serialutil.SerialException:
 		if print_one:

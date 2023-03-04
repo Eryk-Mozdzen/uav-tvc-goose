@@ -1,21 +1,17 @@
-#ifndef LOGGER_H
-#define LOGGER_H
+#pragma once
 
-#ifdef __cplusplus
-extern "C" {
-#endif
+class Logger {
+	Logger();
 
-typedef enum {
-	LOG_DEBUG = 7,
-	LOG_INFO = 14,
-	LOG_WARNING = 11,
-	LOG_ERROR = 9
-} log_type_t;
+public:
+	enum LOG {
+		DEBUG = 7,
+		INFO = 14,
+		WARNING = 11,
+		ERROR = 9
+	};
 
-void LOG(const log_type_t type, const char *format, ...);
+	void log(const LOG type, const char *format, ...);
 
-#ifdef __cplusplus
-}
-#endif
-
-#endif
+	static Logger & getInstance();
+};

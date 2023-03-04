@@ -1,204 +1,245 @@
-#include "state_estimator.h"
-
-#include <cmath>
-#include "FreeRTOS.h"
-#include "task.h"
-#include "queue.h"
+#include "TimerCPP.h"
+#include "TaskCPP.h"
+#include "MutexCPP.h"
 
 #include "logger.h"
-#include "queue_element.h"
-#include "matrix.h"
-#include "kalman_filter.h"
+#include "transport.h"
+
 #include "extended_kalman_filter.h"
 #include "quaternion.h"
+#include "matrix.h"
+#include "vector.h"
 
-QueueHandle_t state_queue;
+class StateEstimator : TaskClassS<2048> {
+	static constexpr float dt = 0.005;
 
-static float3_t acceleration;
-static float3_t gyration;
-static float3_t magnetic_field;
-static float pressure;
+	ExtendedKalmanFilter<7, 3, 6> ekf;
+	
+	Mutex lock;
+	Quaternion body_to_world;
+	TimerMember<StateEstimator> azimuth_setter;
 
-void handle_readings() {
-	queue_element_t reading;
+	Vector acceleration;
+	Vector magnetic_field;
+	bool acc_ready;
+	bool mag_ready;
 
-	while(xQueueReceive(sensor_queue, &reading, 0)) {
+	Quaternion getAttitudeNED() const;
+	Vector removeMagneticDeclination(Vector mag) const;
 
-		switch(reading.type) {
-			case SENSOR_ACCELEROMETER: {
-				memcpy(&acceleration, reading.data, sizeof(float3_t));
+	void zeroAzimuth();
 
-			} break;
-			case SENSOR_GYROSCOPE: {
-				memcpy(&gyration, reading.data, sizeof(float3_t));
+public:
+	StateEstimator();
 
-			} break;
-			case SENSOR_MAGNETOMETER: {
-				memcpy(&magnetic_field, reading.data, sizeof(float3_t));
+	Quaternion getAttitude();
 
-			} break;
-			case SENSOR_BAROMETER: {
-				memcpy(&pressure, reading.data, sizeof(float));
+	void task();
+};
 
-			} break;
-			default: {
-				LOG(LOG_WARNING, "est: unknown sensor reading\n\r");
-			} break;
-		}
+StateEstimator estimator;
 
-		vPortFree(reading.data);
-	}
+StateEstimator::StateEstimator() : TaskClassS{"State Estimator", TaskPrio_High}, ekf{
+
+		[](const Matrix<7, 1> state, const Matrix<3, 1> gyr) {
+			(void)gyr;
+
+			const Quaternion q(state(0, 0), state(1, 0), state(2, 0), state(3, 0));
+
+			const Matrix<7, 7> A = {
+				1, 0, 0, 0,  0.5f*dt*q.i,  0.5f*dt*q.j,  0.5f*dt*q.k,
+				0, 1, 0, 0, -0.5f*dt*q.w,  0.5f*dt*q.k, -0.5f*dt*q.j,
+				0, 0, 1, 0, -0.5f*dt*q.k, -0.5f*dt*q.w,  0.5f*dt*q.i,
+				0, 0, 0, 1,  0.5f*dt*q.j, -0.5f*dt*q.i, -0.5f*dt*q.w,
+
+				0, 0, 0, 0,  1,			   0, 		     0,
+				0, 0, 0, 0,  0,			   1,		     0,
+				0, 0, 0, 0,  0,			   0,   		 1
+			};
+
+			const Matrix<7, 3> B = {
+				-q.i, -q.j, -q.k,
+				q.w, -q.k,  q.j,
+				q.k,  q.w, -q.i,
+				-q.j,  q.i,  q.w,
+				0,    0,    0,
+				0,    0,    0,
+				0,    0,    0
+			};
+
+			return A*state + 0.5f*dt*B*gyr;
+		},
+
+		[](const Matrix<7, 1> state) {
+			const Quaternion q(state(0, 0), state(1, 0), state(2, 0), state(3, 0));
+
+			const Matrix<6, 7> C = {
+				 2.f*q.j, -2.f*q.k,  2.f*q.w, -2.f*q.i, 0, 0, 0,
+				-2.f*q.i, -2.f*q.w, -2.f*q.k, -2.f*q.j, 0, 0, 0,
+				-2.f*q.w,  2.f*q.i,  2.f*q.j, -2.f*q.k, 0, 0, 0,
+
+				-2.f*q.k, -2.f*q.j, -2.f*q.i, -2.f*q.w, 0, 0, 0,
+				-2.f*q.w,  2.f*q.i, -2.f*q.j,  2.f*q.k, 0, 0, 0,
+				 2.f*q.i,  2.f*q.w, -2.f*q.k, -2.f*q.j, 0, 0, 0
+			};
+
+			return C*state;
+		},
+
+		[](const Matrix<7, 1> state, const Matrix<3, 1> gyr) {
+			(void)gyr;
+
+			const Quaternion q(state(0, 0), state(1, 0), state(2, 0), state(3, 0));
+
+			const Matrix<7, 7> A = {
+				1, 0, 0, 0,  0.5f*dt*q.i,  0.5f*dt*q.j,  0.5f*dt*q.k,
+				0, 1, 0, 0, -0.5f*dt*q.w,  0.5f*dt*q.k, -0.5f*dt*q.j,
+				0, 0, 1, 0, -0.5f*dt*q.k, -0.5f*dt*q.w,  0.5f*dt*q.i,
+				0, 0, 0, 1,  0.5f*dt*q.j, -0.5f*dt*q.i, -0.5f*dt*q.w,
+
+				0, 0, 0, 0,  1,			   0, 		     0,
+				0, 0, 0, 0,  0,			   1,		     0,
+				0, 0, 0, 0,  0,			   0,   		 1
+			};
+
+			return A;
+		},
+
+		[](const Matrix<7, 1> state) {
+			const Quaternion q(state(0, 0), state(1, 0), state(2, 0), state(3, 0));
+
+			const Matrix<6, 7> C = {
+				 2.f*q.j, -2.f*q.k,  2.f*q.w, -2.f*q.i, 0, 0, 0,
+				-2.f*q.i, -2.f*q.w, -2.f*q.k, -2.f*q.j, 0, 0, 0,
+				-2.f*q.w,  2.f*q.i,  2.f*q.j, -2.f*q.k, 0, 0, 0,
+
+				-2.f*q.k, -2.f*q.j, -2.f*q.i, -2.f*q.w, 0, 0, 0,
+				-2.f*q.w,  2.f*q.i, -2.f*q.j,  2.f*q.k, 0, 0, 0,
+				 2.f*q.i,  2.f*q.w, -2.f*q.k, -2.f*q.j, 0, 0, 0
+			};
+
+			return C;
+		},
+
+		Matrix<7, 7>::identity()*0.0001f,
+		Matrix<6, 6>::identity()*1.f,
+		{0, -1, 0, 0, 0, 0, 0}}, 
+
+		lock{"body to world quat lock"}, 
+		azimuth_setter{"azimuth setter", this, &StateEstimator::zeroAzimuth, 3000, pdFALSE} {
+
 }
 
-float3_t normalize(float3_t vec) {
-	const float len = sqrtf(vec.x*vec.x + vec.y*vec.y + vec.z*vec.z);
-	
-	if(len<0.01f)
-		return vec;
-
-	vec.x /=len;
-	vec.y /=len;
-	vec.z /=len;
-	
-	return vec;
-}
-
-float3_t mag_remove_z(float3_t mag, const ExtendedKalmanFilter<7, 3, 6> &ekf) {
-	const Matrix<7, 1> state = ekf.getState();
-	const Quaternion q = Quaternion(state(0, 0), state(1, 0), state(2, 0), state(3, 0)).getNormalized();
+Vector StateEstimator::removeMagneticDeclination(Vector b_mag) const {
+	const Quaternion q = getAttitudeNED();
 	const Matrix<3, 3> rot = q.getRotation();
 
-	Matrix<3, 1> b_mag = {mag.x, mag.y, mag.z};
-	Matrix<3, 1> w_mag = rot*b_mag;
+	Vector w_mag = rot*b_mag;
 
-	w_mag(2, 0) = 0.f;
-	const float len = std::sqrt(w_mag(0, 0)*w_mag(0, 0) + w_mag(1, 0)*w_mag(1, 0));
-	w_mag(0, 0) /=len;
-	w_mag(1, 0) /=len;
+	w_mag.z = 0.f;
+	w_mag.normalize();
 
 	b_mag = rot.transposition()*w_mag;
 
-	mag.x = b_mag(0, 0);
-	mag.y = b_mag(1, 0);
-	mag.z = b_mag(2, 0);
-	return mag;
+	return b_mag;
 }
 
-void estimator(void *param) {
-	(void)param;
+Quaternion StateEstimator::getAttitudeNED() const {
+	const Matrix<7, 1> state = ekf.getState();
+	const Quaternion q = Quaternion(state(0, 0), state(1, 0), state(2, 0), state(3, 0)).getNormalized();
+
+	return q;
+}
+
+Quaternion StateEstimator::getAttitude() {
+	const Matrix<7, 1> state = ekf.getState();
+	const Quaternion q = Quaternion(state(0, 0), state(1, 0), state(2, 0), state(3, 0)).getNormalized();
+
+	if(lock.take(100)) {
+		const Quaternion result = body_to_world^q;
+		lock.give();
+		return result;
+	}
+	
+	return q;
+}
+
+void StateEstimator::task() {
+
+	azimuth_setter.start();
 
 	TickType_t time = xTaskGetTickCount();
 
-	constexpr float pi = 3.1415f;
-	constexpr float rad_to_deg = 180.f/pi;
-
-	constexpr float dt = 0.01;
-
-	const auto f = [](const Matrix<7, 1> state, const Matrix<3, 1> gyr) {
-		const Quaternion q(state(0, 0), state(1, 0), state(2, 0), state(3, 0));
-
-		const Matrix<7, 7> A = {
-			1, 0, 0, 0,  0.5f*dt*q.i,  0.5f*dt*q.j,  0.5f*dt*q.k,
-			0, 1, 0, 0, -0.5f*dt*q.w,  0.5f*dt*q.k, -0.5f*dt*q.j,
-			0, 0, 1, 0, -0.5f*dt*q.k, -0.5f*dt*q.w,  0.5f*dt*q.i,
-			0, 0, 0, 1,  0.5f*dt*q.j, -0.5f*dt*q.i, -0.5f*dt*q.w,
-
-			0, 0, 0, 0,  1,			   0, 		     0,
-			0, 0, 0, 0,  0,			   1,		     0,
-			0, 0, 0, 0,  0,			   0,   		 1
-		};
-
-		const Matrix<7, 3> B = {
-			-q.i, -q.j, -q.k,
-			 q.w, -q.k,  q.j,
-			 q.k,  q.w, -q.i,
-			-q.j,  q.i,  q.w,
-			 0,    0,    0,
-			 0,    0,    0,
-			 0,    0,    0
-		};
-
-		return A*state + 0.5f*dt*B*gyr;
-	};
-
-	const auto h = [](const Matrix<7, 1> state) {
-		const Quaternion q(state(0, 0), state(1, 0), state(2, 0), state(3, 0));
-
-		const Matrix<6, 7> C = {
-			 2.f*q.j, -2.f*q.k,  2.f*q.w, -2.f*q.i, 0, 0, 0,
-			-2.f*q.i, -2.f*q.w, -2.f*q.k, -2.f*q.j, 0, 0, 0,
-			-2.f*q.w,  2.f*q.i,  2.f*q.j, -2.f*q.k, 0, 0, 0,
-
-			-2.f*q.k, -2.f*q.j, -2.f*q.i, -2.f*q.w, 0, 0, 0,
-			-2.f*q.w,  2.f*q.i, -2.f*q.j,  2.f*q.k, 0, 0, 0,
-			 2.f*q.i,  2.f*q.w, -2.f*q.k, -2.f*q.j, 0, 0, 0
-		};
-
-		return C*state;
-	};
-
-	const auto f_tangent = [](const Matrix<7, 1> state, const Matrix<3, 1> gyr) {
-		const Quaternion q(state(0, 0), state(1, 0), state(2, 0), state(3, 0));
-
-		const Matrix<7, 7> A = {
-			1, 0, 0, 0,  0.5f*dt*q.i,  0.5f*dt*q.j,  0.5f*dt*q.k,
-			0, 1, 0, 0, -0.5f*dt*q.w,  0.5f*dt*q.k, -0.5f*dt*q.j,
-			0, 0, 1, 0, -0.5f*dt*q.k, -0.5f*dt*q.w,  0.5f*dt*q.i,
-			0, 0, 0, 1,  0.5f*dt*q.j, -0.5f*dt*q.i, -0.5f*dt*q.w,
-
-			0, 0, 0, 0,  1,			   0, 		     0,
-			0, 0, 0, 0,  0,			   1,		     0,
-			0, 0, 0, 0,  0,			   0,   		 1
-		};
-
-		return A;
-	};
-
-	const auto h_tangent = [](const Matrix<7, 1> state) {
-		const Quaternion q(state(0, 0), state(1, 0), state(2, 0), state(3, 0));
-
-		const Matrix<6, 7> C = {
-			 2.f*q.j, -2.f*q.k,  2.f*q.w, -2.f*q.i, 0, 0, 0,
-			-2.f*q.i, -2.f*q.w, -2.f*q.k, -2.f*q.j, 0, 0, 0,
-			-2.f*q.w,  2.f*q.i,  2.f*q.j, -2.f*q.k, 0, 0, 0,
-
-			-2.f*q.k, -2.f*q.j, -2.f*q.i, -2.f*q.w, 0, 0, 0,
-			-2.f*q.w,  2.f*q.i, -2.f*q.j,  2.f*q.k, 0, 0, 0,
-			 2.f*q.i,  2.f*q.w, -2.f*q.k, -2.f*q.j, 0, 0, 0
-		};
-
-		return C;
-	};
-
-	constexpr Matrix<7, 7> Q = Matrix<7, 7>::identity()*0.0001f;
-	constexpr Matrix<6, 6> R = Matrix<6, 6>::identity()*1.f;
-	constexpr Matrix<7, 1> x_init = {1, 0, 0, 0, 0, 0, 0};
-
-	ExtendedKalmanFilter<7, 3, 6> ekf(f, h, f_tangent, h_tangent, Q, R, x_init);
+	Transport::Sensors type;
 
 	while(1) {
 		xTaskDelayUntil(&time, 10);
 
-		handle_readings();
+		while(Transport::getInstance().sensor_queue.pop(type, 0)) {
 
-		ekf.predict({gyration.x, gyration.y, gyration.z});
+			switch(type) {
+				case Transport::Sensors::ACCELEROMETER: {
+					Transport::getInstance().sensor_queue.getValue(acceleration);
+					acc_ready = true;
 
-		const float3_t acc = normalize(acceleration);
-		const float3_t mag = normalize(magnetic_field);
+				} break;
+				case Transport::Sensors::GYROSCOPE: {
+					Vector gyration;
+					Transport::getInstance().sensor_queue.getValue(gyration);
+					ekf.predict(gyration);
 
-		const float3_t mag_without_z = mag_remove_z(mag, ekf);
+				} break;
+				case Transport::Sensors::MAGNETOMETER: {
+					Transport::getInstance().sensor_queue.getValue(magnetic_field);
+					mag_ready = true;
 
-		ekf.update({acc.x, acc.y, acc.z, mag_without_z.x, mag_without_z.y, mag_without_z.z});
+				} break;
+				case Transport::Sensors::BAROMETER: {
+					
+				} break;
+			}
 
-		const Matrix<7, 1> state = ekf.getState();
-		const Quaternion q = Quaternion(state(0, 0), state(1, 0), state(2, 0), state(3, 0)).getNormalized();
+			if(acc_ready) {
+				const float len = acceleration.getLength()/9.81f;
 
-		LOG(LOG_DEBUG, "quat: %+10.5f %+10.5f %+10.5f %+10.5f\n\r", (double)(q.w), (double)(q.i), (double)(q.j), (double)(q.k));
+				if(len>1.03f || len<0.97f) {
+					//Logger::getInstance().log(Logger::DEBUG, "est: linear acceleration detected, total length: %f\n\r", (double)len);
+					acc_ready = false;
+				}
+			}
+
+			if(acc_ready && mag_ready) {
+				acc_ready = false;
+				mag_ready = false;
+
+				acceleration.normalize();
+				magnetic_field.normalize();
+
+				const Vector mag = removeMagneticDeclination(magnetic_field);
+
+				ekf.update({acceleration.x, acceleration.y, acceleration.z, mag.x, mag.y, mag.z});
+			}
+
+		}
+
+		const Quaternion q = getAttitude();
+
+		Logger::getInstance().log(Logger::DEBUG, "quat: %+10.5f %+10.5f %+10.5f %+10.5f\n\r", (double)(q.w), (double)(q.i), (double)(q.j), (double)(q.k));
 	}
 }
 
-void StateEstimator_Init() {
-	state_queue = xQueueCreate(16, sizeof(state_t));
+void StateEstimator::zeroAzimuth() {
+	const Quaternion q = getAttitudeNED();
 
-	xTaskCreate(estimator, "state estimator", 1024, NULL, 4, NULL);
+	const float azimuth = std::atan2(2.f*(q.w*q.k + q.i*q.j), q.w*q.w + q.i*q.i - q.j*q.j - q.k*q.k);
+
+	if(lock.take(100)) {
+		body_to_world = Quaternion(-azimuth, Vector::Z);
+
+		lock.give();
+		
+		constexpr float pi = 3.14159265359f;
+
+		Logger::getInstance().log(Logger::INFO, "est: set azimuth to %.0f deg\n\r", (double)(azimuth*180.f/pi));
+	}
 }

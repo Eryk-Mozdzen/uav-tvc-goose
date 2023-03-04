@@ -16,7 +16,7 @@ Quaternion::Quaternion(const Matrix<3, 1> &vec) : w{0.f}, i{vec(0, 0)}, j{vec(1,
 
 }
 
-Quaternion::Quaternion(float angle, const Matrix<3, 1> &axis) : w{std::cos(0.5f*angle)} {
+Quaternion::Quaternion(const float angle, const Matrix<3, 1> &axis) : w{std::cos(0.5f*angle)} {
 	const float len = std::sqrt(axis(0, 0)*axis(0, 0) + axis(1, 0)*axis(1, 0) + axis(2, 0)*axis(2, 0));
 	const float s = std::sin(0.5f*angle);
 
@@ -55,9 +55,9 @@ Quaternion Quaternion::operator+(const Quaternion &rhs) const {
 Quaternion Quaternion::operator^(const Quaternion &rhs) const {
 	return Quaternion(
 		w*rhs.w - i*rhs.i - j*rhs.j - k*rhs.k,
-		w*rhs.w + i*rhs.i + j*rhs.j - k*rhs.k,
-		w*rhs.w - i*rhs.i + j*rhs.j + k*rhs.k,
-		w*rhs.w + i*rhs.i - j*rhs.j + k*rhs.k
+		w*rhs.i + i*rhs.w + j*rhs.k - k*rhs.j,
+		w*rhs.j - i*rhs.k + j*rhs.w + k*rhs.i,
+		w*rhs.k + i*rhs.j - j*rhs.i + k*rhs.w
 	);
 }
 
@@ -95,6 +95,15 @@ Matrix<3, 3> Quaternion::getRotation() const {
 		2.f*s*(i*j + k*w),		 	1.f - 2.f*s*(i*i + k*k),	2.f*s*(j*k - i*w),
 		2.f*s*(i*k - j*w),			2.f*s*(j*k + i*w),			1.f - 2.f*s*(i*i + j*j)
 	};
+}
+
+void Quaternion::normalize() {
+	const float len = abs();
+
+	w /=len;
+	i /=len;
+	j /=len;
+	k /=len;
 }
 
 Quaternion operator*(const float lhs, const Quaternion &rhs) {

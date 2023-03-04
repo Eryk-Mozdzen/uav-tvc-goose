@@ -6,7 +6,7 @@
 uint8_t UserRxBufferFS[APP_RX_DATA_SIZE];
 uint8_t UserTxBufferFS[APP_TX_DATA_SIZE];
 
-extern TaskHandle_t transmitterTask;
+extern TaskHandle_t transmitter_task;
 
 extern USBD_HandleTypeDef hUsbDeviceFS;
 
@@ -63,7 +63,7 @@ uint8_t CDC_Transmit_FS(uint8_t* Buf, uint16_t Len) {
 
 static int8_t CDC_TransmitCplt_FS(uint8_t *Buf, uint32_t *Len, uint8_t epnum) {
 	
-	vTaskNotifyGiveIndexedFromISR(transmitterTask, 0, NULL);
+	vTaskNotifyGiveIndexedFromISR(transmitter_task, 0, NULL);
 
 	return USBD_OK;
 }

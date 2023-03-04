@@ -125,7 +125,7 @@ public:
 			}
 
 			if(maxVal<0.002f) {
-				LOG(LOG_WARNING, "mat: can't inverse %dx%d matrix\n\r", N, N);
+				Logger::getInstance().log(Logger::WARNING, "mat: can't inverse %dx%d matrix\n\r", N, N);
 				return Matrix<N, N>();
 			}
 
@@ -163,6 +163,17 @@ public:
 				inverse(i, j) = combined(i, j+N);
 
 		return inverse;
+	}
+
+	template<int K, int L>
+	constexpr Matrix<K, L> slice(const int row, const int col) const {
+		Matrix<K, L> result;
+
+		for(int i=0; i<K; i++)
+			for(int j=0; j<L; j++)
+				result(i, j) = (*this)(row + i, col + j);
+
+		return result;
 	}
 };
 

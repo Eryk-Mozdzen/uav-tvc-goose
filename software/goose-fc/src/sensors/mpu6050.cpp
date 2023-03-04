@@ -1,5 +1,9 @@
-#ifndef MPU6050_H
-#define MPU6050_H
+#include "stm32f4xx_hal.h"
+#include "TaskCPP.h"
+
+#include "logger.h"
+#include "transport.h"
+#include "sensor_bus.h"
 
 #define MPU6050_ADDR		0x68
 
@@ -194,4 +198,147 @@
 
 #define MPU6050_WHO_AM_I_VALUE						(0x68<<0)
 
-#endif
+class MPU6050 : public TaskClassS<1024> {
+	Vector gyration;	
+	Vector acceleration;
+
+public:
+
+	MPU6050();
+
+	void init();
+
+	bool readData();
+	Vector getGyration() const;
+	Vector getAcceleration() const;
+
+	void task();
+};
+
+TaskHandle_t imu_task;
+
+MPU6050 imu;
+
+MPU6050::MPU6050() : TaskClassS{"MPU6050 reader", TaskPrio_Low} {
+
+}
+
+void MPU6050::init() {
+
+	GPIO_InitTypeDef GPIO_InitStruct;
+
+	__HAL_RCC_GPIOA_CLK_ENABLE();
+	GPIO_InitStruct.Pin = GPIO_PIN_15;
+	GPIO_InitStruct.Mode = GPIO_MODE_IT_RISING;
+	GPIO_InitStruct.Pull = GPIO_NOPULL;
+	HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
+	HAL_NVIC_SetPriority(EXTI15_10_IRQn, 6, 0);
+	HAL_NVIC_EnableIRQ(EXTI15_10_IRQn);
+
+	SensorBus::getInstance().write(MPU6050_ADDR, MPU6050_REG_PWR_MGMT_1,
+		MPU6050_PWR_MGMT_1_DEVICE_RESET
+	);
+
+	vTaskDelay(100);
+
+	SensorBus::getInstance().write(MPU6050_ADDR, MPU6050_REG_SIGNAL_PATH_RESET, 
+		MPU6050_SIGNAL_PATH_RESET_GYRO |
+		MPU6050_SIGNAL_PATH_RESET_ACCEL |
+		MPU6050_SIGNAL_PATH_RESET_TEMP
+	);
+
+	vTaskDelay(100);
+
+	SensorBus::getInstance().write(MPU6050_ADDR, MPU6050_REG_INT_ENABLE,
+		MPU6050_INT_ENABLE_FIFO_OVERLOW_DISABLE | 
+		MPU6050_INT_ENABLE_I2C_MST_INT_DISABLE |
+		MPU6050_INT_ENABLE_DATA_RDY_ENABLE
+	);
+
+	SensorBus::getInstance().write(MPU6050_ADDR, MPU6050_REG_INT_PIN_CFG,
+		MPU6050_INT_PIN_CFG_LEVEL_ACTIVE_HIGH |
+		MPU6050_INT_PIN_CFG_PUSH_PULL |
+		MPU6050_INT_PIN_CFG_PULSE |
+		MPU6050_INT_PIN_CFG_STATUS_CLEAR_AFTER_ANY |
+		MPU6050_INT_PIN_CFG_FSYNC_DISABLE |
+		MPU6050_INT_PIN_CFG_I2C_BYPASS_DISABLE
+	);
+
+	SensorBus::getInstance().write(MPU6050_ADDR, MPU6050_REG_PWR_MGMT_1,
+		MPU6050_PWR_MGMT_1_TEMP_DIS |
+		MPU6050_PWR_MGMT_1_CLOCK_INTERNAL
+	);
+
+	SensorBus::getInstance().write(MPU6050_ADDR, MPU6050_REG_CONFIG, 
+		MPU6050_CONFIG_EXT_SYNC_DISABLED |
+		MPU6050_CONFIG_DLPF_SETTING_6
+	);
+
+	SensorBus::getInstance().write(MPU6050_ADDR, MPU6050_REG_ACCEL_CONFIG,
+		MPU6050_ACCEL_CONFIG_RANGE_4G
+	);
+
+	SensorBus::getInstance().write(MPU6050_ADDR, MPU6050_REG_GYRO_CONFIG,
+		MPU6050_GYRO_CONFIG_RANGE_500DPS
+	);
+
+	SensorBus::getInstance().write(MPU6050_ADDR, MPU6050_REG_SMPLRT_DIV, 4);
+
+	Logger::getInstance().log(Logger::INFO, "imu: initialization complete\n\r");
+}
+
+bool MPU6050::readData() {
+	uint8_t buffer[14] = {0};
+
+	if(SensorBus::getInstance().read(MPU6050_ADDR, MPU6050_REG_ACCEL_XOUT_H, buffer, sizeof(buffer))) {
+		return false;
+	}
+
+	const int16_t acc_raw_x = (((int16_t)buffer[0])<<8) | buffer[1];
+	const int16_t acc_raw_y = (((int16_t)buffer[2])<<8) | buffer[3];
+	const int16_t acc_raw_z = (((int16_t)buffer[4])<<8) | buffer[5];
+
+	constexpr float acc_gain = 8192.f;
+	constexpr float g_to_ms2 = 9.81f;
+
+	acceleration = Vector(acc_raw_x, acc_raw_y, acc_raw_z)*g_to_ms2/acc_gain;
+
+	const int16_t gyr_raw_x = (((int16_t)buffer[8])<<8) | buffer[9];
+	const int16_t gyr_raw_y = (((int16_t)buffer[10])<<8) | buffer[11];
+	const int16_t gyr_raw_z = (((int16_t)buffer[12])<<8) | buffer[13];
+
+	constexpr float gyr_gain = 65.5f;
+	constexpr float dps_to_rads = 0.017453292519943f;
+
+	gyration = Vector(gyr_raw_x, gyr_raw_y, gyr_raw_z)*dps_to_rads/gyr_gain;
+
+	return true;
+}
+
+Vector MPU6050::getGyration() const {
+	return gyration;
+}
+
+Vector MPU6050::getAcceleration() const {
+	return acceleration;
+}
+
+void MPU6050::task() {
+	imu_task = getTaskHandle();
+
+	init();
+
+	while(1) {
+		ulTaskNotifyTakeIndexed(1, pdTRUE, portMAX_DELAY);
+
+		if(!readData()) {
+			continue;
+		}
+
+		const Vector acc = getAcceleration();
+		const Vector gyr = getGyration();
+
+		Transport::getInstance().sensor_queue.add(Transport::Sensors::ACCELEROMETER, acc, 0);
+		Transport::getInstance().sensor_queue.add(Transport::Sensors::GYROSCOPE, gyr, 0);
+	}
+}
