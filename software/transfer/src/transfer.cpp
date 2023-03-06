@@ -7,7 +7,7 @@ Transfer::Transfer() {
 void Transfer::reset() {
 	counter = 0;
 
-	memset(frame, 0xFF, sizeof(frame));
+	memset(frame_buffer, 0xFF, sizeof(frame_buffer));
 }
 
 void Transfer::consume(const uint8_t byte) {
@@ -23,41 +23,43 @@ void Transfer::consume(const uint8_t byte) {
 		reset();
 	}
 
-	frame[counter] = byte;
+	frame_buffer[counter] = byte;
 	counter++;
 }
 
-bool Transfer::receive(uint8_t &id, uint8_t *buffer, size_t &length) const {
+bool Transfer::receive(FrameRX &frame) const {
 	if(counter<5) {
 		return false;
 	}
 
-	if(frame[0]!=start_byte) {
+	if(frame_buffer[0]!=start_byte) {
 		return false;
 	}
 
-	memcpy(buffer, frame, counter);
+	uint8_t copy[max_length + 5];
+	memcpy(copy, frame_buffer, counter);
 
-	const uint8_t cobs = buffer[1];
+	const uint8_t cobs = copy[1];
 
-	decode_COBS(&buffer[2], counter - 2, cobs);
+	decode_COBS(&copy[2], counter - 2, cobs);
 
-	length = buffer[3];
-	const uint8_t length_real = counter - 5;
+	frame.length = copy[3];
+	const size_t length_real = counter - 5;
 
-	if(length!=length_real) {
+	if(frame.length!=length_real) {
 		return false;
 	}
 
-	const uint8_t crc = buffer[2];
-	const uint8_t crc_real = calculate_CRC(&buffer[4], length + 1);
+	const uint8_t crc = copy[2];
+	const uint8_t crc_real = calculate_CRC(&copy[4], frame.length + 1);
 
 	if(crc!=crc_real) {
 		return false;
 	}
 
-	id = buffer[4];
-	memmove(buffer, &buffer[5], length);
+	frame.id = static_cast<ID>(copy[4]);
+
+	memcpy(frame.payload, &copy[5], frame.length);
 
 	return true;
 }
