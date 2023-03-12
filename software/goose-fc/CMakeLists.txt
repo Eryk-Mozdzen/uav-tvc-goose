@@ -38,6 +38,8 @@ add_executable(${TARGET}
 	"../third-party/stm32_mw_usb_device/Core/Src/usbd_ioreq.c"
 	"../third-party/stm32_mw_usb_device/Class/CDC/Src/usbd_cdc.c"
 
+	"../transfer/transfer.cpp"
+
 	"startup/system_stm32f4xx.c"
 	"startup/startup_stm32f411xe.s"
 
@@ -86,6 +88,8 @@ target_include_directories(${TARGET} PRIVATE
 	"../third-party/stm32_mw_usb_device/Class/CDC/Inc"
 
 	"../third-party/FreeRTOScpp"
+
+	"../transfer"
 	
 	"FreeRTOS/ARM_CM4F"
 	"FreeRTOS/MemMang"

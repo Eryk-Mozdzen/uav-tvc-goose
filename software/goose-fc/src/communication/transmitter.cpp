@@ -8,6 +8,7 @@ extern "C" {
 
 #include "transport.h"
 #include "logger.h"
+#include "transfer.h"
 
 class Transmitter : public TaskClassS<1024> {
 public:
@@ -36,27 +37,15 @@ void Transmitter::task() {
 
 	init();
 
-	Transport::TX type = Transport::LOG;
-
 	while(1) {
-		Transport::getInstance().tx_queue.pop(type, portMAX_DELAY);
+		Transfer::FrameTX tx;
+		Transport::getInstance().tx_queue.pop(tx, portMAX_DELAY);
+		
+		do {
+			CDC_Transmit_FS(tx.buffer, tx.length);
+		} while(!ulTaskNotifyTakeIndexed(0, pdTRUE, 500));
 
-		switch(type) {
-			case Transport::TX::LOG: {
-
-				Message str;
-				Transport::getInstance().tx_queue.getValue(str);
-
-				do {
-					CDC_Transmit_FS((uint8_t *)str.c_str(), str.size());
-				} while(!ulTaskNotifyTakeIndexed(0, pdTRUE, 500));
-
-			} break;
-			case Transport::TX::TELEMETRY: {
-
-				// TODO
-
-			} break;
-		}
+		// TODO
+		// send over UART
 	}
 }

@@ -1,7 +1,7 @@
 #pragma once
 
-#include <transfer/frame_tx.h>
-#include <transfer/frame_rx.h>
+#include "frame_tx.h"
+#include "frame_rx.h"
 #include <cstdint>
 #include <cstring>
 
@@ -52,6 +52,21 @@ public:
 
 	void consume(const uint8_t byte);
 	bool receive(FrameRX &frame) const;
+
+	static FrameTX encode(const void *payload, const size_t length, const ID id) {
+		FrameTX frame;
+	
+		memcpy(&frame.buffer[5], payload, length);
+		frame.buffer[4] = id;
+		frame.buffer[3] = length;
+		frame.buffer[2] = calculate_CRC(&frame.buffer[4], 1 + length);
+		frame.buffer[1] = encode_COBS(&frame.buffer[2], 3 + length);
+		frame.buffer[0] = start_byte;
+
+		frame.length = length + 5;
+
+		return frame;
+	}
 
 	template<typename T>
 	static FrameTX encode(const T &payload, const ID id) {

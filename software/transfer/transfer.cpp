@@ -1,4 +1,4 @@
-#include <transfer/transfer.h>
+#include "transfer.h"
 
 Transfer::Transfer() {
 	reset();
@@ -101,7 +101,7 @@ uint8_t Transfer::encode_COBS(uint8_t *buffer, const size_t size) {
 
 void Transfer::decode_COBS(uint8_t *buffer, const size_t size, const uint8_t cobs) {
 
-	int index = cobs - 1;
+	size_t index = cobs - 1;
 
 	while(index<size) {
 		const int next = buffer[index];

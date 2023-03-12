@@ -3,16 +3,12 @@
 #include "multi_queue.h"
 #include "vector.h"
 #include "message.h"
+#include "transfer.h"
 
 class Transport {
 	Transport();
 
 public:
-
-	enum TX {
-		LOG,
-		TELEMETRY
-	};
 
 	enum Sensors {
 		ACCELEROMETER,
@@ -22,7 +18,7 @@ public:
 	};
 
 	MultiQueue<Sensors, 16, Vector, float> sensor_queue;
-	MultiQueue<TX, 32, Message> tx_queue;
+	Queue<Transfer::FrameTX, 32> tx_queue;
 
 	Transport(Transport &) = delete;
 	void operator=(const Transport &) = delete;
