@@ -125,7 +125,7 @@ public:
 			}
 
 			if(maxVal<0.002f) {
-				Logger::getInstance().log(Logger::WARNING, "mat: can't inverse %dx%d matrix\n\r", N, N);
+				Logger::getInstance().log(Logger::WARNING, "mat: can't inverse %dx%d matrix", N, N);
 				return Matrix<N, N>();
 			}
 

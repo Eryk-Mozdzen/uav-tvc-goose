@@ -189,7 +189,7 @@ void BMP280::init() {
 		BMP280_CONFIG_SPI_3WIRE_DISABLE
 	);
 
-	Logger::getInstance().log(Logger::INFO, "bar: initialization complete\n\r");
+	Logger::getInstance().log(Logger::INFO, "bar: initialization complete");
 }
 
 bool BMP280::readCalibrationData() {
@@ -197,7 +197,7 @@ bool BMP280::readCalibrationData() {
 	uint8_t buffer[24] = {0};
 
 	if(SensorBus::getInstance().read(BMP280_ADDR, BMP280_REG_CALIB00, buffer, sizeof(buffer))) {
-		Logger::getInstance().log(Logger::ERROR, "bar: error in calibration values\n\r");
+		Logger::getInstance().log(Logger::ERROR, "bar: error in calibration values");
 		return false;
 	}
 	
@@ -215,7 +215,7 @@ bool BMP280::readCalibrationData() {
 	calib.dig_P8 = (((int16_t)buffer[21])<<8) | buffer[20];
 	calib.dig_P9 = (((int16_t)buffer[23])<<8) | buffer[22];
 
-	Logger::getInstance().log(Logger::INFO, "bar: succesfully read calibration values\n\r");
+	Logger::getInstance().log(Logger::INFO, "bar: succesfully read calibration values");
 
 	return true;
 }

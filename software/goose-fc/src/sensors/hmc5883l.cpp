@@ -99,7 +99,7 @@ void HMC5883L::init() {
 		HMC5883L_MODE_CONTINOUS
 	);
 
-	Logger::getInstance().log(Logger::INFO, "mag: initialization complete\n\r");
+	Logger::getInstance().log(Logger::INFO, "mag: initialization complete");
 }
 
 bool HMC5883L::readData() {
@@ -114,7 +114,7 @@ bool HMC5883L::readData() {
 	const int16_t raw_z = (((int16_t)buffer[2])<<8) | buffer[3];
 
 	if((raw_x>2047 || raw_x<-2048) || (raw_y>2047 || raw_y<-2048) || (raw_z>2047 || raw_z<-2048)) {
-		Logger::getInstance().log(Logger::WARNING, "mag: value out of valid range [%10d %10d %10d]\n\r", raw_x, raw_y, raw_z);
+		Logger::getInstance().log(Logger::WARNING, "mag: value out of valid range [%10d %10d %10d]", raw_x, raw_y, raw_z);
 	}
 	
 	constexpr float gain = 1090.f;

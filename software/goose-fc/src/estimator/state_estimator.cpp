@@ -203,7 +203,7 @@ void StateEstimator::task() {
 				const float len = acceleration.getLength()/9.81f;
 
 				if(len>1.03f || len<0.97f) {
-					//Logger::getInstance().log(Logger::DEBUG, "est: linear acceleration detected, total length: %f\n\r", (double)len);
+					//Logger::getInstance().log(Logger::DEBUG, "est: linear acceleration detected, total length: %f", (double)len);
 					acc_ready = false;
 				}
 			}
@@ -224,7 +224,7 @@ void StateEstimator::task() {
 
 		const Quaternion q = getAttitude();
 
-		Logger::getInstance().log(Logger::DEBUG, "quat: %+10.5f %+10.5f %+10.5f %+10.5f\n\r", (double)(q.w), (double)(q.i), (double)(q.j), (double)(q.k));
+		//Logger::getInstance().log(Logger::DEBUG, "quat: %+10.5f %+10.5f %+10.5f %+10.5f", (double)(q.w), (double)(q.i), (double)(q.j), (double)(q.k));
 	}
 }
 
@@ -240,6 +240,6 @@ void StateEstimator::zeroAzimuth() {
 		
 		constexpr float pi = 3.14159265359f;
 
-		Logger::getInstance().log(Logger::INFO, "est: set azimuth to %.0f deg\n\r", (double)(azimuth*180.f/pi));
+		Logger::getInstance().log(Logger::INFO, "est: set azimuth to %.0f deg", (double)(azimuth*180.f/pi));
 	}
 }

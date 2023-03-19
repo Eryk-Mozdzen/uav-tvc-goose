@@ -284,7 +284,7 @@ void MPU6050::init() {
 
 	SensorBus::getInstance().write(MPU6050_ADDR, MPU6050_REG_SMPLRT_DIV, 4);
 
-	Logger::getInstance().log(Logger::INFO, "imu: initialization complete\n\r");
+	Logger::getInstance().log(Logger::INFO, "imu: initialization complete");
 }
 
 bool MPU6050::readData() {
