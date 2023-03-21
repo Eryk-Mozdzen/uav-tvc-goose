@@ -31,9 +31,17 @@ int main(int argc, char** argv) {
 
     Transfer transfer;
     LibSerial::DataBuffer buffer = {1, 2, 3, 4};
+	struct __attribute__((packed)) Vector3f {
+		float x, y, z;
+	};
+    Vector3f data = { 5.0, 3.0 ,-9.0}; 
+    Transfer::FrameTX tx = Transfer::encode(&data, sizeof(Vector3f), Transfer::TELEMETRY_ESTIMATION_ATTITUDE);
+    
     while (1) {
-        serial_port.Write(buffer);
-        serial_port.DrainWriteBuffer();
+        for(int i =0; i < tx.length; ++i){
+            serial_port.WriteByte(tx.buffer[i]);
+            serial_port.DrainWriteBuffer();
+        }
         sleep(1);
     }
 
