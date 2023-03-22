@@ -10,9 +10,10 @@ add_compile_options(
 	-std=c++2a 
 )
 
+link_directories(/usr/local/lib)
+
 add_executable(${PROJECT_NAME}
 	"src/main.cpp"
-	"src/serial.cpp"
 	"../../transfer/transfer.cpp"
 )
 
@@ -23,5 +24,5 @@ target_include_directories(${PROJECT_NAME} PUBLIC
 
 target_link_libraries(${PROJECT_NAME} PRIVATE
 	m
-	pthread
+	serial
 )
