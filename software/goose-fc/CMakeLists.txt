@@ -44,7 +44,6 @@ add_executable(${TARGET}
 	"startup/startup_stm32f411xe.s"
 
 	"FreeRTOS/ARM_CM4F/port.c"
-	#"FreeRTOS/MemMang/heap_4.c"
 	"FreeRTOS/freertos_exceptions.c"
 
 	"HAL/stm32f4xx_hal_it.c"
@@ -65,10 +64,10 @@ add_executable(${TARGET}
 	"src/sensors/hmc5883l.cpp"
 	"src/communication/transmitter.cpp"
 	"src/communication/logger.cpp"
-	"src/communication/message.cpp"
 	"src/estimator/state_estimator.cpp"
 	"src/utils/quaternion.cpp"
 	"src/utils/vector.cpp"
+	"src/utils/message.cpp"
 	"src/transport/transport.cpp"
 )
 

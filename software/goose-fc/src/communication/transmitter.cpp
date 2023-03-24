@@ -15,8 +15,6 @@ public:
 
 	Transmitter();
 
-	void init();
-
 	void task();
 };
 
@@ -28,14 +26,10 @@ Transmitter::Transmitter() : TaskClassS{"TX", TaskPrio_Mid} {
 	
 }
 
-void Transmitter::init() {
-	USB_DEVICE_Init();
-}
-
 void Transmitter::task() {
 	transmitter_task = getTaskHandle();
 
-	init();
+	USB_DEVICE_Init();
 
 	while(1) {
 		Transfer::FrameTX tx;
