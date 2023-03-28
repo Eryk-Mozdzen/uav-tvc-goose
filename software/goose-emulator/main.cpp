@@ -3,7 +3,6 @@
 #include <libserial/SerialPort.h>
 #include <math.h>
 #include <unistd.h>
-#include <signal.h>
 #include <iostream>
 #include <thread>
 
@@ -14,9 +13,9 @@ LibSerial::SerialPort serial;
 
 struct Generator {
     inline static float angle = 0.0;
-    float phase{0.0};
-    float scale{1.0};
-    float offset{0.0};
+    float phase;
+    float scale;
+    float offset;
     Generator(float phase = 0.0, float scale = 1.0, float offset = 0.0) : phase{phase}, scale{scale}, offset{offset} {
     }
 
@@ -72,17 +71,8 @@ void send_log() {
     }
 }
 
-void signal_callback_handler(int signum) {
-   std::cout << "Caught signal " << signum << std::endl;
-   // Terminate program
-   serial.Close();
-   exit(signum);
-}
-
-
 int main(int argc, char **argv) {
     (void)argc;
-    signal(SIGINT, signal_callback_handler);
     try {
         serial.Open(argv[1]);
 
