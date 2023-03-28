@@ -3,9 +3,9 @@
 sudo apt install libserial-dev
 ```
 # Create new virtual port
-```bash
 > **Warning**
 > Always restart socets after killing emulator
+```bash
 socat -d -d pty,raw,echo=0 pty,raw,echo=1
 ```
 Output:
