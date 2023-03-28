@@ -51,7 +51,6 @@ public:
 
 		while(1) {
 			HAL_GPIO_TogglePin(GPIOB, GPIO_PIN_10);
-			Logger::getInstance().log(Logger::INFO, "test %lu", xTaskGetTickCount());
 			vTaskDelay(500);
 		}
 	}

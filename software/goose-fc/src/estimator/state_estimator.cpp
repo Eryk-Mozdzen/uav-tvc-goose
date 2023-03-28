@@ -225,6 +225,7 @@ void StateEstimator::task() {
 		const Quaternion q = getAttitude();
 
 		//Logger::getInstance().log(Logger::DEBUG, "quat: %+10.5f %+10.5f %+10.5f %+10.5f", (double)(q.w), (double)(q.i), (double)(q.j), (double)(q.k));
+		Transport::getInstance().tx_queue.push(Transfer::encode(q, Transfer::TELEMETRY_ESTIMATION_ATTITUDE));
 	}
 }
 
