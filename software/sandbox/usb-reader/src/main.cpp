@@ -13,7 +13,6 @@ int main(int argc, char **argv) {
 	const std::ios_base::fmtflags default_flags = std::cout.flags();
 
 	while(true) {
-		
 		try {
 			serial.Open(argv[1]);
 			serial.SetBaudRate(LibSerial::BaudRate::BAUD_115200);
@@ -38,7 +37,7 @@ int main(int argc, char **argv) {
 
 				Transfer::FrameRX rx;
 				if(transfer.receive(rx)) {
-					
+
 					std::cout.flags(default_flags);
 
 					switch(rx.id) {
@@ -53,6 +52,27 @@ int main(int argc, char **argv) {
 						} break;
 						case Transfer::LOG_ERROR: {
 							std::cout << EscapeCode::RED << std::string(reinterpret_cast<char *>(rx.payload), rx.length) << std::endl;
+						} break;
+						case Transfer::TELEMETRY_SENSOR_VOLTAGE: {
+							float voltage;
+							rx.getPayload(voltage);
+							std::cout << EscapeCode::GRAY << voltage << "V" << std::endl;
+						} break;
+						case Transfer::TELEMETRY_SENSOR_PRESSURE: {
+							float preasure;
+							rx.getPayload(preasure);
+							std::cout << EscapeCode::GRAY << preasure << "Pa" << std::endl;
+						} break;
+						case Transfer::TELEMETRY_INPUTS_MOTOR: {
+							float motor;
+							rx.getPayload(motor);
+							std::cout << EscapeCode::GRAY << motor << "%" << std::endl;
+						} break;
+						case Transfer::TELEMETRY_INPUTS_SERVOS: {
+							struct Servo {float w, i, j, k;} q;
+							rx.getPayload(q);
+							std::cout << EscapeCode::GRAY << std::showpos << std::fixed << std::setprecision(5);
+							std::cout << q.w << "rad " << q.i << "rad " << q.j << "rad " << q.k << "rad" << std::endl;
 						} break;
 
 						case Transfer::TELEMETRY_ESTIMATION_ATTITUDE: {
@@ -74,3 +94,4 @@ int main(int argc, char **argv) {
 
 	}
 }
+

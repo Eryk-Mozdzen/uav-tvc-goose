@@ -4,24 +4,27 @@ sudo apt install libserial-dev
 ```
 # Create new virtual port
 ```bash
+> **Warning**
+> Always restart socets after killing emulator
 socat -d -d pty,raw,echo=0 pty,raw,echo=1
 ```
-# Add permision
-```bash
-sudo chmod 777 /dev/pts/5
+Output:
 ```
-# In new terminal print the virtual port e.g.
-```bash
-cat < /dev/pts/5
+2023/03/28 12:31:21 socat[35447] N PTY is /dev/pts/13
+2023/03/28 12:31:21 socat[35447] N PTY is /dev/pts/14
+2023/03/28 12:31:21 socat[35447] N starting data transfer loop with FDs [5,5] and [7,7]
 ```
+For me `socat` opend `/dev/pts/13` and `dev/pts/14`.
 
 # In new terminal build the emulator
 ```
-mkdir build 
+mkdir build
 cd build
-make 
+make
 ```
 # Run the emulator
+> **Warning**
+> Remember always run writing `goose-emulator` before reading!
 ```bash
 ./goose-emulator
 ```
