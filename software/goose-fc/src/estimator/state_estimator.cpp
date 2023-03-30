@@ -14,7 +14,7 @@ class StateEstimator : TaskClassS<2048> {
 	static constexpr float dt = 0.005;
 
 	ExtendedKalmanFilter<7, 3, 6> ekf;
-	
+
 	Mutex lock;
 	Quaternion body_to_world;
 	TimerMember<StateEstimator> azimuth_setter;
@@ -123,9 +123,9 @@ StateEstimator::StateEstimator() : TaskClassS{"State Estimator", TaskPrio_High},
 
 		Matrix<7, 7>::identity()*0.0001f,
 		Matrix<6, 6>::identity()*1.f,
-		{0, -1, 0, 0, 0, 0, 0}}, 
+		{0, -1, 0, 0, 0, 0, 0}},
 
-		lock{"body to world quat lock"}, 
+		lock{"body to world quat lock"},
 		azimuth_setter{"azimuth setter", this, &StateEstimator::zeroAzimuth, 3000, pdFALSE} {
 
 }
@@ -195,7 +195,7 @@ void StateEstimator::task() {
 
 				} break;
 				case Transport::Sensors::BAROMETER: {
-					
+
 				} break;
 			}
 
@@ -203,7 +203,6 @@ void StateEstimator::task() {
 				const float len = acceleration.getLength()/9.81f;
 
 				if(len>1.03f || len<0.97f) {
-					//Logger::getInstance().log(Logger::DEBUG, "est: linear acceleration detected, total length: %f", (double)len);
 					acc_ready = false;
 				}
 			}
@@ -224,8 +223,7 @@ void StateEstimator::task() {
 
 		const Quaternion q = getAttitude();
 
-		//Logger::getInstance().log(Logger::DEBUG, "quat: %+10.5f %+10.5f %+10.5f %+10.5f", (double)(q.w), (double)(q.i), (double)(q.j), (double)(q.k));
-		Transport::getInstance().tx_queue.push(Transfer::encode(q, Transfer::TELEMETRY_ESTIMATION_ATTITUDE));
+		Logger::getInstance().send(Transfer::ID::TELEMETRY_ESTIMATION_ATTITUDE, q);
 	}
 }
 

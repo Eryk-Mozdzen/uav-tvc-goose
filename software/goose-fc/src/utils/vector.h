@@ -1,7 +1,5 @@
 #pragma once
 
-#include "matrix.h"
-
 struct Vector {
 	static const Vector X;
 	static const Vector Y;
@@ -11,9 +9,6 @@ struct Vector {
 
 	Vector();
 	Vector(float, float, float);
-	Vector(const Matrix<3, 1> &);
-
-	operator Matrix<3, 1>() const;
 
 	Vector operator*(const float) const;
 	Vector operator/(const float) const;
@@ -29,4 +24,3 @@ struct Vector {
 };
 
 Vector operator*(const float, const Vector &);
-Vector operator*(const Matrix<3, 3> &, const Vector &);

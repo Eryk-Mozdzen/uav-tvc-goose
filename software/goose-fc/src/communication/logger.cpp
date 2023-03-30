@@ -5,8 +5,6 @@
 #include <cstdarg>
 #include <cstring>
 
-#include "transport.h"
-
 Logger::Logger() {
 
 }
@@ -20,7 +18,8 @@ void Logger::log(const LOG type, const char *format, ...) {
 
 	const Transfer::FrameTX frame = Transfer::encode(buffer, len, static_cast<Transfer::ID>(type));
 
-	Transport::getInstance().tx_queue.add(frame, 0);
+	Transport::getInstance().wire_tx_queue.add(frame, 0);
+	Transport::getInstance().wireless_tx_queue.add(frame, 0);
 }
 
 Logger & Logger::getInstance() {

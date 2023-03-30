@@ -8,7 +8,7 @@ Message::Message() {
 Message::Message(const char *str) {
 	const size_t str_len = strlen(str);
 	const size_t len = str_len<max_len ? str_len : max_len;
-	
+
 	memcpy(buffer, str, len);
 	buffer[len] = '\0';
 }

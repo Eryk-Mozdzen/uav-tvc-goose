@@ -62,8 +62,10 @@ add_executable(${TARGET}
 	"src/sensors/bmp280.cpp"
 	"src/sensors/mpu6050.cpp"
 	"src/sensors/hmc5883l.cpp"
-	"src/communication/transmitter.cpp"
 	"src/communication/logger.cpp"
+	"src/communication/wire_transmitter.cpp"
+	"src/communication/wireless_transmitter.cpp"
+	"src/communication/wireless_receiver.cpp"
 	"src/estimator/state_estimator.cpp"
 	"src/utils/quaternion.cpp"
 	"src/utils/vector.cpp"
@@ -89,7 +91,7 @@ target_include_directories(${TARGET} PRIVATE
 	"../third-party/FreeRTOScpp"
 
 	"../transfer"
-	
+
 	"FreeRTOS/ARM_CM4F"
 	"FreeRTOS/MemMang"
 	"FreeRTOS"
@@ -109,11 +111,11 @@ target_compile_options(${TARGET} PRIVATE
 		#-O0 -g3
 		-Os -g
 
-		-mthumb 
-		-mhard-float 
-		-mcpu=cortex-m4 
-		-mfpu=fpv4-sp-d16 
-		-specs=nano.specs 
+		-mthumb
+		-mhard-float
+		-mcpu=cortex-m4
+		-mfpu=fpv4-sp-d16
+		-specs=nano.specs
 
 		-x assembler-with-cpp
 	>
@@ -131,11 +133,11 @@ target_compile_options(${TARGET} PRIVATE
 		-fdata-sections
 		-fstack-usage
 
-		-mthumb 
-		-mhard-float 
-		-mcpu=cortex-m4 
-		-mfpu=fpv4-sp-d16 
-		-specs=nano.specs 
+		-mthumb
+		-mhard-float
+		-mcpu=cortex-m4
+		-mfpu=fpv4-sp-d16
+		-specs=nano.specs
 	>
 
 	$<$<COMPILE_LANGUAGE:CXX>:
@@ -154,11 +156,11 @@ target_compile_options(${TARGET} PRIVATE
 		-fstack-usage
 		-fno-threadsafe-statics
 		-fno-common
-		-fno-exceptions 
-		-fno-rtti 
+		-fno-exceptions
+		-fno-rtti
 
-		-mthumb 
-		-mhard-float 
+		-mthumb
+		-mhard-float
 		-mcpu=cortex-m4
 		-mfloat-abi=hard
 		-mfpu=fpv4-sp-d16
@@ -186,7 +188,7 @@ target_link_options(${TARGET} PRIVATE
 	-u _printf_float
 )
 
-target_link_libraries(${TARGET} 
+target_link_libraries(${TARGET}
 	m
 )
 

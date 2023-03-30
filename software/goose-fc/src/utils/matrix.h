@@ -2,6 +2,7 @@
 
 #include <cmath>
 #include "logger.h"
+#include "vector.h"
 
 template<int N, int M>
 class Matrix {
@@ -17,7 +18,20 @@ public:
     constexpr Matrix(U... list) : elements{static_cast<float>(list)...} {
         static_assert(sizeof...(list)==N*M, "wrong size");
     }
-	
+
+	constexpr Matrix(const Vector &vec) : elements{vec.x, vec.y, vec.z} {
+		static_assert(N==3 && M==1);
+	}
+
+	constexpr operator Vector() const {
+		static_assert(N==3 && M==1);
+		return Vector(
+			elements(0),
+			elements(1),
+			elements(2)
+		);
+	}
+
 	constexpr float& operator()(const int row, const int col) {
 		return elements[row*M + col];
 	}
@@ -62,6 +76,15 @@ public:
 		for(int i=0; i<N*M; i++)
 			result.elements[i] = elements[i]*number;
 		return result;
+	}
+
+	constexpr Vector operator*(const Vector &vec) const {
+		static_assert(N==3 && M==3);
+		return Vector(
+			(*this)(0, 0)*vec.x + (*this)(0, 1)*vec.y + (*this)(0, 2)*vec.z,
+			(*this)(1, 0)*vec.x + (*this)(1, 1)*vec.y + (*this)(1, 2)*vec.z,
+			(*this)(2, 0)*vec.x + (*this)(2, 1)*vec.y + (*this)(2, 2)*vec.z
+		);
 	}
 
 	constexpr Matrix<M, N> transposition() const {

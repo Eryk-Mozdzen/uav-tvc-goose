@@ -14,7 +14,7 @@ public:
 	Message(const Message &other);
 
 	void operator=(const Message &other);
-	
+
 	size_t size() const;
 
 	char * c_str();

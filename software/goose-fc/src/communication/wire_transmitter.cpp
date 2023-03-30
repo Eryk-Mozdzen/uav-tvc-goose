@@ -7,39 +7,35 @@ extern "C" {
 }
 
 #include "transport.h"
-#include "logger.h"
 #include "transfer.h"
 
-class Transmitter : public TaskClassS<1024> {
+class WireTransmitter : public TaskClassS<1024> {
 public:
 
-	Transmitter();
+	WireTransmitter();
 
 	void task();
 };
 
-TaskHandle_t transmitter_task;
+TaskHandle_t wire_transmitter_task;
 
-Transmitter transmitter;
+WireTransmitter wire_transmitter;
 
-Transmitter::Transmitter() : TaskClassS{"TX", TaskPrio_Mid} {
-	
+WireTransmitter::WireTransmitter() : TaskClassS{"TX", TaskPrio_Mid} {
+
 }
 
-void Transmitter::task() {
-	transmitter_task = getTaskHandle();
+void WireTransmitter::task() {
+	wire_transmitter_task = getTaskHandle();
 
 	USB_DEVICE_Init();
 
 	while(1) {
 		Transfer::FrameTX tx;
-		Transport::getInstance().tx_queue.pop(tx, portMAX_DELAY);
-		
+		Transport::getInstance().wire_tx_queue.pop(tx, portMAX_DELAY);
+
 		do {
 			CDC_Transmit_FS(tx.buffer, tx.length);
 		} while(!ulTaskNotifyTakeIndexed(0, pdTRUE, 500));
-
-		// TODO
-		// send over UART
 	}
 }
