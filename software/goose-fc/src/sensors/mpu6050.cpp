@@ -199,7 +199,7 @@
 #define MPU6050_WHO_AM_I_VALUE						(0x68<<0)
 
 class MPU6050 : public TaskClassS<1024> {
-	Vector gyration;	
+	Vector gyration;
 	Vector acceleration;
 
 public:
@@ -241,7 +241,7 @@ void MPU6050::init() {
 
 	vTaskDelay(100);
 
-	SensorBus::getInstance().write(MPU6050_ADDR, MPU6050_REG_SIGNAL_PATH_RESET, 
+	SensorBus::getInstance().write(MPU6050_ADDR, MPU6050_REG_SIGNAL_PATH_RESET,
 		MPU6050_SIGNAL_PATH_RESET_GYRO |
 		MPU6050_SIGNAL_PATH_RESET_ACCEL |
 		MPU6050_SIGNAL_PATH_RESET_TEMP
@@ -250,7 +250,7 @@ void MPU6050::init() {
 	vTaskDelay(100);
 
 	SensorBus::getInstance().write(MPU6050_ADDR, MPU6050_REG_INT_ENABLE,
-		MPU6050_INT_ENABLE_FIFO_OVERLOW_DISABLE | 
+		MPU6050_INT_ENABLE_FIFO_OVERLOW_DISABLE |
 		MPU6050_INT_ENABLE_I2C_MST_INT_DISABLE |
 		MPU6050_INT_ENABLE_DATA_RDY_ENABLE
 	);
@@ -269,7 +269,7 @@ void MPU6050::init() {
 		MPU6050_PWR_MGMT_1_CLOCK_INTERNAL
 	);
 
-	SensorBus::getInstance().write(MPU6050_ADDR, MPU6050_REG_CONFIG, 
+	SensorBus::getInstance().write(MPU6050_ADDR, MPU6050_REG_CONFIG,
 		MPU6050_CONFIG_EXT_SYNC_DISABLED |
 		MPU6050_CONFIG_DLPF_SETTING_6
 	);

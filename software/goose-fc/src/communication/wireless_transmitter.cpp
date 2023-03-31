@@ -2,6 +2,7 @@
 #include "TaskCPP.h"
 #include "transport.h"
 #include "transfer.h"
+#include "communication_bus.h"
 
 class WirelessTransmitter : public TaskClassS<1024> {
 public:
@@ -22,12 +23,10 @@ WirelessTransmitter::WirelessTransmitter() : TaskClassS{"TX", TaskPrio_Mid} {
 void WirelessTransmitter::task() {
 	wireless_transmitter_task = getTaskHandle();
 
-	// UART init
-
 	while(1) {
 		Transfer::FrameTX tx;
 		Transport::getInstance().wireless_tx_queue.pop(tx, portMAX_DELAY);
 
-		// send over UART
+		CommunicationBus::getInstance().write(tx.buffer, tx.length);
 	}
 }

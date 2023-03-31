@@ -103,7 +103,7 @@ class BMP280 : public TaskClassS<1024> {
 
 	Calibration calib;
 
-	float pressure;	
+	float pressure;
 	float temperature;
 
 	using BMP280_U32_t = uint32_t;
@@ -177,7 +177,7 @@ void BMP280::init() {
 
 	SensorBus::getInstance().write(BMP280_ADDR, BMP280_REG_RESET, BMP280_RESET_VALUE);
 
-	SensorBus::getInstance().write(BMP280_ADDR, BMP280_REG_CTRL_MEAS, 
+	SensorBus::getInstance().write(BMP280_ADDR, BMP280_REG_CTRL_MEAS,
 		BMP280_CTRL_TEMP_OVERSAMPLING_2 |
 		BMP280_CTRL_PRESS_OVERSAMPLING_16 |
 		BMP280_CTRL_MODE_NORMAL
@@ -200,7 +200,7 @@ bool BMP280::readCalibrationData() {
 		Logger::getInstance().log(Logger::ERROR, "bar: error in calibration values");
 		return false;
 	}
-	
+
 	calib.dig_T1 = (((uint16_t)buffer[1])<<8) | buffer[0];
 	calib.dig_T2 = (((int16_t)buffer[3])<<8) | buffer[2];
 	calib.dig_T3 = (((int16_t)buffer[5])<<8) | buffer[4];
@@ -253,7 +253,7 @@ void BMP280::task() {
 
 	while(1) {
 		vTaskDelayUntil(&time, 100);
-		
+
 		if(!readData()) {
 			continue;
 		}

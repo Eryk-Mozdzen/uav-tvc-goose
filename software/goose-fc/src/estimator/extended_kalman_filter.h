@@ -20,7 +20,7 @@ class ExtendedKalmanFilter {
 	public:
 
 		ExtendedKalmanFilter(
-			const std::function<Matrix<X, 1>(const Matrix<X, 1>, const Matrix<U, 1>)> f_p, 
+			const std::function<Matrix<X, 1>(const Matrix<X, 1>, const Matrix<U, 1>)> f_p,
 			const std::function<Matrix<Z, 1>(const Matrix<X, 1>)> h_p,
 			const std::function<Matrix<X, X>(const Matrix<X, 1>, const Matrix<U, 1>)> f_tangent_p,
 			const std::function<Matrix<Z, X>(const Matrix<X, 1>)> h_tangent_p,

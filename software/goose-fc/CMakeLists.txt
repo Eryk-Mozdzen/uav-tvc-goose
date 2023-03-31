@@ -11,6 +11,7 @@ set(TARGET ${CMAKE_PROJECT_NAME}.elf)
 add_executable(${TARGET}
 	"../third-party/stm32f4xx_hal_driver/Src/stm32f4xx_ll_usb.c"
 	"../third-party/stm32f4xx_hal_driver/Src/stm32f4xx_hal_i2c.c"
+	"../third-party/stm32f4xx_hal_driver/Src/stm32f4xx_hal_uart.c"
 	"../third-party/stm32f4xx_hal_driver/Src/stm32f4xx_hal_can.c"
 	"../third-party/stm32f4xx_hal_driver/Src/stm32f4xx_hal_pcd.c"
 	"../third-party/stm32f4xx_hal_driver/Src/stm32f4xx_hal_pcd_ex.c"
@@ -58,12 +59,14 @@ add_executable(${TARGET}
 	"USB/usb_device.c"
 
 	"src/main.cpp"
+	"src/blink.cpp"
 	"src/sensors/sensor_bus.cpp"
 	"src/sensors/bmp280.cpp"
 	"src/sensors/mpu6050.cpp"
 	"src/sensors/hmc5883l.cpp"
 	"src/communication/logger.cpp"
 	"src/communication/wire_transmitter.cpp"
+	"src/communication/communication_bus.cpp"
 	"src/communication/wireless_transmitter.cpp"
 	"src/communication/wireless_receiver.cpp"
 	"src/estimator/state_estimator.cpp"
@@ -71,6 +74,7 @@ add_executable(${TARGET}
 	"src/utils/vector.cpp"
 	"src/utils/message.cpp"
 	"src/transport/transport.cpp"
+	"src/control/control.cpp"
 )
 
 target_compile_definitions(${TARGET} PRIVATE

@@ -160,7 +160,7 @@ Quaternion StateEstimator::getAttitude() {
 		lock.give();
 		return result;
 	}
-	
+
 	return q;
 }
 
@@ -236,7 +236,7 @@ void StateEstimator::zeroAzimuth() {
 		body_to_world = Quaternion(-azimuth, Vector::Z);
 
 		lock.give();
-		
+
 		constexpr float pi = 3.14159265359f;
 
 		Logger::getInstance().log(Logger::INFO, "est: set azimuth to %.0f deg", (double)(azimuth*180.f/pi));
