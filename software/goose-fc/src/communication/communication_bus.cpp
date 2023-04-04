@@ -46,9 +46,7 @@ void CommunicationBus::write(const uint8_t *src, const uint32_t len) {
 
 	com_bus_task_tx = xTaskGetCurrentTaskHandle();
 
-	taskENTER_CRITICAL();
 	HAL_UART_Transmit_DMA(&huart1, src, len);
-	taskEXIT_CRITICAL();
 
 	if(!ulTaskNotifyTakeIndexed(2, pdTRUE, 100)) {
 		Logger::getInstance().log(Logger::ERROR, "cbus: tx timeout");
@@ -62,9 +60,7 @@ void CommunicationBus::read(uint8_t *dest, const uint32_t len) {
 
 	com_bus_task_rx = xTaskGetCurrentTaskHandle();
 
-	taskENTER_CRITICAL();
 	HAL_UART_Receive_DMA(&huart1, dest, len);
-	taskEXIT_CRITICAL();
 
 	ulTaskNotifyTakeIndexed(3, pdTRUE, portMAX_DELAY);
 

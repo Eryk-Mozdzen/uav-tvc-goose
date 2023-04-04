@@ -75,9 +75,7 @@ void SensorBus::slaveRecovery() {
 void SensorBus::write(const uint8_t device, const uint8_t reg, uint8_t src) {
 	lock.take(portMAX_DELAY);
 
-	taskENTER_CRITICAL();
 	const HAL_StatusTypeDef status = HAL_I2C_Mem_Write(&hi2c1, device<<1, reg, 1, &src, 1, 100);
-	taskEXIT_CRITICAL();
 
 	switch(status) {
 		case HAL_ERROR:		Logger::getInstance().log(Logger::ERROR, "bus: write into 0x%02X device ended with HAL_ERROR", device);		break;
@@ -94,9 +92,7 @@ int SensorBus::read(const uint8_t device, const uint8_t reg, uint8_t *dest, cons
 
 	task_to_notify = xTaskGetCurrentTaskHandle();
 
-	taskENTER_CRITICAL();
 	const HAL_StatusTypeDef status = HAL_I2C_Mem_Read_DMA(&hi2c1, device<<1, reg, 1, dest, len);
-	taskEXIT_CRITICAL();
 
 	if(status!=HAL_OK) {
 		switch(status) {

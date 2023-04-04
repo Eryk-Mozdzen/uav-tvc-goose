@@ -16,7 +16,7 @@ TaskHandle_t wireless_transmitter_task;
 
 WirelessTransmitter wireless_transmitter;
 
-WirelessTransmitter::WirelessTransmitter() : TaskClassS{"TX", TaskPrio_Mid} {
+WirelessTransmitter::WirelessTransmitter() : TaskClassS{"wireless TX", TaskPrio_High} {
 
 }
 

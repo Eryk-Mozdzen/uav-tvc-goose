@@ -39,7 +39,7 @@ public:
 
 StateEstimator estimator;
 
-StateEstimator::StateEstimator() : TaskClassS{"State Estimator", TaskPrio_High}, ekf{
+StateEstimator::StateEstimator() : TaskClassS{"State Estimator", TaskPrio_Mid}, ekf{
 
 		[](const Matrix<7, 1> state, const Matrix<3, 1> gyr) {
 			(void)gyr;

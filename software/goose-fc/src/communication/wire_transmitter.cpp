@@ -21,7 +21,7 @@ TaskHandle_t wire_transmitter_task;
 
 WireTransmitter wire_transmitter;
 
-WireTransmitter::WireTransmitter() : TaskClassS{"TX", TaskPrio_Mid} {
+WireTransmitter::WireTransmitter() : TaskClassS{"wire TX", TaskPrio_High} {
 
 }
 

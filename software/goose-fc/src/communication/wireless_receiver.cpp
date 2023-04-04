@@ -4,7 +4,7 @@
 #include "transfer.h"
 #include "communication_bus.h"
 
-class WirelessReceiver : public TaskClassS<1024> {
+class WirelessReceiver : public TaskClassS<2048> {
 public:
 
 	WirelessReceiver();
@@ -14,7 +14,7 @@ public:
 
 WirelessReceiver transmitter;
 
-WirelessReceiver::WirelessReceiver() : TaskClassS{"RX", TaskPrio_Mid} {
+WirelessReceiver::WirelessReceiver() : TaskClassS{"wireless RX", TaskPrio_High} {
 
 }
 
@@ -22,7 +22,7 @@ void WirelessReceiver::task() {
 
 	Transfer transfer;
 
-	uint8_t buffer[32];
+	uint8_t buffer[8];
 	Transfer::FrameRX frame;
 
 	while(1) {

@@ -13,17 +13,19 @@ public:
 
 Control control;
 
-Control::Control() : TaskClassS{"control loop", TaskPrio_High} {
+Control::Control() : TaskClassS{"control loop", TaskPrio_Mid} {
 
 }
 
 void Control::task() {
 
 	Transfer::FrameRX frame;
+	int counter = 0;
 
 	while(1) {
 		Transport::getInstance().wireless_rx_queue.pop(frame, portMAX_DELAY);
+		counter++;
 
-		Logger::getInstance().log(Logger::INFO, "[length = %u\tid = %u\t]", frame.length, frame.id);
+		Logger::getInstance().log(Logger::INFO, "message num: %d [length = %u\tid = %u\t]", counter, frame.length, frame.id);
 	}
 }
