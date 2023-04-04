@@ -4,6 +4,9 @@ extern TIM_HandleTypeDef htim11;
 extern PCD_HandleTypeDef hpcd_USB_OTG_FS;
 extern I2C_HandleTypeDef hi2c1;
 extern DMA_HandleTypeDef hdma_i2c1_rx;
+extern UART_HandleTypeDef huart1;
+extern DMA_HandleTypeDef hdma_usart1_tx;
+extern DMA_HandleTypeDef hdma_usart1_rx;
 
 void TIM1_TRG_COM_TIM11_IRQHandler() {
 	HAL_TIM_IRQHandler(&htim11);
@@ -23,6 +26,18 @@ void I2C1_ER_IRQHandler() {
 
 void DMA1_Stream0_IRQHandler() {
 	HAL_DMA_IRQHandler(&hdma_i2c1_rx);
+}
+
+void USART1_IRQHandler() {
+	HAL_UART_IRQHandler(&huart1);
+}
+
+void DMA2_Stream2_IRQHandler() {
+	HAL_DMA_IRQHandler(&hdma_usart1_rx);
+}
+
+void DMA2_Stream7_IRQHandler() {
+	HAL_DMA_IRQHandler(&hdma_usart1_tx);
 }
 
 void EXTI9_5_IRQHandler() {

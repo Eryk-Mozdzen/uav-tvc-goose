@@ -11,6 +11,7 @@ set(TARGET ${CMAKE_PROJECT_NAME}.elf)
 add_executable(${TARGET}
 	"../third-party/stm32f4xx_hal_driver/Src/stm32f4xx_ll_usb.c"
 	"../third-party/stm32f4xx_hal_driver/Src/stm32f4xx_hal_i2c.c"
+	"../third-party/stm32f4xx_hal_driver/Src/stm32f4xx_hal_uart.c"
 	"../third-party/stm32f4xx_hal_driver/Src/stm32f4xx_hal_can.c"
 	"../third-party/stm32f4xx_hal_driver/Src/stm32f4xx_hal_pcd.c"
 	"../third-party/stm32f4xx_hal_driver/Src/stm32f4xx_hal_pcd_ex.c"
@@ -38,11 +39,12 @@ add_executable(${TARGET}
 	"../third-party/stm32_mw_usb_device/Core/Src/usbd_ioreq.c"
 	"../third-party/stm32_mw_usb_device/Class/CDC/Src/usbd_cdc.c"
 
+	"../transfer/transfer.cpp"
+
 	"startup/system_stm32f4xx.c"
 	"startup/startup_stm32f411xe.s"
 
 	"FreeRTOS/ARM_CM4F/port.c"
-	#"FreeRTOS/MemMang/heap_4.c"
 	"FreeRTOS/freertos_exceptions.c"
 
 	"HAL/stm32f4xx_hal_it.c"
@@ -57,17 +59,22 @@ add_executable(${TARGET}
 	"USB/usb_device.c"
 
 	"src/main.cpp"
+	"src/blink.cpp"
 	"src/sensors/sensor_bus.cpp"
 	"src/sensors/bmp280.cpp"
 	"src/sensors/mpu6050.cpp"
 	"src/sensors/hmc5883l.cpp"
-	"src/communication/transmitter.cpp"
 	"src/communication/logger.cpp"
-	"src/communication/message.cpp"
+	"src/communication/wire_transmitter.cpp"
+	"src/communication/communication_bus.cpp"
+	"src/communication/wireless_transmitter.cpp"
+	"src/communication/wireless_receiver.cpp"
 	"src/estimator/state_estimator.cpp"
 	"src/utils/quaternion.cpp"
 	"src/utils/vector.cpp"
+	"src/utils/message.cpp"
 	"src/transport/transport.cpp"
+	"src/control/control.cpp"
 )
 
 target_compile_definitions(${TARGET} PRIVATE
@@ -86,7 +93,9 @@ target_include_directories(${TARGET} PRIVATE
 	"../third-party/stm32_mw_usb_device/Class/CDC/Inc"
 
 	"../third-party/FreeRTOScpp"
-	
+
+	"../transfer"
+
 	"FreeRTOS/ARM_CM4F"
 	"FreeRTOS/MemMang"
 	"FreeRTOS"
@@ -106,11 +115,11 @@ target_compile_options(${TARGET} PRIVATE
 		#-O0 -g3
 		-Os -g
 
-		-mthumb 
-		-mhard-float 
-		-mcpu=cortex-m4 
-		-mfpu=fpv4-sp-d16 
-		-specs=nano.specs 
+		-mthumb
+		-mhard-float
+		-mcpu=cortex-m4
+		-mfpu=fpv4-sp-d16
+		-specs=nano.specs
 
 		-x assembler-with-cpp
 	>
@@ -128,11 +137,11 @@ target_compile_options(${TARGET} PRIVATE
 		-fdata-sections
 		-fstack-usage
 
-		-mthumb 
-		-mhard-float 
-		-mcpu=cortex-m4 
-		-mfpu=fpv4-sp-d16 
-		-specs=nano.specs 
+		-mthumb
+		-mhard-float
+		-mcpu=cortex-m4
+		-mfpu=fpv4-sp-d16
+		-specs=nano.specs
 	>
 
 	$<$<COMPILE_LANGUAGE:CXX>:
@@ -151,11 +160,11 @@ target_compile_options(${TARGET} PRIVATE
 		-fstack-usage
 		-fno-threadsafe-statics
 		-fno-common
-		-fno-exceptions 
-		-fno-rtti 
+		-fno-exceptions
+		-fno-rtti
 
-		-mthumb 
-		-mhard-float 
+		-mthumb
+		-mhard-float
 		-mcpu=cortex-m4
 		-mfloat-abi=hard
 		-mfpu=fpv4-sp-d16
@@ -183,7 +192,7 @@ target_link_options(${TARGET} PRIVATE
 	-u _printf_float
 )
 
-target_link_libraries(${TARGET} 
+target_link_libraries(${TARGET}
 	m
 )
 

@@ -70,11 +70,11 @@ TaskHandle_t mag_task;
 HMC5883L magnetometer;
 
 HMC5883L::HMC5883L() : TaskClassS{"HMC5883L reader", TaskPrio_Low} {
-	
+
 }
 
 void HMC5883L::init() {
-	
+
 	GPIO_InitTypeDef GPIO_InitStruct;
 
 	__HAL_RCC_GPIOB_CLK_ENABLE();
@@ -85,21 +85,21 @@ void HMC5883L::init() {
 	HAL_NVIC_SetPriority(EXTI9_5_IRQn, 6, 0);
 	HAL_NVIC_EnableIRQ(EXTI9_5_IRQn);
 
-	SensorBus::getInstance().write(HMC5883L_ADDR, HMC5883L_REG_CONFIG_A, 
+	SensorBus::getInstance().write(HMC5883L_ADDR, HMC5883L_REG_CONFIG_A,
 		HMC5883L_CONFIG_A_MEAS_NORMAL |
 		HMC5883L_CONFIG_A_RATE_75 |
 		HMC5883L_CONFIG_A_SAMPLES_8
 	);
 
-	SensorBus::getInstance().write(HMC5883L_ADDR, HMC5883L_REG_CONFIG_B, 
+	SensorBus::getInstance().write(HMC5883L_ADDR, HMC5883L_REG_CONFIG_B,
 		HMC5883L_CONFIG_B_RANGE_1_3GA
 	);
 
-	SensorBus::getInstance().write(HMC5883L_ADDR, HMC5883L_REG_MODE, 
+	SensorBus::getInstance().write(HMC5883L_ADDR, HMC5883L_REG_MODE,
 		HMC5883L_MODE_CONTINOUS
 	);
 
-	Logger::getInstance().log(Logger::INFO, "mag: initialization complete\n\r");
+	Logger::getInstance().log(Logger::INFO, "mag: initialization complete");
 }
 
 bool HMC5883L::readData() {
@@ -114,13 +114,13 @@ bool HMC5883L::readData() {
 	const int16_t raw_z = (((int16_t)buffer[2])<<8) | buffer[3];
 
 	if((raw_x>2047 || raw_x<-2048) || (raw_y>2047 || raw_y<-2048) || (raw_z>2047 || raw_z<-2048)) {
-		Logger::getInstance().log(Logger::WARNING, "mag: value out of valid range [%10d %10d %10d]\n\r", raw_x, raw_y, raw_z);
+		Logger::getInstance().log(Logger::WARNING, "mag: value out of valid range [%10d %10d %10d]", raw_x, raw_y, raw_z);
 	}
-	
+
 	constexpr float gain = 1090.f;
 
 	const Vector mag_raw = Vector(raw_x, raw_y, raw_z)/gain;
-	
+
 	const Vector offset = {0.04157f, -0.10032f, -0.06273f};
 	const Matrix<3, 3> scale = {
 		1.98471f, 0,		0,

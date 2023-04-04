@@ -35,7 +35,7 @@ void SensorBus::init() {
 
 	lock.give();
 
-	Logger::getInstance().log(Logger::INFO, "bus: initialization complete\n\r");
+	Logger::getInstance().log(Logger::INFO, "bus: initialization complete");
 }
 
 void SensorBus::slaveRecovery() {
@@ -57,7 +57,7 @@ void SensorBus::slaveRecovery() {
 
 	HAL_GPIO_WritePin(GPIOB, GPIO_PIN_8, GPIO_PIN_RESET);
 
-	Logger::getInstance().log(Logger::INFO, "bus: performing recovery from slaves...\n\r");
+	Logger::getInstance().log(Logger::INFO, "bus: performing recovery from slaves...");
 
 	int ones = 0;
 	while(ones<=10) {
@@ -75,14 +75,12 @@ void SensorBus::slaveRecovery() {
 void SensorBus::write(const uint8_t device, const uint8_t reg, uint8_t src) {
 	lock.take(portMAX_DELAY);
 
-	taskENTER_CRITICAL();
 	const HAL_StatusTypeDef status = HAL_I2C_Mem_Write(&hi2c1, device<<1, reg, 1, &src, 1, 100);
-	taskEXIT_CRITICAL();
 
 	switch(status) {
-		case HAL_ERROR:		Logger::getInstance().log(Logger::ERROR, "bus: write into 0x%02X device ended with HAL_ERROR\n\r", device);		break;
-		case HAL_BUSY:		Logger::getInstance().log(Logger::ERROR, "bus: write into 0x%02X device ended with HAL_BUSY\n\r", device);		break;
-		case HAL_TIMEOUT:	Logger::getInstance().log(Logger::ERROR, "bus: write into 0x%02X device ended with HAL_TIMEOUT\n\r", device);	break;
+		case HAL_ERROR:		Logger::getInstance().log(Logger::ERROR, "bus: write into 0x%02X device ended with HAL_ERROR", device);		break;
+		case HAL_BUSY:		Logger::getInstance().log(Logger::ERROR, "bus: write into 0x%02X device ended with HAL_BUSY", device);		break;
+		case HAL_TIMEOUT:	Logger::getInstance().log(Logger::ERROR, "bus: write into 0x%02X device ended with HAL_TIMEOUT", device);	break;
 		case HAL_OK: break;
 	}
 
@@ -94,15 +92,13 @@ int SensorBus::read(const uint8_t device, const uint8_t reg, uint8_t *dest, cons
 
 	task_to_notify = xTaskGetCurrentTaskHandle();
 
-	taskENTER_CRITICAL();
 	const HAL_StatusTypeDef status = HAL_I2C_Mem_Read_DMA(&hi2c1, device<<1, reg, 1, dest, len);
-	taskEXIT_CRITICAL();
 
 	if(status!=HAL_OK) {
 		switch(status) {
-			case HAL_ERROR:		Logger::getInstance().log(Logger::ERROR, "bus: read from 0x%02X device ended with HAL_ERROR\n\r", device);		break;
-			case HAL_BUSY:		Logger::getInstance().log(Logger::ERROR, "bus: read from 0x%02X device ended with HAL_BUSY\n\r", device);		break;
-			case HAL_TIMEOUT:	Logger::getInstance().log(Logger::ERROR, "bus: read from 0x%02X device ended with HAL_TIMEOUT\n\r", device);	break;
+			case HAL_ERROR:		Logger::getInstance().log(Logger::ERROR, "bus: read from 0x%02X device ended with HAL_ERROR", device);		break;
+			case HAL_BUSY:		Logger::getInstance().log(Logger::ERROR, "bus: read from 0x%02X device ended with HAL_BUSY", device);		break;
+			case HAL_TIMEOUT:	Logger::getInstance().log(Logger::ERROR, "bus: read from 0x%02X device ended with HAL_TIMEOUT", device);	break;
 			case HAL_OK: break;
 		}
 
@@ -111,7 +107,7 @@ int SensorBus::read(const uint8_t device, const uint8_t reg, uint8_t *dest, cons
 	}
 
 	if(!ulTaskNotifyTakeIndexed(0, pdTRUE, 100)) {
-		Logger::getInstance().log(Logger::ERROR, "bus: timeout while reading from 0x%02X device\n\r", device);
+		Logger::getInstance().log(Logger::ERROR, "bus: timeout while reading from 0x%02X device", device);
 		lock.give();
 		return 2;
 	}

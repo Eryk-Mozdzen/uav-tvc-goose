@@ -103,7 +103,7 @@ class BMP280 : public TaskClassS<1024> {
 
 	Calibration calib;
 
-	float pressure;	
+	float pressure;
 	float temperature;
 
 	using BMP280_U32_t = uint32_t;
@@ -177,7 +177,7 @@ void BMP280::init() {
 
 	SensorBus::getInstance().write(BMP280_ADDR, BMP280_REG_RESET, BMP280_RESET_VALUE);
 
-	SensorBus::getInstance().write(BMP280_ADDR, BMP280_REG_CTRL_MEAS, 
+	SensorBus::getInstance().write(BMP280_ADDR, BMP280_REG_CTRL_MEAS,
 		BMP280_CTRL_TEMP_OVERSAMPLING_2 |
 		BMP280_CTRL_PRESS_OVERSAMPLING_16 |
 		BMP280_CTRL_MODE_NORMAL
@@ -189,7 +189,7 @@ void BMP280::init() {
 		BMP280_CONFIG_SPI_3WIRE_DISABLE
 	);
 
-	Logger::getInstance().log(Logger::INFO, "bar: initialization complete\n\r");
+	Logger::getInstance().log(Logger::INFO, "bar: initialization complete");
 }
 
 bool BMP280::readCalibrationData() {
@@ -197,10 +197,10 @@ bool BMP280::readCalibrationData() {
 	uint8_t buffer[24] = {0};
 
 	if(SensorBus::getInstance().read(BMP280_ADDR, BMP280_REG_CALIB00, buffer, sizeof(buffer))) {
-		Logger::getInstance().log(Logger::ERROR, "bar: error in calibration values\n\r");
+		Logger::getInstance().log(Logger::ERROR, "bar: error in calibration values");
 		return false;
 	}
-	
+
 	calib.dig_T1 = (((uint16_t)buffer[1])<<8) | buffer[0];
 	calib.dig_T2 = (((int16_t)buffer[3])<<8) | buffer[2];
 	calib.dig_T3 = (((int16_t)buffer[5])<<8) | buffer[4];
@@ -215,7 +215,7 @@ bool BMP280::readCalibrationData() {
 	calib.dig_P8 = (((int16_t)buffer[21])<<8) | buffer[20];
 	calib.dig_P9 = (((int16_t)buffer[23])<<8) | buffer[22];
 
-	Logger::getInstance().log(Logger::INFO, "bar: succesfully read calibration values\n\r");
+	Logger::getInstance().log(Logger::INFO, "bar: succesfully read calibration values");
 
 	return true;
 }
@@ -253,7 +253,7 @@ void BMP280::task() {
 
 	while(1) {
 		vTaskDelayUntil(&time, 100);
-		
+
 		if(!readData()) {
 			continue;
 		}

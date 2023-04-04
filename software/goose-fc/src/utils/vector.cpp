@@ -1,4 +1,5 @@
 #include "vector.h"
+#include <cmath>
 
 const Vector Vector::X(1, 0, 0);
 const Vector Vector::Y(0, 1, 0);
@@ -10,14 +11,6 @@ Vector::Vector() : x{0}, y{0}, z{0} {
 
 Vector::Vector(float _x, float _y, float _z) : x{_x}, y{_y}, z{_z} {
 
-}
-
-Vector::Vector(const Matrix<3, 1> &mat) : x{mat(0, 0)}, y{mat(1, 0)}, z{mat(2, 0)} {
-
-}
-
-Vector::operator Matrix<3, 1>() const {
-	return {x, y, z};
 }
 
 Vector Vector::operator*(const float num) const {
@@ -74,12 +67,4 @@ Vector Vector::getNormalized() const {
 
 Vector operator*(const float num, const Vector &vec) {
 	return Vector(num*vec.x, num*vec.y, num*vec.z);
-}
-
-Vector operator*(const Matrix<3, 3> &mat, const Vector &vec) {
-	return Vector(
-		mat(0, 0)*vec.x + mat(0, 1)*vec.y + mat(0, 2)*vec.z,
-		mat(1, 0)*vec.x + mat(1, 1)*vec.y + mat(1, 2)*vec.z,
-		mat(2, 0)*vec.x + mat(2, 1)*vec.y + mat(2, 2)*vec.z
-	);
 }
