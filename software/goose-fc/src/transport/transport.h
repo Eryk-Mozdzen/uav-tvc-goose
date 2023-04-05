@@ -14,7 +14,8 @@ public:
 		ACCELEROMETER,
 		GYROSCOPE,
 		MAGNETOMETER,
-		BAROMETER
+		BAROMETER,
+		LASER
 	};
 
 	MultiQueue<Sensors, 16, Vector, float> sensor_queue;

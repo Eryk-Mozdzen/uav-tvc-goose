@@ -197,6 +197,9 @@ void StateEstimator::task() {
 				case Transport::Sensors::BAROMETER: {
 
 				} break;
+				case Transport::Sensors::LASER: {
+
+				} break;
 			}
 
 			if(acc_ready) {

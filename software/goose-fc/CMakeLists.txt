@@ -64,6 +64,7 @@ add_executable(${TARGET}
 	"src/sensors/bmp280.cpp"
 	"src/sensors/mpu6050.cpp"
 	"src/sensors/hmc5883l.cpp"
+	"src/sensors/vl53l0x.cpp"
 	"src/communication/logger.cpp"
 	"src/communication/wire_transmitter.cpp"
 	"src/communication/communication_bus.cpp"
