@@ -20,6 +20,7 @@ add_executable(${PROJECT_NAME}
 	"src/communication/communication_usb.cpp"
 	"src/interface/display.cpp"
 	"src/interface/escape_codes.cpp"
+	"src/interface/writer.cpp"
 
 	"qml/qml.qrc"
 )

@@ -21,6 +21,7 @@ void Display::readLog() {
 		if(!logs.pop(log))
 			continue;
 
+		mutex.lock();
 		switch(log.first) {
 			case Transfer::LOG_DEBUG:	std::cout << EscapeCode::GRAY;		break;
 			case Transfer::LOG_INFO:	std::cout << EscapeCode::CYAN;		break;
@@ -29,7 +30,8 @@ void Display::readLog() {
 			default: break;
 		}
 
-		std::cout << log.first << ":\t" << log.second << std::endl;
+		std::cout << log.first << "\t" << log.second << std::endl;
+		mutex.unlock();
 	}
 }
 
@@ -44,19 +46,21 @@ void Display::readTelemetry() {
 			struct Quaternion {float w, i, j, k;} q;
 			data.getPayload(q);
 
+			mutex.lock();
 			const std::ios_base::fmtflags default_flags = std::cout.flags();
-
 			std::cout << EscapeCode::MAGENTA << std::showpos << std::fixed << std::setprecision(5);
 			std::cout << q.w << " " << q.i << " " << q.j << " " << q.k << std::endl;
-
 			std::cout.flags(default_flags);
+			mutex.unlock();
 
 			continue;
 		}
 
-		std::cout << static_cast<int>(data.id) << ":\t";
+		mutex.lock();
+		std::cout << EscapeCode::MAGENTA << data.id << "\t";
 		for(size_t i=0; i<data.length; i++)
 			std::cout << static_cast<int>(data.payload[i]) << "\t";
 		std::cout << std::endl;
+		mutex.unlock();
 	}
 }

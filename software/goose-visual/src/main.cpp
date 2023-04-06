@@ -3,6 +3,7 @@
 
 #include "communication_usb.h"
 #include "display.h"
+#include "writer.h"
 
 int main(int argc, char *argv[]) {
 
@@ -10,8 +11,10 @@ int main(int argc, char *argv[]) {
 	ConcurrentQueue<CommunicationBase::Telemetry> telemetry;
 	ConcurrentQueue<CommunicationBase::Control> controls;
 
-	CommunicationUSB usb("/dev/ttyACM0", logs, telemetry, controls);
+	CommunicationUSB usb(argv[1], logs, telemetry, controls);
+
 	Display display(logs, telemetry);
+	Writer writer(controls);
 
     QApplication app(argc, argv);
 
