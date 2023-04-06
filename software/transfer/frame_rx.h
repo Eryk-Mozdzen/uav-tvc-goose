@@ -12,7 +12,7 @@ namespace _transfer {
 		uint8_t payload[MAX_LENGTH];
 
 		template<typename T>
-		bool getPayload(T &dest) {
+		bool getPayload(T &dest) const {
 			if(sizeof(T)!=length) {
 				return false;
 			}
