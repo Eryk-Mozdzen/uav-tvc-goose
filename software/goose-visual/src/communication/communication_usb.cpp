@@ -28,6 +28,12 @@ void CommunicationUSB::threadRW() {
 			serial.SetStopBits(LibSerial::StopBits::STOP_BITS_1);
 
 			while(!thread_kill) {
+
+				Control control;
+				if(controls.pop(control)) {
+					serial.Write(LibSerial::DataBuffer(control.buffer, control.buffer + control.length));
+				}
+
 				LibSerial::DataBuffer buffer;
 
 				try {

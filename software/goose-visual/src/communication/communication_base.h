@@ -8,7 +8,7 @@ class CommunicationBase {
 public:
 	using Log = std::pair<Transfer::ID, std::string>;
 	using Telemetry = Transfer::FrameRX;
-	using Control = std::pair<Transfer::ID, std::vector<uint8_t>>;
+	using Control = Transfer::FrameTX;
 
 protected:
 	ConcurrentQueue<Log> &logs;
