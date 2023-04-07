@@ -16,10 +16,10 @@ link_directories(/usr/local/lib)
 add_executable(${PROJECT_NAME}
 	"src/main.cpp"
 	"../transfer/transfer.cpp"
-	"src/communication/communication_base.cpp"
-	"src/communication/communication_usb.cpp"
-	"src/interface/display.cpp"
+	"src/communication/usb.cpp"
+	"src/communication/telnet.cpp"
 	"src/interface/escape_codes.cpp"
+	"src/interface/printer.cpp"
 	"src/interface/writer.cpp"
 
 	"qml/qml.qrc"
@@ -28,6 +28,7 @@ add_executable(${PROJECT_NAME}
 target_include_directories(${PROJECT_NAME} PRIVATE
 	"src"
 	"../transfer"
+	"../third-party/libtelnet"
 	"src/communication"
 	"src/interface"
 )

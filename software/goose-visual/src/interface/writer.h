@@ -2,11 +2,10 @@
 
 #include <thread>
 #include "transfer.h"
-#include "concurrent_queue.h"
-#include "communication_base.h"
+#include "comm.h"
 
 class Writer {
-	ConcurrentQueue<CommunicationBase::Control> &controls;
+	ConcurrentQueue<Comm::Control> &controls;
 
 	bool thread_kill;
 	std::thread thread;
@@ -14,6 +13,6 @@ class Writer {
 	void write();
 
 public:
-	Writer(ConcurrentQueue<CommunicationBase::Control> &controls);
+	Writer(ConcurrentQueue<Comm::Control> &controls);
 	~Writer();
 };

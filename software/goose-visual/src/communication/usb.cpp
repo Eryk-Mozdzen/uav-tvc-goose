@@ -1,15 +1,14 @@
-#include "communication_usb.h"
+#include "usb.h"
 #include <iostream>
 
-CommunicationUSB::CommunicationUSB(const std::string port, ConcurrentQueue<Log> &logs, ConcurrentQueue<Telemetry> &telemetry, ConcurrentQueue<Control> &controls) :
-	CommunicationBase{logs, telemetry, controls}, name{port}, thread_kill{false},
-	thread_read{&CommunicationUSB::read, this},
-	thread_write{&CommunicationUSB::write, this} {
+USB::USB(const std::string port, Comm &communication) : communication{communication}, name{port}, thread_kill{false},
+	thread_read{&USB::read, this},
+	thread_write{&USB::write, this} {
 
 	mutex.unlock();
 }
 
-CommunicationUSB::~CommunicationUSB() {
+USB::~USB() {
 	thread_kill = true;
 
 	thread_read.join();
@@ -19,7 +18,7 @@ CommunicationUSB::~CommunicationUSB() {
 		serial.Close();
 }
 
-void CommunicationUSB::open() {
+void USB::open() {
 	mutex.lock();
 	if(!serial.IsOpen()) {
 		serial.Open(name);
@@ -32,12 +31,14 @@ void CommunicationUSB::open() {
 	mutex.unlock();
 }
 
-void CommunicationUSB::read() {
+void USB::read() {
 
 	while(!thread_kill) {
 
 		try {
 			open();
+
+			Transfer transfer;
 
 			while(!thread_kill) {
 				LibSerial::DataBuffer buffer;
@@ -54,9 +55,9 @@ void CommunicationUSB::read() {
 
 					if(transfer.receive(frame)) {
 						if(frame.id>=Transfer::ID::LOG_DEBUG && frame.id<=Transfer::ID::LOG_ERROR) {
-							logs.push(std::make_pair(frame.id, std::string(reinterpret_cast<char *>(frame.payload), frame.length)));
+							communication.logs.push(std::make_pair(frame.id, std::string(reinterpret_cast<char *>(frame.payload), frame.length)));
 						} else {
-							telemetry.push(frame);
+							communication.telemetry.push(frame);
 						}
 					}
 				}
@@ -77,7 +78,7 @@ void CommunicationUSB::read() {
 	}
 }
 
-void CommunicationUSB::write() {
+void USB::write() {
 
 	while(!thread_kill) {
 
@@ -85,9 +86,9 @@ void CommunicationUSB::write() {
 			open();
 
 			while(!thread_kill) {
-				Control control;
+				Comm::Control control;
 
-				if(controls.pop(control)) {
+				if(communication.controls.pop(control)) {
 					mutex.lock();
 					serial.Write(LibSerial::DataBuffer(control.buffer, control.buffer + control.length));
 					serial.FlushOutputBuffer();

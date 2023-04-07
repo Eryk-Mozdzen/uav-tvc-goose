@@ -1,20 +1,21 @@
 #include <QApplication>
 #include <QQmlApplicationEngine>
 
-#include "communication_usb.h"
-#include "display.h"
+#include "usb.h"
+#include "telnet.h"
+#include "printer.h"
 #include "writer.h"
 
 int main(int argc, char *argv[]) {
 
-	ConcurrentQueue<CommunicationBase::Log> logs;
-	ConcurrentQueue<CommunicationBase::Telemetry> telemetry;
-	ConcurrentQueue<CommunicationBase::Control> controls;
+	Comm commuication;
 
-	CommunicationUSB usb(argv[1], logs, telemetry, controls);
+	//USB uart("/dev/ttyUSB0", commuication);
+	USB usb("/dev/ttyACM0", commuication);
+	Telnet telnet("192.168.113.29", "23", commuication);
 
-	Display display(logs, telemetry);
-	Writer writer(controls);
+	Printer printer(commuication.logs, commuication.telemetry);
+	Writer writer(commuication.controls);
 
     QApplication app(argc, argv);
 

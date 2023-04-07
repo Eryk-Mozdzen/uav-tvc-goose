@@ -2,7 +2,7 @@
 #include <chrono>
 #include <iostream>
 
-Writer::Writer(ConcurrentQueue<CommunicationBase::Control> &controls) : controls{controls}, thread_kill{false}, thread{&Writer::write, this} {
+Writer::Writer(ConcurrentQueue<Comm::Control> &controls) : controls{controls}, thread_kill{false}, thread{&Writer::write, this} {
 
 }
 

@@ -1,23 +1,23 @@
-#include "display.h"
+#include "printer.h"
 #include <iostream>
 #include <iomanip>
 #include "escape_codes.h"
 
-Display::Display(ConcurrentQueue<CommunicationBase::Log> &logs, ConcurrentQueue<CommunicationBase::Telemetry> &telemetry) :
-	logs{logs}, telemetry{telemetry}, thread_kill{false}, logger{&Display::readLog, this}, viewer{&Display::readTelemetry, this} {
+Printer::Printer(ConcurrentQueue<Comm::Log> &logs, ConcurrentQueue<Comm::Telemetry> &telemetry) :
+	logs{logs}, telemetry{telemetry}, thread_kill{false}, logger{&Printer::readLog, this}, viewer{&Printer::readTelemetry, this} {
 }
 
-Display::~Display() {
+Printer::~Printer() {
 	thread_kill = true;
 
 	logger.join();
 	viewer.join();
 }
 
-void Display::readLog() {
+void Printer::readLog() {
 
 	while(!thread_kill) {
-		CommunicationBase::Log log;
+		Comm::Log log;
 		if(!logs.pop(log))
 			continue;
 
@@ -35,10 +35,10 @@ void Display::readLog() {
 	}
 }
 
-void Display::readTelemetry() {
+void Printer::readTelemetry() {
 
 	while(!thread_kill) {
-		CommunicationBase::Telemetry data;
+		Comm::Telemetry data;
 		if(!telemetry.pop(data))
 			continue;
 
