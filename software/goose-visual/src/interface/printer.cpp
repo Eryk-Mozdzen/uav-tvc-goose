@@ -3,8 +3,8 @@
 #include <iomanip>
 #include "escape_codes.h"
 
-Printer::Printer(ConcurrentQueue<Comm::Log> &logs, ConcurrentQueue<Comm::Telemetry> &telemetry) :
-	logs{logs}, telemetry{telemetry}, thread_kill{false}, logger{&Printer::readLog, this}, viewer{&Printer::readTelemetry, this} {
+Printer::Printer(Comm &commuication) : commuication{commuication},
+	thread_kill{false}, logger{&Printer::readLog, this}, viewer{&Printer::readTelemetry, this} {
 }
 
 Printer::~Printer() {
@@ -18,7 +18,7 @@ void Printer::readLog() {
 
 	while(!thread_kill) {
 		Comm::Log log;
-		if(!logs.pop(log))
+		if(!commuication.logs.pop(log))
 			continue;
 
 		mutex.lock();
@@ -39,7 +39,7 @@ void Printer::readTelemetry() {
 
 	while(!thread_kill) {
 		Comm::Telemetry data;
-		if(!telemetry.pop(data))
+		if(!commuication.telemetry.pop(data))
 			continue;
 
 		if(data.id==Transfer::ID::TELEMETRY_ESTIMATION_ATTITUDE) {

@@ -6,8 +6,7 @@
 #include "comm.h"
 
 class Printer {
-	ConcurrentQueue<Comm::Log> &logs;
-	ConcurrentQueue<Comm::Telemetry> &telemetry;
+	Comm &commuication;
 
 	std::mutex mutex;
 	bool thread_kill;
@@ -18,6 +17,6 @@ class Printer {
 	void readTelemetry();
 
 public:
-	Printer(ConcurrentQueue<Comm::Log> &logs, ConcurrentQueue<Comm::Telemetry> &telemetry);
+	Printer(Comm &commuication);
 	~Printer();
 };

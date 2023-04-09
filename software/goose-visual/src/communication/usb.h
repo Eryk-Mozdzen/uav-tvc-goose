@@ -1,9 +1,7 @@
 #pragma once
 
 #include <thread>
-#include <mutex>
-#include <libserial/SerialPort.h>
-#include "transfer.h"
+#include <atomic>
 #include "comm.h"
 
 class USB {
@@ -13,14 +11,11 @@ class USB {
 	Comm &communication;
 
 	const std::string name;
-	LibSerial::SerialPort serial;
 
-	bool thread_kill;
+	std::atomic_bool thread_kill;
 	std::thread thread_read;
 	std::thread thread_write;
-	std::mutex mutex;
 
-	void open();
 	void read();
 	void write();
 

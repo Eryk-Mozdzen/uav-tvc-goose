@@ -1,14 +1,14 @@
 #pragma once
 
 #include <thread>
+#include <atomic>
 #include <mutex>
 #include "comm.h"
-#include "transfer.h"
 
 class Telnet {
 	Comm &communication;
 
-	bool thread_kill;
+	std::atomic_bool thread_kill;
 	std::thread thread_read;
 	std::thread thread_write;
 	std::mutex mutex;

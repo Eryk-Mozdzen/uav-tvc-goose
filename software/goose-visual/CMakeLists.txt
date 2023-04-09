@@ -11,7 +11,6 @@ set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 find_package(Qt5 COMPONENTS Quick Widgets REQUIRED)
-link_directories(/usr/local/lib)
 
 add_executable(${PROJECT_NAME}
 	"src/main.cpp"
@@ -28,7 +27,6 @@ add_executable(${PROJECT_NAME}
 target_include_directories(${PROJECT_NAME} PRIVATE
 	"src"
 	"../transfer"
-	"../third-party/libtelnet"
 	"src/communication"
 	"src/interface"
 )

@@ -14,8 +14,8 @@ int main(int argc, char *argv[]) {
 	USB usb("/dev/ttyACM0", commuication);
 	Telnet telnet("192.168.113.29", "23", commuication);
 
-	Printer printer(commuication.logs, commuication.telemetry);
-	Writer writer(commuication.controls);
+	Printer printer(commuication);
+	Writer writer(commuication);
 
     QApplication app(argc, argv);
 

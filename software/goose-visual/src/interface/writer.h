@@ -5,7 +5,7 @@
 #include "comm.h"
 
 class Writer {
-	ConcurrentQueue<Comm::Control> &controls;
+	Comm &communication;
 
 	bool thread_kill;
 	std::thread thread;
@@ -13,6 +13,6 @@ class Writer {
 	void write();
 
 public:
-	Writer(ConcurrentQueue<Comm::Control> &controls);
+	Writer(Comm &communication);
 	~Writer();
 };
