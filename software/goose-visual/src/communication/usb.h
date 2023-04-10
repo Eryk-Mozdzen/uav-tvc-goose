@@ -1,25 +1,30 @@
 #pragma once
 
-#include <thread>
-#include <atomic>
-#include "comm.h"
+#include <QSerialPort>
+#include <QTimer>
+#include "transfer.h"
 
-class USB {
-	static constexpr int buffer_size = 64;
-	static constexpr int timeout_ms = 100;
+class USB : public QObject {
+	Q_OBJECT
 
-	Comm &communication;
+private:
+	Transfer transfer;
 
-	const std::string name;
+	QSerialPort serial;
+	QTimer timer;
 
-	std::atomic_bool thread_kill;
-	std::thread thread_read;
-	std::thread thread_write;
+private slots:
+    void handleReadyRead();
+    void handleError(QSerialPort::SerialPortError error);
+	void handleTimeout();
 
-	void read();
-	void write();
+public slots:
+	void transmit(const Transfer::FrameTX &frame);
+
+signals:
+	void receive(const Transfer::FrameRX &frame);
 
 public:
-	USB(const std::string port, Comm &communication);
+	USB(const QString port, QObject *parent = nullptr);
 	~USB();
 };

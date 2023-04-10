@@ -1,76 +1,58 @@
 #include "usb.h"
-#include <libserial/SerialPort.h>
-#include "transfer.h"
+#include <QDebug>
 
-USB::USB(const std::string port, Comm &communication) : communication{communication}, name{port},
-	thread_kill{false},
-	thread_read{&USB::read, this},
-	thread_write{&USB::write, this} {
+USB::USB(const QString port, QObject *parent) : QObject{parent} {
 
+	serial.setPortName(port);
+	serial.setBaudRate(115200);
+
+	connect(&serial, &QSerialPort::readyRead, this, &USB::handleReadyRead);
+    connect(&serial, &QSerialPort::errorOccurred, this, &USB::handleError);
+	connect(&timer, &QTimer::timeout, this, &USB::handleTimeout);
+
+	if(!serial.open(QIODevice::OpenModeFlag::ReadWrite))
+		timer.start(1000);
 }
 
 USB::~USB() {
-	thread_kill = true;
-
-	thread_read.join();
-	thread_write.join();
+	timer.stop();
+	serial.close();
 }
 
-void USB::read() {
+void USB::transmit(const Transfer::FrameTX &frame) {
+	if(!serial.isOpen())
+		return;
 
-	LibSerial::SerialPort serial;
-
-	serial.Open(name, std::ios_base::in);
-	serial.SetBaudRate(LibSerial::BaudRate::BAUD_115200);
-	serial.SetCharacterSize(LibSerial::CharacterSize::CHAR_SIZE_8);
-	serial.SetFlowControl(LibSerial::FlowControl::FLOW_CONTROL_NONE);
-	serial.SetParity(LibSerial::Parity::PARITY_NONE);
-	serial.SetStopBits(LibSerial::StopBits::STOP_BITS_1);
-
-	Transfer transfer;
-
-	while(!thread_kill) {
-		LibSerial::DataBuffer buffer;
-
-		serial.Read(buffer, buffer_size, timeout_ms);
-
-		for(const uint8_t byte : buffer) {
-			transfer.consume(byte);
-
-			Transfer::FrameRX frame;
-
-			if(transfer.receive(frame)) {
-				if(frame.id>=Transfer::ID::LOG_DEBUG && frame.id<=Transfer::ID::LOG_ERROR) {
-					communication.logs.push(std::make_pair(frame.id, std::string(reinterpret_cast<char *>(frame.payload), frame.length)));
-				} else {
-					communication.telemetry.push(frame);
-				}
-			}
-		}
-	}
-
-	serial.Close();
+	serial.write(reinterpret_cast<const char *>(frame.buffer), frame.length);
 }
 
-void USB::write() {
+void USB::handleReadyRead() {
+	const QByteArray data = serial.readAll();
 
-	LibSerial::SerialPort serial;
+	for(int i=0; i<data.size(); i++) {
+		transfer.consume(data[i]);
 
-	serial.Open(name, std::ios_base::out);
-	serial.SetBaudRate(LibSerial::BaudRate::BAUD_115200);
-	serial.SetCharacterSize(LibSerial::CharacterSize::CHAR_SIZE_8);
-	serial.SetFlowControl(LibSerial::FlowControl::FLOW_CONTROL_NONE);
-	serial.SetParity(LibSerial::Parity::PARITY_NONE);
-	serial.SetStopBits(LibSerial::StopBits::STOP_BITS_1);
+		Transfer::FrameRX frame;
 
-	while(!thread_kill) {
-		Comm::Control control;
+		if(transfer.receive(frame))
+			receive(frame);
+	}
+}
 
-		if(communication.controls.pop(control)) {
-			serial.Write(LibSerial::DataBuffer(control.buffer, control.buffer + control.length));
-			serial.DrainWriteBuffer();
-		}
+void USB::handleError(QSerialPort::SerialPortError error) {
+	if(error==QSerialPort::SerialPortError::OpenError || error==QSerialPort::SerialPortError::ResourceError)
+		serial.close();
+
+	if(error!=QSerialPort::SerialPortError::NoError)
+		timer.start(1000);
+}
+
+void USB::handleTimeout() {
+	if(serial.open(QIODevice::OpenModeFlag::ReadWrite)) {
+		timer.stop();
+		qDebug() << "connected to" << serial.portName();
+		return;
 	}
 
-	serial.Close();
+	qDebug() << "waiting for" << serial.portName() << "...";
 }

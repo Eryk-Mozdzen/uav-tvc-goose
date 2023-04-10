@@ -2,25 +2,21 @@
 #include <QQmlApplicationEngine>
 
 #include "usb.h"
-#include "telnet.h"
-#include "printer.h"
-#include "writer.h"
+#include "printer_writer.h"
 
 int main(int argc, char *argv[]) {
+	QApplication app(argc, argv);
 
-	Comm commuication;
-
-	//USB uart("/dev/ttyUSB0", commuication);
-	USB usb("/dev/ttyACM0", commuication);
-	Telnet telnet("192.168.113.29", "23", commuication);
-
-	Printer printer(commuication);
-	Writer writer(commuication);
-
-    QApplication app(argc, argv);
-
-    QQmlApplicationEngine engine;
+	QQmlApplicationEngine engine;
 	engine.load(QUrl(QStringLiteral("qrc:/main.qml")));
+
+	USB usb("/dev/ttyUSB0");
+	//USB usb("/dev/ttyACM0");
+
+	PrinterWriter printer_writer;
+
+	QObject::connect(&usb, &USB::receive, &printer_writer, &PrinterWriter::onReceive);
+	QObject::connect(&printer_writer, &PrinterWriter::onTransmit, &usb, &USB::transmit);
 
 	return app.exec();
 }
