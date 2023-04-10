@@ -16,6 +16,7 @@ add_executable(${PROJECT_NAME}
 	"src/main.cpp"
 	"../transfer/transfer.cpp"
 	"src/communication/usb.cpp"
+	"src/communication/telnet.cpp"
 	"src/interface/escape_codes.cpp"
 	"src/interface/printer_writer.cpp"
 
