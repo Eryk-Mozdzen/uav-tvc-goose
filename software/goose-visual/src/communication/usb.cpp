@@ -7,11 +7,12 @@ USB::USB(const QString port, QObject *parent) : QObject{parent} {
 	serial.setBaudRate(115200);
 
 	connect(&serial, &QSerialPort::readyRead, this, &USB::handleReadyRead);
-    connect(&serial, &QSerialPort::errorOccurred, this, &USB::handleError);
+	connect(&serial, &QSerialPort::errorOccurred, this, &USB::handleError);
 	connect(&timer, &QTimer::timeout, this, &USB::handleTimeout);
 
-	if(!serial.open(QIODevice::OpenModeFlag::ReadWrite))
+	if(!serial.open(QIODevice::OpenModeFlag::ReadWrite)) {
 		timer.start(1000);
+	}
 }
 
 USB::~USB() {
@@ -20,8 +21,9 @@ USB::~USB() {
 }
 
 void USB::transmit(const Transfer::FrameTX &frame) {
-	if(!serial.isOpen())
+	if(!serial.isOpen()) {
 		return;
+	}
 
 	serial.write(reinterpret_cast<const char *>(frame.buffer), frame.length);
 }
@@ -34,17 +36,20 @@ void USB::handleReadyRead() {
 
 		Transfer::FrameRX frame;
 
-		if(transfer.receive(frame))
+		if(transfer.receive(frame)) {
 			receive(frame);
+		}
 	}
 }
 
 void USB::handleError(QSerialPort::SerialPortError error) {
-	if(error==QSerialPort::SerialPortError::OpenError || error==QSerialPort::SerialPortError::ResourceError)
+	if(error==QSerialPort::SerialPortError::OpenError || error==QSerialPort::SerialPortError::ResourceError) {
 		serial.close();
+	}
 
-	if(error!=QSerialPort::SerialPortError::NoError)
+	if(error!=QSerialPort::SerialPortError::NoError) {
 		timer.start(1000);
+	}
 }
 
 void USB::handleTimeout() {
