@@ -1,34 +1,78 @@
 import QtQuick 2.10
 import QtQuick.Controls 2.10
 import QtQuick.Window 2.10
+import QtQuick.Layouts 1.15
 
 ApplicationWindow {
-	id: applicationWindow
-
 	visible: true
-	width: 640
-	height: 480
+	width: 1366
+	height: 728
+	title: "TVC Goose visualization"
+	color: "#424549"
 
-	Column {
-		anchors.horizontalCenter: parent.horizontalCenter
-		anchors.verticalCenter: parent.verticalCenter
-		spacing: 10
+	Rectangle {
+		anchors.fill: parent
+		anchors.centerIn: parent
+    	anchors.margins: 20
+		color: "transparent"
 
-		Button {
-			anchors.horizontalCenter: parent.horizontalCenter
-			text: "generate"
+		Rectangle {
+			id: wingsRect
+			anchors.top: parent.top
+			anchors.left: parent.left
+			color: "#282b30"
+			radius: 15
+			width: 0.7*parent.height
+			height: 0.7*parent.height
+		}
+
+		Rectangle {
+			id: model3dRect
+			anchors.top: parent.top
+			anchors.left: wingsRect.right
+			anchors.right: batteryAltmeterCol.left
+			height: wingsRect.height
+			color: "black"
+			radius: 15
+			anchors.leftMargin: 20
+			anchors.rightMargin: 20
+		}
+
+		ColumnLayout {
+			id: batteryAltmeterCol
+			spacing: 20
 			width: 200
+			height: parent.height
+			anchors.right: parent.right
 
-			onClicked: {
-				textBox.text = textBox.text + 1
+			Rectangle {
+				id: altmeterRect
+				Layout.fillHeight: true
+        		width: parent.width
+				color: "#282b30"
+				radius: 15
+			}
+
+			Rectangle {
+				id: batteryRect
+				Layout.fillHeight: true
+        		width: parent.width
+				color: "#282b30"
+				radius: 15
 			}
 		}
 
-		Text {
-			id: textBox
-
-			anchors.horizontalCenter: parent.horizontalCenter
-			text: "reset"
+		Rectangle {
+			id: loggerRect
+			anchors.top: wingsRect.bottom
+			anchors.left: parent.left
+			anchors.right: batteryAltmeterCol.left
+			anchors.bottom: parent.bottom
+			anchors.topMargin: 20
+			anchors.rightMargin: 20
+			color: "black"
+			radius: 15
 		}
+
 	}
 }
