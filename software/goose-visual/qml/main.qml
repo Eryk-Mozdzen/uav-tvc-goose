@@ -3,6 +3,9 @@ import QtQuick.Controls 2.15
 import QtQuick.Window 2.15
 import QtQuick.Layouts 1.15
 
+import "qrc:/styles"
+import "qrc:/components"
+
 ApplicationWindow {
 	id: mainWindow
 	visible: true
