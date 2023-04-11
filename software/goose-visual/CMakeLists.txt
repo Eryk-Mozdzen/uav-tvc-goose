@@ -20,7 +20,7 @@ add_executable(${PROJECT_NAME}
 	"src/interface/escape_codes.cpp"
 	"src/interface/printer_writer.cpp"
 
-	"qml/qml.qrc"
+	"qml/resources.qrc"
 )
 
 target_include_directories(${PROJECT_NAME} PRIVATE

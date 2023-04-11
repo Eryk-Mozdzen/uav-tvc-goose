@@ -8,7 +8,7 @@ ApplicationWindow {
 	visible: true
 	width: 1366
 	height: 728
-	color: palette.secondary
+	color: Style.secondary
 	flags: Qt.FramelessWindowHint | Qt.Window
 
 	DragHandler {
@@ -33,12 +33,8 @@ ApplicationWindow {
 		}
 	}
 
-	QtObject {
-		id: palette
-		property color primary: "#00ADB5"
-		property color secondary: "#393E46"
-		property color background: "#222831"
-		property color text: "#EEEEEE"
+	Settings {
+		id: settingsPopout
 	}
 
 	Rectangle {
@@ -51,7 +47,7 @@ ApplicationWindow {
 			id: wingsRect
 			anchors.top: parent.top
 			anchors.left: parent.left
-			color: palette.background
+			color: Style.background
 			radius: 15
 			width: 0.7*parent.height
 			height: 0.7*parent.height
@@ -63,7 +59,7 @@ ApplicationWindow {
 			anchors.left: wingsRect.right
 			anchors.right: batteryAltmeterCol.left
 			height: wingsRect.height
-			color: palette.background
+			color: Style.background
 			radius: 15
 			anchors.leftMargin: 20
 			anchors.rightMargin: 20
@@ -88,11 +84,26 @@ ApplicationWindow {
 					Button {
 						Layout.fillWidth: true
 						Layout.fillHeight: true
-						icon.color: palette.text
+						icon.color: Style.text
+						icon.source: "images/setting.png"
+
+						background: Rectangle {
+							color: Style.secondary
+						}
+
+						onClicked: {
+							settingsPopout.visible = true
+						}
+					}
+
+					Button {
+						Layout.fillWidth: true
+						Layout.fillHeight: true
+						icon.color: Style.text
 						icon.source: "images/minus.png"
 
 						background: Rectangle {
-							color: palette.secondary
+							color: Style.secondary
 						}
 
 						onClicked: mainWindow.showMinimized()
@@ -101,11 +112,11 @@ ApplicationWindow {
 					Button {
 						Layout.fillWidth: true
 						Layout.fillHeight: true
-						icon.color: palette.text
+						icon.color: Style.text
 						icon.source: "images/fullscreen.png"
 
 						background: Rectangle {
-							color: palette.secondary
+							color: Style.secondary
 						}
 
 						property bool toggle: true
@@ -124,11 +135,11 @@ ApplicationWindow {
 					Button {
 						Layout.fillWidth: true
 						Layout.fillHeight: true
-						icon.color: palette.text
+						icon.color: Style.text
 						icon.source: "images/close.png"
 
 						background: Rectangle {
-							color: palette.secondary
+							color: Style.secondary
 						}
 
 						onClicked: Qt.quit()
@@ -140,7 +151,7 @@ ApplicationWindow {
 				id: altmeterRect
 				Layout.fillHeight: true
         		width: parent.width
-				color: palette.background
+				color: Style.background
 				radius: 15
 			}
 
@@ -148,7 +159,7 @@ ApplicationWindow {
 				id: batteryRect
 				Layout.fillHeight: true
         		width: parent.width
-				color: palette.background
+				color: Style.background
 				radius: 15
 			}
 		}
@@ -161,11 +172,11 @@ ApplicationWindow {
 			anchors.bottom: parent.bottom
 			anchors.topMargin: 20
 			anchors.rightMargin: 20
-			color: palette.background
+			color: Style.background
 			radius: 15
 
 			TextArea {
-				color: palette.text
+				color: Style.text
 				font.family: "Monospace"
 				font.pixelSize: 14
 				wrapMode: TextArea.Wrap
