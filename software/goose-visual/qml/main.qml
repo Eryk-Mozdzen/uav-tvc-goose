@@ -1,6 +1,6 @@
-import QtQuick 2.10
-import QtQuick.Controls 2.10
-import QtQuick.Window 2.10
+import QtQuick 2.15
+import QtQuick.Controls 2.15
+import QtQuick.Window 2.15
 import QtQuick.Layouts 1.15
 
 ApplicationWindow {
@@ -11,70 +11,34 @@ ApplicationWindow {
 	color: palette.secondary
 	flags: Qt.FramelessWindowHint | Qt.Window
 
+	DragHandler {
+		id: resizeHandler
+		grabPermissions: TapHandler.TakeOverForbidden
+		target: null
+
+		property int border: 20
+
+		onActiveChanged: if (active) {
+			const position = resizeHandler.centroid.position;
+			let edge = 0;
+			if(position.x < border) edge |= Qt.LeftEdge;
+			if(position.x >= width - border) edge |= Qt.RightEdge;
+			if(position.y < border) edge |= Qt.TopEdge;
+			if(position.y >= height - border) edge |= Qt.BottomEdge;
+			if(edge !== 0){
+				mainWindow.startSystemResize(edge);
+			} else{
+				mainWindow.startSystemMove()
+			}
+		}
+	}
+
 	QtObject {
 		id: palette
 		property color primary: "#00ADB5"
 		property color secondary: "#393E46"
 		property color background: "#222831"
 		property color text: "#EEEEEE"
-	}
-
-    MouseArea {
-		anchors.fill: parent
-        hoverEnabled: true
-
-        property int edges: 0;
-        property int edgeOffest: 10;
-
-        function setEdges(x, y) {
-            edges = 0;
-
-            if(x<edgeOffest) {
-				edges |=Qt.LeftEdge;
-			}
-
-            if(x>(width - edgeOffest)) {
-				edges |=Qt.RightEdge;
-			}
-
-            if(y<edgeOffest) {
-				edges |=Qt.TopEdge;
-			}
-
-            if(y>(height - edgeOffest)) {
-				edges |=Qt.BottomEdge;
-			}
-        }
-
-        cursorShape: {
-            return !containsMouse ? Qt.ArrowCursor:
-                   edges == 3 || edges == 12 ? Qt.SizeFDiagCursor :
-                   edges == 5 || edges == 10 ? Qt.SizeBDiagCursor :
-                   edges & 9 ? Qt.SizeVerCursor :
-                   edges & 6 ? Qt.SizeHorCursor : Qt.ArrowCursor;
-        }
-
-        onPositionChanged: {
-			setEdges(mouseX, mouseY);
-		}
-
-        onPressed: {
-			setEdges(mouseX, mouseY);
-
-            if(edges && containsMouse) {
-                startSystemResize(edges);
-            }
-        }
-    }
-
-	MouseArea {
-		anchors.fill: parent
-		anchors.margins: 100
-		z: 100
-
-		onPressed: {
-			startSystemMove();
-		}
 	}
 
 	Rectangle {
