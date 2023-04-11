@@ -8,9 +8,8 @@ ApplicationWindow {
 	visible: true
 	width: 1366
 	height: 728
-	title: "TVC Goose visualization"
 	color: palette.secondary
-	flags: Qt.FramelessWindowHint
+	flags: Qt.FramelessWindowHint | Qt.Window
 
 	QtObject {
 		id: palette
@@ -60,7 +59,7 @@ ApplicationWindow {
 		}
 
         onPressed: {
-            setEdges(mouseX, mouseY);
+			setEdges(mouseX, mouseY);
 
             if(edges && containsMouse) {
                 startSystemResize(edges);
@@ -73,10 +72,10 @@ ApplicationWindow {
 		anchors.margins: 100
 		z: 100
 
-        onPressed: {
-            startSystemMove();
-        }
-    }
+		onPressed: {
+			startSystemMove();
+		}
+	}
 
 	Rectangle {
 		anchors.fill: parent
@@ -129,8 +128,7 @@ ApplicationWindow {
 						icon.source: "images/minus.png"
 
 						background: Rectangle {
-							color: palette.background
-							radius: 15
+							color: palette.secondary
 						}
 
 						onClicked: mainWindow.showMinimized()
@@ -143,8 +141,7 @@ ApplicationWindow {
 						icon.source: "images/fullscreen.png"
 
 						background: Rectangle {
-							color: palette.background
-							radius: 15
+							color: palette.secondary
 						}
 
 						property bool toggle: true
@@ -167,8 +164,7 @@ ApplicationWindow {
 						icon.source: "images/close.png"
 
 						background: Rectangle {
-							color: palette.background
-							radius: 15
+							color: palette.secondary
 						}
 
 						onClicked: Qt.quit()
