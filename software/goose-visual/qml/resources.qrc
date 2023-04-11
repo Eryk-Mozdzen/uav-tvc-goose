@@ -2,10 +2,15 @@
     <qresource prefix="/">
         <file>main.qml</file>
 
+        <file>Logger.qml</file>
+        <file>Actuators.qml</file>
+        <file>Altimeter.qml</file>
+        <file>Battery.qml</file>
+        <file>Scene.qml</file>
+        <file>Settings.qml</file>
+
         <file>qmldir</file>
         <file>Style.qml</file>
-
-        <file>Settings.qml</file>
 
         <file>images/close.png</file>
         <file>images/fullscreen.png</file>

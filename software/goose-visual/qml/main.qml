@@ -39,34 +39,28 @@ ApplicationWindow {
 
 	Rectangle {
 		anchors.fill: parent
-		anchors.centerIn: parent
     	anchors.margins: 20
 		color: "transparent"
 
-		Rectangle {
-			id: wingsRect
+		Actuators {
+			id: actuators
+			height: 0.7*parent.height
 			anchors.top: parent.top
 			anchors.left: parent.left
-			color: Style.background
-			radius: 15
-			width: 0.7*parent.height
-			height: 0.7*parent.height
 		}
 
-		Rectangle {
-			id: model3dRect
+		Scene {
+			id: scene
 			anchors.top: parent.top
-			anchors.left: wingsRect.right
-			anchors.right: batteryAltmeterCol.left
-			height: wingsRect.height
-			color: Style.background
-			radius: 15
+			anchors.left: actuators.right
+			anchors.right: batterAltimeterCol.left
+			anchors.bottom: actuators.bottom
 			anchors.leftMargin: 20
 			anchors.rightMargin: 20
 		}
 
 		ColumnLayout {
-			id: batteryAltmeterCol
+			id: batterAltimeterCol
 			spacing: 20
 			width: 220
 			height: parent.height
@@ -147,43 +141,27 @@ ApplicationWindow {
 				}
 			}
 
-			Rectangle {
+			Altimeter {
 				id: altmeterRect
 				Layout.fillHeight: true
         		width: parent.width
-				color: Style.background
-				radius: 15
 			}
 
-			Rectangle {
+			Battery {
 				id: batteryRect
 				Layout.fillHeight: true
         		width: parent.width
-				color: Style.background
-				radius: 15
 			}
 		}
 
-		Rectangle {
-			id: loggerRect
-			anchors.top: wingsRect.bottom
+		Logger {
+			id: logger
+			anchors.top: actuators.bottom
 			anchors.left: parent.left
-			anchors.right: batteryAltmeterCol.left
+			anchors.right: batterAltimeterCol.left
 			anchors.bottom: parent.bottom
 			anchors.topMargin: 20
 			anchors.rightMargin: 20
-			color: Style.background
-			radius: 15
-
-			TextArea {
-				color: Style.text
-				font.family: "Monospace"
-				font.pixelSize: 14
-				wrapMode: TextArea.Wrap
-				anchors.fill: parent
-
-				text: "Welcome to the terminal\nType your commands here:\n> ls\nfile1.txt file2.txt\n> cat file1.txt\nHello world!\n> "
-			}
 		}
 
 	}
