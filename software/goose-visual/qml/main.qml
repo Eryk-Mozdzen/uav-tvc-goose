@@ -47,17 +47,17 @@ ApplicationWindow {
 
 		Actuators {
 			id: actuators
-			height: 0.7*parent.height
 			anchors.top: parent.top
 			anchors.left: parent.left
+			anchors.bottom: scene.bottom
 		}
 
 		Scene {
 			id: scene
+			height: Math.min(0.7*parent.height, 0.5*(parent.width - batterAltimeterCol.width) - 20)
 			anchors.top: parent.top
 			anchors.left: actuators.right
 			anchors.right: batterAltimeterCol.left
-			anchors.bottom: actuators.bottom
 			anchors.leftMargin: 20
 			anchors.rightMargin: 20
 		}
@@ -156,6 +156,7 @@ ApplicationWindow {
         		width: parent.width
 			}
 		}
+
 
 		Logger {
 			id: logger
