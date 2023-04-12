@@ -13,10 +13,5 @@
         <file>components/Battery.qml</file>
         <file>components/Logger.qml</file>
         <file>components/Scene.qml</file>
-
-        <file>images/close.png</file>
-        <file>images/fullscreen.png</file>
-        <file>images/minus.png</file>
-        <file>images/setting.png</file>
     </qresource>
 </RCC>
