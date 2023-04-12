@@ -13,7 +13,6 @@
         <file>components/Battery.qml</file>
         <file>components/Logger.qml</file>
         <file>components/Scene.qml</file>
-        <file>components/Settings.qml</file>
 
         <file>images/close.png</file>
         <file>images/fullscreen.png</file>

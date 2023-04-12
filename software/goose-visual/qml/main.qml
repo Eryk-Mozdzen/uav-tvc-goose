@@ -12,33 +12,9 @@ ApplicationWindow {
 	width: 1366
 	height: 728
 	color: Style.secondary
-	flags: Qt.FramelessWindowHint | Qt.Window
-
-	DragHandler {
-		id: resizeHandler
-		grabPermissions: TapHandler.TakeOverForbidden
-		target: null
-
-		property int border: 20
-
-		onActiveChanged: if (active) {
-			const position = resizeHandler.centroid.position;
-			let edge = 0;
-			if(position.x < border) edge |= Qt.LeftEdge;
-			if(position.x >= width - border) edge |= Qt.RightEdge;
-			if(position.y < border) edge |= Qt.TopEdge;
-			if(position.y >= height - border) edge |= Qt.BottomEdge;
-			if(edge !== 0){
-				mainWindow.startSystemResize(edge);
-			} else{
-				mainWindow.startSystemMove()
-			}
-		}
-	}
-
-	Settings {
-		id: settingsPopout
-	}
+	title: "TVC Goose Monitor"
+	minimumHeight: 200
+	minimumWidth: 400
 
 	Rectangle {
 		anchors.fill: parent
@@ -54,7 +30,7 @@ ApplicationWindow {
 
 		Scene {
 			id: scene
-			height: Math.min(0.7*parent.height, 0.5*(parent.width - batterAltimeterCol.width) - 20)
+			height: Math.min(0.65*parent.height, 0.5*(parent.width - batterAltimeterCol.width) - 20)
 			anchors.top: parent.top
 			anchors.left: actuators.right
 			anchors.right: batterAltimeterCol.left
@@ -65,95 +41,21 @@ ApplicationWindow {
 		ColumnLayout {
 			id: batterAltimeterCol
 			spacing: 20
-			width: 220
-			height: parent.height
+			width: (1/1.618)*0.5*parent.height
+			anchors.top: parent.top
 			anchors.right: parent.right
-
-			Rectangle {
-				width: parent.width
-				height: 40
-				color: "transparent"
-
-				RowLayout {
-					anchors.fill: parent
-					spacing: 20
-
-					Button {
-						Layout.fillWidth: true
-						Layout.fillHeight: true
-						icon.color: Style.text
-						icon.source: "images/setting.png"
-
-						background: Rectangle {
-							color: Style.secondary
-						}
-
-						onClicked: {
-							settingsPopout.visible = true
-						}
-					}
-
-					Button {
-						Layout.fillWidth: true
-						Layout.fillHeight: true
-						icon.color: Style.text
-						icon.source: "images/minus.png"
-
-						background: Rectangle {
-							color: Style.secondary
-						}
-
-						onClicked: mainWindow.showMinimized()
-					}
-
-					Button {
-						Layout.fillWidth: true
-						Layout.fillHeight: true
-						icon.color: Style.text
-						icon.source: "images/fullscreen.png"
-
-						background: Rectangle {
-							color: Style.secondary
-						}
-
-						property bool toggle: true
-
-						onClicked: {
-							if(toggle) {
-								mainWindow.showMaximized()
-							} else {
-								mainWindow.showNormal()
-							}
-
-							toggle = !toggle
-						}
-					}
-
-					Button {
-						Layout.fillWidth: true
-						Layout.fillHeight: true
-						icon.color: Style.text
-						icon.source: "images/close.png"
-
-						background: Rectangle {
-							color: Style.secondary
-						}
-
-						onClicked: Qt.quit()
-					}
-				}
-			}
+			anchors.bottom: parent.bottom
 
 			Altimeter {
-				id: altmeterRect
+				id: altimeter
+				Layout.fillWidth: true
 				Layout.fillHeight: true
-        		width: parent.width
 			}
 
 			Battery {
-				id: batteryRect
+				id: battery
+				Layout.fillWidth: true
 				Layout.fillHeight: true
-        		width: parent.width
 			}
 		}
 
