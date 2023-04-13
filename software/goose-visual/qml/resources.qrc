@@ -1,0 +1,17 @@
+<!DOCTYPE RCC>
+
+<RCC>
+    <qresource prefix="/">
+        <file>main.qml</file>
+
+        <file>styles/qmldir</file>
+        <file>styles/Style.qml</file>
+
+        <file>components/qmldir</file>
+        <file>components/Actuators.qml</file>
+        <file>components/Altimeter.qml</file>
+        <file>components/Battery.qml</file>
+        <file>components/Logger.qml</file>
+        <file>components/Scene.qml</file>
+    </qresource>
+</RCC>

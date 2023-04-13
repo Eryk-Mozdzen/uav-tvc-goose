@@ -1,34 +1,75 @@
-import QtQuick 2.10
-import QtQuick.Controls 2.10
-import QtQuick.Window 2.10
+import QtQuick 2.15
+import QtQuick.Controls 2.15
+import QtQuick.Window 2.15
+import QtQuick.Layouts 1.15
+
+import "qrc:/styles"
+import "qrc:/components"
 
 ApplicationWindow {
-	id: applicationWindow
-
+	id: mainWindow
 	visible: true
-	width: 640
-	height: 480
+	width: 1366
+	height: 728
+	color: Style.secondary
+	title: "TVC Goose Monitor"
+	minimumHeight: 200
+	minimumWidth: 400
 
-	Column {
-		anchors.horizontalCenter: parent.horizontalCenter
-		anchors.verticalCenter: parent.verticalCenter
-		spacing: 10
+	Rectangle {
+		anchors.fill: parent
+    	anchors.margins: 20
+		color: "transparent"
 
-		Button {
-			anchors.horizontalCenter: parent.horizontalCenter
-			text: "generate"
-			width: 200
+		Actuators {
+			id: actuators
+			anchors.top: parent.top
+			anchors.left: parent.left
+			anchors.bottom: scene.bottom
+		}
 
-			onClicked: {
-				textBox.text = textBox.text + 1
+		Scene {
+			id: scene
+			height: Math.min(0.65*parent.height, 0.5*(parent.width - batterAltimeterCol.width) - 20)
+			anchors.top: parent.top
+			anchors.left: actuators.right
+			anchors.right: batterAltimeterCol.left
+			anchors.leftMargin: 20
+			anchors.rightMargin: 20
+		}
+
+		ColumnLayout {
+			id: batterAltimeterCol
+			spacing: 20
+			width: (1/1.618)*0.5*parent.height
+			anchors.top: parent.top
+			anchors.right: parent.right
+			anchors.bottom: parent.bottom
+
+			Altimeter {
+				id: altimeter
+				Layout.fillWidth: true
+				Layout.fillHeight: true
+			}
+
+			Battery {
+				id: battery
+				Layout.fillWidth: true
+				Layout.fillHeight: true
 			}
 		}
 
-		Text {
-			id: textBox
 
-			anchors.horizontalCenter: parent.horizontalCenter
-			text: "reset"
+		Logger {
+			id: logger
+			anchors.top: actuators.bottom
+			anchors.left: parent.left
+			anchors.right: batterAltimeterCol.left
+			anchors.bottom: parent.bottom
+			anchors.topMargin: 20
+			anchors.rightMargin: 20
 		}
+
 	}
+
 }
