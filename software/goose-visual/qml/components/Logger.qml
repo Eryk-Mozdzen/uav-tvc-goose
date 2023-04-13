@@ -14,8 +14,8 @@ Rectangle {
         Rectangle {
             id: logRect
             color: "transparent"
-            width: 700
-            height: 20
+            width: logger.width - 60
+            height: childrenRect.height
 
             property string type
             property string text
@@ -29,41 +29,52 @@ Rectangle {
                 }
             }
 
-            RowLayout {
-                anchors.fill: parent
+            Button {
+                id: logType
+                anchors.left: parent.left
 
-                Text {
-                    id: logType
-                    color: logRect.textColor
-                    text: logRect.type
-                    font.family: "Monospace"
-                    font.pixelSize: 14
-                    Layout.fillWidth: true
-                    Layout.alignment: Qt.AlignLeft
+                background: Rectangle {
+                    color: "transparent"
                 }
 
-                Text {
-                    id: logText
-                    color: logRect.textColor
-                    text: logRect.text
-                    font.family: "Monospace"
-                    font.pixelSize: 14
-                    Layout.fillWidth: true
-                }
-
-                Text {
-                    id: logCounter
-                    color: logRect.textColor
-                    text: {
-                        if(logRect.counter==1)
-                            return ""
-                        return logRect.counter.toString()
+                icon.width: 14
+                icon.height: 14
+                icon.color: logRect.textColor
+                icon.source: {
+                    switch(logRect.type) {
+                        case "DEBUG":   return "qrc:/icons/debug.png";          break
+                        case "INFO":    return "qrc:/icons/information.png";    break
+                        case "WARNING": return "qrc:/icons/alert.png";          break
+                        case "ERROR":   return "qrc:/icons/close.png";          break
                     }
-                    font.family: "Monospace"
-                    font.pixelSize: 14
-                    Layout.fillWidth: true
-                    Layout.alignment: Qt.AlignRight
                 }
+            }
+
+            Text {
+                id: logText
+                color: logRect.textColor
+                text: logRect.text
+                height: parent.height
+                verticalAlignment: Text.AlignVCenter
+                font.family: "Monospace"
+                font.pixelSize: 14
+                anchors.left: logType.right
+                anchors.leftMargin: 20
+            }
+
+            Text {
+                id: logCounter
+                color: logRect.textColor
+                height: parent.height
+                verticalAlignment: Text.AlignVCenter
+                text: {
+                    if(logRect.counter==1)
+                        return ""
+                    return logRect.counter.toString()
+                }
+                font.family: "Monospace"
+                font.pixelSize: 14
+                anchors.right: parent.right
             }
         }
     }
@@ -78,7 +89,7 @@ Rectangle {
             let last = loggerColumn.children[loggerColumn.children.length-1]
 
             if(text==last.text && type==last.type) {
-                last.counter = last.counter + 1
+                last.counter++
                 return
             }
         }
@@ -91,14 +102,16 @@ Rectangle {
 
     // TEST
     Timer {
-        interval: 200
+        interval: 500
         running: true
         repeat: true
         onTriggered: {
             let types = ["DEBUG", "INFO", "WARNING", "ERROR"]
-            let rand = Math.floor(Math.random()*types.length)
+            let texts = ["witajcie w mojej kuchni", "sztosiwo kabanosiwo"]
+            let rand1 = Math.floor(Math.random()*types.length)
+            let rand2 = Math.floor(Math.random()*texts.length)
 
-            add(types[rand], "witajcie w mojej kuchni")
+            add(types[rand1], texts[rand2])
         }
     }
 
@@ -120,7 +133,6 @@ Rectangle {
 
         Column {
             id: loggerColumn
-            spacing: 2
             padding: 20
             anchors.fill: parent
         }
