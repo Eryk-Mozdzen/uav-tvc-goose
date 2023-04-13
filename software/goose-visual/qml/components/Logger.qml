@@ -11,15 +11,14 @@ Rectangle {
         id: log
 
         Text {
-            color: Style.loggerError
-            text: ""
+            id: logText
+            color: log.color
+            text: ""//log.text
             wrapMode: Text.Wrap
             font.family: "Monospace"
             font.pixelSize: 14
         }
     }
-
-    //property int messageCounter: 0
 
     function add(type, text) {
         let color = Style.text
@@ -31,19 +30,32 @@ Rectangle {
             case "error":   color = Style.loggerError;      break
         }
 
-        /*messageCounter++
+        if(loggerColumn.children.length>=50) {
+            loggerColumn.children[0].destroy()
+        }
 
-        if(messageCounter>5) {
-            loggerColumn.children.splice(0, 1);
-            messageCounter--
-        }*/
+        if(loggerColumn.children.length>0) {
+            const lastLog = loggerColumn.children[loggerColumn.children.length-1]
 
-        log.createObject(loggerColumn, {color: color, text: type + "\t" + text})
+            const curr = type.toUpperCase() + " " + text
+            const last = lastLog.text.substring(0, lastLog.text.lastIndexOf(" "));
+            const counter = lastLog.text.split(" ").pop();
+
+            if(curr==last) {
+                lastLog.text = curr + " " + (Number(counter) + 1)
+                return
+            }
+        }
+
+        log.createObject(loggerColumn, {
+            color: color,
+            text: type.toUpperCase() + " " + text + " 1"
+        })
     }
 
     // TEST
     Timer {
-        interval: 1000
+        interval: 200
         running: true
         repeat: true
         onTriggered: {
@@ -58,6 +70,17 @@ Rectangle {
         id: scrollView
         clip: true
         anchors.fill: parent
+
+        ScrollBar.vertical: ScrollBar {
+            width: 20
+            height: parent.height
+            anchors.right: parent.right
+
+            contentItem: Rectangle {
+                color: Style.primary
+                radius: 15
+            }
+        }
 
         Column {
             id: loggerColumn

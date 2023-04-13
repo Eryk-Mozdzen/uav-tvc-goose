@@ -8,8 +8,8 @@ QtObject {
     readonly property color background: "#222831"
     readonly property color text: "#EEEEEE"
 
-    readonly property color loggerDebug: "gray"
-    readonly property color loggerInfo: "cyan"
-    readonly property color loggerWarning: "yellow"
-    readonly property color loggerError: "red"
+    readonly property color loggerDebug: text
+    readonly property color loggerInfo: primary
+    readonly property color loggerWarning: "#EEEE00"
+    readonly property color loggerError: "#EE0000"
 }
