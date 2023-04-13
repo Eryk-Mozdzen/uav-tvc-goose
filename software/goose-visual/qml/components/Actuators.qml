@@ -55,9 +55,10 @@ Rectangle {
 
             Rectangle {
                 width: 0
-                height: parent.height
+                height: parent.height - 10
+                y: 10/2
                 color: Style.third
-                radius: parent.width/20
+                
 
                 Timer {
                     property double counter: 0
@@ -71,8 +72,8 @@ Rectangle {
                             parent.anchors.left = parent.parent.center
                             parent.anchors.right = parent.parent.left
                         }
-                        parent.width = Math.abs(Style.angle_down) / 30 * parent.parent.height/2 - parent.height/6
-                        Style.angle_down = 30*Math.sin(counter-0.5)
+                        parent.width = Math.abs(Style.angle_down) / 30 * parent.parent.height/2 - parent.width/6
+                        Style.angle_down = 30*Math.sin(counter-0.9)
                         counter += 0.1
                     }
                 }
@@ -118,7 +119,8 @@ Rectangle {
 
             Rectangle {
                 width: 0
-                height: parent.height
+                height: parent.height - 10
+                y: 10/2
                 color: Style.third
                 radius: parent.width/20
 
@@ -134,7 +136,7 @@ Rectangle {
                             parent.anchors.left = parent.parent.center
                             parent.anchors.right = parent.parent.left
                         }
-                        parent.width = Math.abs(Style.angle_up) / 30 * parent.parent.height/2 - parent.height/6
+                        parent.width = Math.abs(Style.angle_up) / 30 * parent.parent.height/2 - parent.width/6
                         Style.angle_up = 30*Math.sin(counter-0.5)
                         counter += 0.1
                     }
@@ -180,10 +182,10 @@ Rectangle {
             radius: parent.width/10
 
             Rectangle {
-                width: parent.width
+                x: 10/2
+                width: parent.width - 10
                 height: 0
                 color: Style.third
-                radius: parent.width/20
 
                 Timer {
                     property double counter: 0
@@ -244,10 +246,10 @@ Rectangle {
             radius: parent.width/10
 
             Rectangle {
-                width: parent.width
+                x: 10/2
+                width: parent.width - 10
                 height: 0
                 color: Style.third
-                radius: parent.width/20
 
                 Timer {
                     property double counter: 0
@@ -258,7 +260,7 @@ Rectangle {
                             parent.anchors.top = parent.parent.center
                         }
                         else{
-                            parent.anchors.bottom =parent.parent.center
+                            parent.anchors.bottom = parent.parent.center
                             parent.anchors.top = parent.parent.bottom
                         }
                         parent.height = Math.abs(Style.angle_right) / 30 * parent.parent.parent.height/2 - parent.width/6
@@ -278,12 +280,33 @@ Rectangle {
         anchors.centerIn: parent
         color: "black"
         radius: width/2
+
         Rectangle {
             width: parent.width/1.2
             height: width
             anchors.centerIn: parent
             color: Style.primary
             radius: width/1.2
+
+            Rectangle {
+                id: rotor1
+                anchors.centerIn: parent
+                width: parent.height+5
+                height: 10
+                color: "black"
+                rotation: 45 
+            }
+
+            Rectangle {
+                id: rotor2
+                anchors.centerIn: parent
+                width: parent.height+5
+                height: 10
+                color: "black"
+                rotation: -45
+            }
+
+
             Rectangle {
                 width: parent.width/1.2
                 height: width
@@ -315,13 +338,15 @@ Rectangle {
                         text: "100%"
                         fontSizeMode: Text.Fit
                         font.bold: true
-
-                        property int throttle: 0
                         Timer {
-                            interval: 500; running: true; repeat: true
+                            property double counter: 0
+                            interval: 100; running: true; repeat: true
                             onTriggered: {
-                                parent.throttle = Math.floor((parent.throttle+1) % 101 )
-                                parent.text = parent.throttle + "%"
+                                Style.throttle = Math.floor(50 * Math.sin(counter *0.1) + 50)
+                                parent.text = Style.throttle + "%"
+                                rotor1.rotation +=  Style.throttle / 4
+                                rotor2.rotation +=  Style.throttle / 4
+                                counter += 0.2
                             }
                         }
                     }

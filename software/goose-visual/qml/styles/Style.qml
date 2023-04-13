@@ -12,4 +12,6 @@ QtObject {
     property double angle_up: 0.0
     property double angle_down: 0.0
     property double angle_right: 0.0
+    property int throttle : 0
+
 }

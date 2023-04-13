@@ -5,4 +5,5 @@ import "qrc:/styles"
 Rectangle {
     color: Style.background
     radius: 15
+
 }
