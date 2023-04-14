@@ -14,12 +14,9 @@ Rectangle {
         Rectangle {
             id: logRect
             color: "transparent"
-            width: logger.width - 60
-            height: childrenRect.height
+            width: logListView.width - loggerSliderBar.width - 20
+            height: logText.height
 
-            property string type
-            property string text
-            property int counter: 1
             property color textColor: {
                 switch(type) {
                     case "DEBUG":   return Style.loggerDebug;      break
@@ -32,7 +29,7 @@ Rectangle {
             Button {
                 id: logType
                 anchors.left: parent.left
-
+                anchors.verticalCenter: logText.verticalCenter
                 background: Rectangle {
                     color: "transparent"
                 }
@@ -41,7 +38,7 @@ Rectangle {
                 icon.height: 14
                 icon.color: logRect.textColor
                 icon.source: {
-                    switch(logRect.type) {
+                    switch(type) {
                         case "DEBUG":   return "qrc:/icons/debug.png";          break
                         case "INFO":    return "qrc:/icons/information.png";    break
                         case "WARNING": return "qrc:/icons/alert.png";          break
@@ -53,13 +50,14 @@ Rectangle {
             Text {
                 id: logText
                 color: logRect.textColor
-                text: logRect.text
-                height: parent.height
-                verticalAlignment: Text.AlignVCenter
+                text: logTextContent
+                height: contentHeight
                 font.family: "Monospace"
                 font.pixelSize: 14
                 anchors.left: logType.right
+                anchors.right: logCounter.left
                 anchors.leftMargin: 20
+                wrapMode: Text.Wrap
             }
 
             Text {
@@ -68,9 +66,9 @@ Rectangle {
                 height: parent.height
                 verticalAlignment: Text.AlignVCenter
                 text: {
-                    if(logRect.counter==1)
+                    if(counter==1)
                         return ""
-                    return logRect.counter.toString()
+                    return counter
                 }
                 font.family: "Monospace"
                 font.pixelSize: 14
@@ -81,23 +79,24 @@ Rectangle {
 
     function add(type, text) {
 
-        if(loggerColumn.children.length>=50) {
-            loggerColumn.children[0].destroy()
+        if(loggerColumn.count>=50) {
+            loggerColumn.remove(0)
         }
 
-        if(loggerColumn.children.length>0) {
-            let last = loggerColumn.children[loggerColumn.children.length-1]
+        if(loggerColumn.count) {
+            let last = loggerColumn.get(loggerColumn.count-1)
 
-            if(text==last.text && type==last.type) {
+            if(text==last.logTextContent && type==last.type) {
                 last.counter++
                 return
             }
         }
 
-        log.createObject(loggerColumn, {
-            type: type,
-            text: text
-        })
+        loggerColumn.append({"type": type, "logTextContent": text, "counter": 1})
+
+        if(!loggerSliderBar.pressed) {
+            logListView.positionViewAtEnd()
+        }
     }
 
     // TEST
@@ -107,7 +106,7 @@ Rectangle {
         repeat: true
         onTriggered: {
             let types = ["DEBUG", "INFO", "WARNING", "ERROR"]
-            let texts = ["witajcie w mojej kuchni", "sztosiwo kabanosiwo"]
+            let texts = ["witajcie w mojej kuchni", "sztosiwo kabanosiwo sztosiwo kabanosiwo sztosiwo kabanosiwo sztosiwo kabanosiwo sztosiwo kabanosiwo sztosiwo kabanosiwo"]
             let rand1 = Math.floor(Math.random()*types.length)
             let rand2 = Math.floor(Math.random()*texts.length)
 
@@ -115,12 +114,23 @@ Rectangle {
         }
     }
 
-    ScrollView {
-        id: scrollView
+    ListView {
+        id: logListView
+        delegate: log
         clip: true
-        anchors.fill: parent
+        spacing: 10
+
+        anchors {
+            fill: parent
+            margins: 20
+        }
+
+        model: ListModel {
+            id: loggerColumn
+        }
 
         ScrollBar.vertical: ScrollBar {
+            id: loggerSliderBar
             width: 20
             height: parent.height
             anchors.right: parent.right
@@ -129,12 +139,6 @@ Rectangle {
                 color: Style.primary
                 radius: 15
             }
-        }
-
-        Column {
-            id: loggerColumn
-            padding: 20
-            anchors.fill: parent
         }
     }
 }
