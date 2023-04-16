@@ -7,6 +7,8 @@ Rectangle {
     color: Style.background
     radius: 15
 
+    readonly property real step: 0.05*height
+
     Rectangle {
         color: "transparent"
         anchors.fill: parent
@@ -15,9 +17,9 @@ Rectangle {
         Rectangle {
             id: batteryRect
             color: "white"
-            radius: 10
+            radius: 0.5*step
             width: 0.25*parent.width
-            height: 20
+            height: step
             anchors.top: parent.top
             anchors.horizontalCenter: parent.horizontalCenter
 
@@ -34,24 +36,24 @@ Rectangle {
             width: 0.65*parent.width
             height: 0.65*parent.height
             color: "white"
-            radius: 35
+            radius: 1.5*step
             anchors.top: batteryRect.bottom
             anchors.horizontalCenter: parent.horizontalCenter
 
             Rectangle {
                 id: batteryContent
                 color: "black"
-                radius: 20
+                radius: step
                 anchors.fill: parent
-                anchors.margins: 20
+                anchors.margins: step
 
                 Rectangle {
                     id: batteryLevel
                     color: Style.primary
-                    radius: 10
-                    width: parent.width - 20
+                    radius: 0.5*step
+                    width: parent.width - step
                     height: parent.height
-                    anchors.margins: 10
+                    anchors.margins: 0.5*step
                     anchors.bottom: parent.bottom
                     anchors.horizontalCenter: parent.horizontalCenter
                 }
@@ -60,9 +62,9 @@ Rectangle {
     }
 
     function setLevel(level) {
-        const max = batteryContent.height - 40
+        const max = batteryContent.height - 2*step
 
-        batteryLevel.height = max*level + 20
+        batteryLevel.height = max*level + step
     }
 
     function setVoltage(voltage) {
