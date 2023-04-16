@@ -8,6 +8,7 @@ QtObject {
     readonly property color background: "#222831"
     readonly property color text: "#EEEEEE"
 
-    readonly property color batteryLow: "#DD0000"
+    readonly property color batteryHigh: primary
     readonly property color batteryMedium: "#DDDD00"
+    readonly property color batteryLow: "#DD0000"
 }

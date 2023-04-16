@@ -178,7 +178,7 @@ Rectangle {
         const max = batteryContent.height - 3*step
 
         if(level>0.5)
-            batteryLevel.color = mixColors(Style.primary, Style.batteryMedium, (level-0.5)*2)
+            batteryLevel.color = mixColors(Style.batteryHigh, Style.batteryMedium, (level-0.5)*2)
         else
             batteryLevel.color = mixColors(Style.batteryMedium, Style.batteryLow, level*2)
 
