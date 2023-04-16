@@ -39,7 +39,7 @@ Rectangle {
                 icon.color: logRect.textColor
                 icon.source: {
                     switch(type) {
-                        case "DEBUG":   return "qrc:/icons/debug.png";          break
+                        case "DEBUG":   return "qrc:/icons/bug.png";          break
                         case "INFO":    return "qrc:/icons/information.png";    break
                         case "WARNING": return "qrc:/icons/alert.png";          break
                         case "ERROR":   return "qrc:/icons/close.png";          break

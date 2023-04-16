@@ -7,7 +7,7 @@
         <file>styles/qmldir</file>
         <file>styles/Style.qml</file>
 
-        <file>icons/debug.png</file>
+        <file>icons/bug.png</file>
         <file>icons/information.png</file>
         <file>icons/alert.png</file>
         <file>icons/close.png</file>
