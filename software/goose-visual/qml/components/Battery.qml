@@ -60,8 +60,105 @@ Rectangle {
             color: Style.text
             font.pixelSize: 3*step
             anchors.top: batteryContent.bottom
-            anchors.topMargin: step
+            anchors.topMargin: 0.5*step
             anchors.horizontalCenter: parent.horizontalCenter
+        }
+
+        Item {
+            id: batteryVoltageRow
+            width: parent.width
+            height: batteryVoltageRect.height
+            anchors.top: batteryText.bottom
+            anchors.topMargin: 0.5*step
+
+            Text {
+                text: "voltage:"
+                color: Style.text
+                height: parent.height
+                font.pixelSize: step
+                horizontalAlignment: Text.AlignRight
+                verticalAlignment: Text.AlignVCenter
+                anchors.rightMargin: step
+                anchors.right: batteryVoltageRect.left
+            }
+
+            Rectangle {
+                id: batteryVoltageRect
+                color: "black"
+                width: 4*step
+                height: 1.5*step
+                radius: 5
+                anchors.left: parent.horizontalCenter
+
+                Text {
+                    id: batteryVoltageText
+                    text: "???"
+                    color: Style.text
+                    font.pixelSize: step
+                    anchors.fill: parent
+                    anchors.rightMargin: 0.5*step
+                    horizontalAlignment: Text.AlignRight
+                    verticalAlignment: Text.AlignVCenter
+                }
+            }
+
+            Text {
+                text: "V"
+                color: Style.text
+                height: parent.height
+                verticalAlignment: Text.AlignVCenter
+                font.pixelSize: step
+                anchors.leftMargin: 0.5*step
+                anchors.left: batteryVoltageRect.right
+            }
+        }
+
+        Item {
+            width: parent.width
+            height: batteryCurrentRect.height
+            anchors.top: batteryVoltageRow.bottom
+            anchors.topMargin: 0.5*step
+
+            Text {
+                text: "current:"
+                color: Style.text
+                height: parent.height
+                font.pixelSize: step
+                horizontalAlignment: Text.AlignRight
+                verticalAlignment: Text.AlignVCenter
+                anchors.rightMargin: step
+                anchors.right: batteryCurrentRect.left
+            }
+
+            Rectangle {
+                id: batteryCurrentRect
+                color: "black"
+                width: 4*step
+                height: 1.5*step
+                radius: 5
+                anchors.left: parent.horizontalCenter
+
+                Text {
+                    id: batteryCurrentText
+                    text: "???"
+                    color: Style.text
+                    font.pixelSize: step
+                    anchors.fill: parent
+                    anchors.rightMargin: 0.5*step
+                    horizontalAlignment: Text.AlignRight
+                    verticalAlignment: Text.AlignVCenter
+                }
+            }
+
+            Text {
+                text: "A"
+                color: Style.text
+                height: parent.height
+                verticalAlignment: Text.AlignVCenter
+                font.pixelSize: step
+                anchors.leftMargin: 0.5*step
+                anchors.left: batteryCurrentRect.right
+            }
         }
     }
 
@@ -90,11 +187,11 @@ Rectangle {
     }
 
     function setVoltage(voltage) {
-
+        batteryVoltageText.text = voltage.toFixed(2)
     }
 
     function setCurrent(current) {
-
+        batteryCurrentText.text = current.toFixed(2)
     }
 
     // TEST
@@ -108,9 +205,9 @@ Rectangle {
         onTriggered: {
             time +=0.002
 
-            const value = 0.5*Math.sin(time) + 0.5
-
-            setLevel(value)
+            setLevel(0.5*Math.sin(time) + 0.5)
+            setVoltage(14.8 + 4*Math.sin(10*time))
+            setCurrent(5 + 5*Math.sin(2*time))
         }
     }
 }
