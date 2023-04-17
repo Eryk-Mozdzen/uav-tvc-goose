@@ -175,11 +175,17 @@ Rectangle {
     }
 
     function setLevel(level) {
-        if(level>1)
-            level = 1
+        let prefix = ""
 
-        if(level<0)
-            level = 0
+        if(level>0.99) {
+            level = 0.99
+            prefix = ">"
+        }
+
+        if(level<0.01) {
+            level = 0.01
+            prefix = "<"
+        }
 
         if(level>0.5)
             batteryLevel.color = mixColors(Style.batteryHigh, Style.batteryMedium, (level-0.5)*2)
@@ -188,7 +194,7 @@ Rectangle {
 
         const max = batteryContent.height - 3*step
         batteryLevel.height = max*level + step
-        batteryText.text = Math.round(level*100) + "%"
+        batteryText.text = prefix + Math.round(level*100) + "%"
     }
 
     function setVoltage(voltage) {
@@ -210,7 +216,7 @@ Rectangle {
         onTriggered: {
             time +=0.002
 
-            setLevel(0.5*Math.sin(time) + 0.5)
+            setLevel(0.55*Math.sin(time) + 0.5)
             setVoltage(14.8 + 4*Math.sin(10*time))
             setCurrent(5 + 5*Math.sin(2*time))
         }
