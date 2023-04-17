@@ -13,8 +13,8 @@ ApplicationWindow {
 	height: 728
 	color: Style.secondary
 	title: "TVC Goose Monitor"
-	minimumHeight: 200
-	minimumWidth: 400
+	minimumHeight: 300
+	minimumWidth: 600
 
 	Rectangle {
 		anchors.fill: parent
