@@ -44,7 +44,7 @@ Rectangle {
 
             Rectangle {
                 id: batteryLevel
-                color: Style.primary
+                color: Style.batteryFull
                 radius: 0.5*step
                 width: parent.width - 2*step
                 height: parent.height - step
@@ -175,26 +175,20 @@ Rectangle {
     }
 
     function setLevel(level) {
-        let prefix = ""
+        if(level>1)
+            level = 1
 
-        if(level>0.99) {
-            level = 0.99
-            prefix = ">"
-        }
-
-        if(level<0.01) {
-            level = 0.01
-            prefix = "<"
-        }
+        if(level<0)
+            level = 0
 
         if(level>0.5)
-            batteryLevel.color = mixColors(Style.batteryHigh, Style.batteryMedium, (level-0.5)*2)
+            batteryLevel.color = mixColors(Style.batteryFull, Style.batteryMedium, (level-0.5)*2)
         else
-            batteryLevel.color = mixColors(Style.batteryMedium, Style.batteryLow, level*2)
+            batteryLevel.color = mixColors(Style.batteryMedium, Style.batteryEmpty, level*2)
 
         const max = batteryContent.height - 3*step
         batteryLevel.height = max*level + step
-        batteryText.text = prefix + Math.round(level*100) + "%"
+        batteryText.text = Math.round(level*100) + "%"
     }
 
     function setVoltage(voltage) {

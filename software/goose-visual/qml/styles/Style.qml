@@ -13,7 +13,7 @@ QtObject {
     readonly property color loggerWarning: "#DDDD00"
     readonly property color loggerError: "#DD0000"
 
-    readonly property color batteryHigh: primary
+    readonly property color batteryFull: primary
     readonly property color batteryMedium: "#DDDD00"
-    readonly property color batteryLow: "#DD0000"
+    readonly property color batteryEmpty: "#DD0000"
 }
