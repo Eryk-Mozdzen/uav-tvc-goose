@@ -175,13 +175,18 @@ Rectangle {
     }
 
     function setLevel(level) {
-        const max = batteryContent.height - 3*step
+        if(level>1)
+            level = 1
+
+        if(level<0)
+            level = 0
 
         if(level>0.5)
             batteryLevel.color = mixColors(Style.batteryHigh, Style.batteryMedium, (level-0.5)*2)
         else
             batteryLevel.color = mixColors(Style.batteryMedium, Style.batteryLow, level*2)
 
+        const max = batteryContent.height - 3*step
         batteryLevel.height = max*level + step
         batteryText.text = Math.round(level*100) + "%"
     }
