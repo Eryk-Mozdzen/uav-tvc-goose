@@ -8,7 +8,7 @@
 
 #include "transfer.h"
 
-constexpr const char *const SERIAL_PORT_2 = "/dev/pts/14";
+constexpr const char *const SERIAL_PORT_2 = "/dev/pts/7";
 LibSerial::SerialPort serial;
 
 struct Generator {
