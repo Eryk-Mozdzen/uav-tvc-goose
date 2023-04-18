@@ -23,9 +23,9 @@ void Control::task() {
 	int counter = 0;
 
 	while(1) {
-		Transport::getInstance().wireless_rx_queue.pop(frame, portMAX_DELAY);
+		Transport::getInstance().frame_rx_queue.pop(frame, portMAX_DELAY);
 		counter++;
 
-		Logger::getInstance().log(Logger::INFO, "message num: %d [length = %u\tid = %u\t]", counter, frame.length, frame.id);
+		Logger::getInstance().log(Logger::INFO, "message num: %d [length = %u\tid = %u\t0x%02X]", counter, frame.length, frame.id, frame.payload[0]);
 	}
 }

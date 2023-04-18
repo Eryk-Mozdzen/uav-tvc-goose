@@ -53,7 +53,7 @@ add_executable(${TARGET}
 	"HAL/hal_callbacks.c"
 	"HAL/hal_exceptions.c"
 
-	"USB/usbd_cdc_if.c"
+	"USB/usbd_cdc_if.cpp"
 	"USB/usbd_conf.c"
 	"USB/usbd_desc.c"
 	"USB/usb_device.c"
@@ -66,6 +66,7 @@ add_executable(${TARGET}
 	"src/sensors/hmc5883l.cpp"
 	"src/communication/logger.cpp"
 	"src/communication/wire_transmitter.cpp"
+	"src/communication/wire_receiver.cpp"
 	"src/communication/communication_bus.cpp"
 	"src/communication/wireless_transmitter.cpp"
 	"src/communication/wireless_receiver.cpp"
@@ -147,7 +148,7 @@ target_compile_options(${TARGET} PRIVATE
 	$<$<COMPILE_LANGUAGE:CXX>:
 		#-O0 -g3
 		-Os -g
-		-std=c++2a
+		-std=c++17
 
 		-Wall
 		-Wextra

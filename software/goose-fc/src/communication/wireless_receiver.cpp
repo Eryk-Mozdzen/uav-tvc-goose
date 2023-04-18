@@ -12,7 +12,7 @@ public:
 	void task();
 };
 
-WirelessReceiver transmitter;
+WirelessReceiver wireless_receiver;
 
 WirelessReceiver::WirelessReceiver() : TaskClassS{"wireless RX", TaskPrio_High} {
 
@@ -32,7 +32,7 @@ void WirelessReceiver::task() {
 			transfer.consume(buffer[i]);
 
 			if(transfer.receive(frame)) {
-				Transport::getInstance().wireless_rx_queue.push(frame, 0);
+				Transport::getInstance().frame_rx_queue.push(frame, 0);
 			}
 		}
 	}

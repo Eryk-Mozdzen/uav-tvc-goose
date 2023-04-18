@@ -3,6 +3,8 @@
 #include "FreeRTOS.h"
 #include "task.h"
 
+#include "transport.h"
+
 uint8_t UserRxBufferFS[APP_RX_DATA_SIZE];
 uint8_t UserTxBufferFS[APP_TX_DATA_SIZE];
 
@@ -44,6 +46,13 @@ static int8_t CDC_Control_FS(uint8_t cmd, uint8_t* pbuf, uint16_t length) {
 
 static int8_t CDC_Receive_FS(uint8_t* Buf, uint32_t *Len) {
 	USBD_CDC_SetRxBuffer(&hUsbDeviceFS, &Buf[0]);
+
+	BaseType_t xHigherPriorityTaskWoken = pdFALSE;
+
+	for(uint32_t i=0; i<*Len; i++) {
+		Transport::getInstance().wire_rx_queue.push_ISR(Buf[i], xHigherPriorityTaskWoken);
+	}
+
 	USBD_CDC_ReceivePacket(&hUsbDeviceFS);
 	return USBD_OK;
 }
@@ -62,6 +71,9 @@ uint8_t CDC_Transmit_FS(uint8_t* Buf, uint16_t Len) {
 }
 
 static int8_t CDC_TransmitCplt_FS(uint8_t *Buf, uint32_t *Len, uint8_t epnum) {
+	(void)Buf;
+	(void)Len;
+	(void)epnum;
 
 	vTaskNotifyGiveIndexedFromISR(wire_transmitter_task, 0, NULL);
 
