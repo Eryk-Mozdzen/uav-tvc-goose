@@ -7,24 +7,23 @@ Rectangle {
     color: Style.background
     radius: 15
     width: height
-
+    readonly property real step: 0.04*height
     Rectangle {
-        id: downText
         x: parent.width/2 - width/2 - parent.width/4.2
         y: parent.height/2 - height/2 + parent.height/3.2
-        width: 75
-        height: 25
+        width: 4.5*step
+        height: 1.5*step
         radius: 10
         color: Style.secondary
         Text{
-            anchors.centerIn: parent
-            font.pointSize: 12
+            id: downText
+            anchors.fill: parent
+            font.pixelSize: step
+            anchors.rightMargin: 0.5*step
             color: Style.text
-            text: "69 deg"
-            Timer {
-                interval: 100; running: true; repeat: true
-                onTriggered: parent.text = Math.floor(Style.angle_down) + " deg"
-            }
+            horizontalAlignment: Text.AlignRight
+            verticalAlignment: Text.AlignVCenter
+            text: "?? deg"
         }
     }
 
@@ -38,15 +37,7 @@ Rectangle {
         radius: 10
 
         Rectangle {
-            width: 0
-            height: parent.height - parent.height/6
-            y: parent.height/2 - height/2
-            x: parent.height/2 - height/2
-            color: Style.third
-            radius: parent.width/20
-        }
-
-        Rectangle {
+            id: downWingBar
             width: parent.width/10
             height: parent.width - parent.width/6
             anchors.centerIn: parent
@@ -54,50 +45,31 @@ Rectangle {
             radius: parent.width/10
 
             Rectangle {
+                id: downWingSlide
                 width: 0
                 height: parent.height - 10
                 y: 10/2
                 color: Style.third
-                
-
-                Timer {
-                    property double counter: 0
-                    interval: 100; running: true; repeat: true
-                    onTriggered: {
-                        if (Style.angle_down >= 0.0){
-                            parent.anchors.left = parent.parent.right
-                            parent.anchors.right = parent.parent.center
-                        }
-                        else{
-                            parent.anchors.left = parent.parent.center
-                            parent.anchors.right = parent.parent.left
-                        }
-                        parent.width = Math.abs(Style.angle_down) / 30 * parent.parent.height/2 - parent.width/6
-                        Style.angle_down = 30*Math.sin(counter-0.9)
-                        counter += 0.1
-                    }
-                }
             }
         }
     }
 
     Rectangle {
-        id: upText
         x: parent.width/2 - width/2 + parent.width/4.2
         y: parent.height/2 - height/2 - parent.height/3.2
-        width: 75
-        height: 25
+        width: 4.5*step
+        height: 1.5*step
         radius: 10
         color: Style.secondary
         Text{
-            anchors.centerIn: parent
-            font.pointSize: 12
+            id: upText
+            anchors.fill: parent
+            font.pixelSize: step
+            anchors.rightMargin: 0.5*step
             color: Style.text
-            text: "69 deg"
-            Timer {
-                interval: 100; running: true; repeat: true
-                onTriggered: parent.text = Math.floor(Style.angle_up) + " deg"
-            }
+            horizontalAlignment: Text.AlignRight
+            verticalAlignment: Text.AlignVCenter
+            text: "?? deg"
         }
     }
 
@@ -111,6 +83,7 @@ Rectangle {
         radius: 10
 
         Rectangle {
+            id: upWingBar
             width: parent.width/10
             height: parent.width - parent.width/6
             anchors.centerIn: parent
@@ -118,50 +91,32 @@ Rectangle {
             radius: parent.width/10
 
             Rectangle {
+                id: upWingSlide
                 width: 0
                 height: parent.height - 10
                 y: 10/2
                 color: Style.third
                 radius: parent.width/20
-
-                Timer {
-                    property double counter: 0
-                    interval: 100; running: true; repeat: true
-                    onTriggered: {
-                        if (Style.angle_up >= 0.0){
-                            parent.anchors.left = parent.parent.right
-                            parent.anchors.right = parent.parent.center
-                        }
-                        else{
-                            parent.anchors.left = parent.parent.center
-                            parent.anchors.right = parent.parent.left
-                        }
-                        parent.width = Math.abs(Style.angle_up) / 30 * parent.parent.height/2 - parent.width/6
-                        Style.angle_up = 30*Math.sin(counter-0.5)
-                        counter += 0.1
-                    }
-                }
             }
         }
     }
 
     Rectangle {
-        id: leftText
         x: parent.width/2 - width/2 - parent.width/3.2
         y: parent.height/2 - height/2 - parent.height/5
-        width: 75
-        height: 25
+        width: 4.5*step
+        height: 1.5*step
         radius: 10
         color: Style.secondary
         Text{
-            anchors.centerIn: parent
-            font.pointSize: 12
+            id: leftText
+            anchors.fill: parent
+            font.pixelSize: step
+            anchors.rightMargin: 0.5*step
             color: Style.text
-            text: "69 deg"
-            Timer {
-                interval: 100; running: true; repeat: true
-                onTriggered: parent.text = Math.floor(Style.angle_left) + " deg"
-            }
+            horizontalAlignment: Text.AlignRight
+            verticalAlignment: Text.AlignVCenter
+            text: "?? deg"
         }
     }
 
@@ -175,6 +130,7 @@ Rectangle {
         radius: 10
 
         Rectangle {
+            id: leftWingBar
             width: parent.width - parent.width/6
             height: parent.width/10
             anchors.centerIn: parent
@@ -182,50 +138,31 @@ Rectangle {
             radius: parent.width/10
 
             Rectangle {
+                id: leftWingSlide
                 x: 10/2
                 width: parent.width - 10
                 height: 0
                 color: Style.third
-
-                Timer {
-                    property double counter: 0
-                    interval: 100; running: true; repeat: true
-                    onTriggered: {
-                        if (Style.angle_left >= 0.0){
-                            parent.anchors.bottom = parent.parent.top
-                            parent.anchors.top = parent.parent.center
-                        }
-                        else{
-                            parent.anchors.bottom =parent.parent.center
-                            parent.anchors.top = parent.parent.bottom
-                        }
-                        parent.height = Math.abs(Style.angle_left) / 30 * parent.parent.parent.height/2 - parent.width/6
-                        Style.angle_left = 30*Math.sin(counter+.4)
-                        counter += 0.2
-                    }
-                }
             }
         }
     }
 
     Rectangle {
-        id: rightText
         x: parent.width/2 - width/2 + parent.width/3.2
         y: parent.height/2 - height/2 + parent.height/5
-        width: 75
-        height: 25
+        width: 4.5*step
+        height: 1.5*step
         radius: 10
         color: Style.secondary
         Text{
-            anchors.centerIn: parent
-            font.pointSize: 12
+            id: rightText
+            anchors.fill: parent
+            font.pixelSize: step
+            anchors.rightMargin: 0.5*step
             color: Style.text
-            text: "69 deg"
-            Timer {
-                property double counter: 0
-                interval: 100; running: true; repeat: true
-                onTriggered: parent.text = Math.floor(Style.angle_right) + " deg"
-            }
+            horizontalAlignment: Text.AlignRight
+            verticalAlignment: Text.AlignVCenter
+            text: "?? deg"
         }
     }
 
@@ -239,6 +176,7 @@ Rectangle {
         radius: 10
 
         Rectangle {
+            id: rightWingBar
             width: parent.width - parent.width/6
             height: parent.width/10
             anchors.centerIn: parent
@@ -246,28 +184,11 @@ Rectangle {
             radius: parent.width/10
 
             Rectangle {
+                id: rightWingSlide
                 x: 10/2
                 width: parent.width - 10
                 height: 0
                 color: Style.third
-
-                Timer {
-                    property double counter: 0
-                    interval: 100; running: true; repeat: true
-                    onTriggered: {
-                        if (Style.angle_right >= 0.0){
-                            parent.anchors.bottom = parent.parent.top
-                            parent.anchors.top = parent.parent.center
-                        }
-                        else{
-                            parent.anchors.bottom = parent.parent.center
-                            parent.anchors.top = parent.parent.bottom
-                        }
-                        parent.height = Math.abs(Style.angle_right) / 30 * parent.parent.parent.height/2 - parent.width/6
-                        Style.angle_right = 30*Math.sin(counter+.4)
-                        counter += 0.5
-                    }
-                }
             }
         }
 
@@ -294,7 +215,7 @@ Rectangle {
                 width: parent.height+5
                 height: 10
                 color: "black"
-                rotation: 45 
+                rotation: 45
             }
 
             Rectangle {
@@ -324,34 +245,99 @@ Rectangle {
                     radius: width/1.2
                     Text {
                         anchors.centerIn: parent
-                        font.pointSize: 6
+                        font.pixelSize: step*0.45
                         color: Style.text
                         text: "motor throttle:\n\n\n\n\n"
                         fontSizeMode: Text.Fit
                     }
 
                     Text {
-                        id: throttle
+                        id: throttleText
                         anchors.centerIn: parent
-                        font.pointSize: 20
+                        font.pixelSize: step*1.5
                         color: Style.text
-                        text: "100%"
+                        text: "???%"
                         fontSizeMode: Text.Fit
                         font.bold: true
-                        Timer {
-                            property double counter: 0
-                            interval: 100; running: true; repeat: true
-                            onTriggered: {
-                                Style.throttle = Math.floor(50 * Math.sin(counter *0.1) + 50)
-                                parent.text = Style.throttle + "%"
-                                rotor1.rotation +=  Style.throttle / 4
-                                rotor2.rotation +=  Style.throttle / 4
-                                counter += 0.2
-                            }
-                        }
                     }
                 }
             }
+        }
+    }
+
+
+    function setThrottle(throttle) {
+        throttleText.text = throttle + "%"
+        rotor1.rotation +=  throttle / 4
+        rotor2.rotation +=  throttle / 4
+    }
+
+    function setLeftWing(angle) {
+        if (angle >= 0.0){
+            leftWingSlide.anchors.bottom = leftWingBar.top
+            leftWingSlide.anchors.top =leftWingBar.center
+        }
+        else{
+            leftWingSlide.anchors.bottom = leftWingBar.center
+            leftWingSlide.anchors.top = leftWingBar.bottom
+        }
+        leftWingSlide.height = Math.abs(angle) / 30 * leftWing.height/2
+        leftWingSlide.height *= 0.75
+        leftText.text = Math.floor(angle) + " deg"
+    }
+
+    function setRightWing(angle) {
+        if (angle >= 0.0){
+            rightWingSlide.anchors.bottom = rightWingBar.top
+            rightWingSlide.anchors.top =rightWingBar.center
+        }
+        else{
+            rightWingSlide.anchors.bottom = rightWingBar.center
+            rightWingSlide.anchors.top = rightWingBar.bottom
+        }
+        rightWingSlide.height = Math.abs(angle) / 30 * rightWing.height/2
+        rightWingSlide.height *= 0.75
+        rightText.text = Math.floor(angle) + " deg"
+    }
+
+    function setUpWing(angle) {
+        if (angle >= 0.0){
+            upWingSlide.anchors.left = upWingBar.right
+            upWingSlide.anchors.right =upWingBar.center
+        }
+        else{
+            upWingSlide.anchors.left = upWingBar.center
+            upWingSlide.anchors.right = upWingBar.left
+        }
+        upWingSlide.width = Math.abs(angle) / 30 * upWing.height/2
+        upWingSlide.width *= 0.75
+        upText.text = Math.floor(angle) + " deg"
+    }
+
+    function setDownWing(angle) {
+        if (angle >= 0.0){
+            downWingSlide.anchors.left = downWingBar.right
+            downWingSlide.anchors.right =downWingBar.center
+        }
+        else{
+            downWingSlide.anchors.left = downWingBar.center
+            downWingSlide.anchors.right = downWingBar.left
+        }
+        downWingSlide.width = Math.abs(angle) / 30 * downWing.height/2
+        downWingSlide.width *= 0.75
+        downText.text = Math.floor(angle) + " deg"
+    }
+
+    Timer {
+        interval: 100; running: true; repeat: true
+        property double time: 0
+        onTriggered: {
+            time += 0.002
+            setThrottle(Math.floor(50 * Math.sin(time*10) + 50))
+            setRightWing(30*Math.sin(50*time+.4))
+            setLeftWing(30*Math.sin(30*time+.4))
+            setDownWing(30*Math.sin(-50*time+.4))
+            setUpWing(30*Math.sin(-30*time+.4))
         }
     }
 }
