@@ -33,8 +33,5 @@ void WireReceiver::task() {
 		if(transfer.receive(frame)) {
 			Transport::getInstance().frame_rx_queue.push(frame, 0);
 		}
-
-		frame.payload[0] = byte;
-		Transport::getInstance().frame_rx_queue.push(frame, 0);
 	}
 }

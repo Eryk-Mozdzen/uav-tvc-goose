@@ -49,7 +49,7 @@ static int8_t CDC_Receive_FS(uint8_t* Buf, uint32_t *Len) {
 
 	BaseType_t xHigherPriorityTaskWoken = pdFALSE;
 
-	for(uint32_t i=0; i<*Len; i++) {
+	for(int i=*Len-1; i>=0; i--) {
 		Transport::getInstance().wire_rx_queue.push_ISR(Buf[i], xHigherPriorityTaskWoken);
 	}
 
