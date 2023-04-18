@@ -9,21 +9,35 @@ Rectangle {
     width: height
     readonly property real step: 0.04*height
     Rectangle {
-        x: parent.width/2 - width/2 - parent.width/4.2
+        x: parent.width/2 - width/2 - parent.width/3.8
         y: parent.height/2 - height/2 + parent.height/3.2
-        width: 4.5*step
+        width: 4*step
         height: 1.5*step
         radius: 10
-        color: Style.secondary
-        Text{
-            id: downText
-            anchors.fill: parent
-            font.pixelSize: step
-            anchors.rightMargin: 0.5*step
-            color: Style.text
-            horizontalAlignment: Text.AlignRight
-            verticalAlignment: Text.AlignVCenter
-            text: "?? deg"
+        color: Style.background
+        Rectangle {
+            width: 2.2*step
+            height: 1.5*step
+            radius: 10
+            color: "black"
+            Text{
+                id: downText
+                anchors.fill: parent
+                font.pixelSize: step
+                anchors.rightMargin: 0.5*step
+                color: Style.text
+                horizontalAlignment: Text.AlignRight
+                verticalAlignment: Text.AlignVCenter
+                text: "???"
+            }
+            Text{
+                anchors.fill: parent
+                font.pixelSize: step
+                color: Style.text
+                verticalAlignment: Text.AlignVCenter
+                text: "deg"
+                anchors.leftMargin: 2.5*step
+            }
         }
     }
 
@@ -57,19 +71,33 @@ Rectangle {
     Rectangle {
         x: parent.width/2 - width/2 + parent.width/4.2
         y: parent.height/2 - height/2 - parent.height/3.2
-        width: 4.5*step
+        width: 4*step
         height: 1.5*step
         radius: 10
-        color: Style.secondary
-        Text{
-            id: upText
-            anchors.fill: parent
-            font.pixelSize: step
-            anchors.rightMargin: 0.5*step
-            color: Style.text
-            horizontalAlignment: Text.AlignRight
-            verticalAlignment: Text.AlignVCenter
-            text: "?? deg"
+        color: Style.background
+        Rectangle {
+            width: 2.2*step
+            height: 1.5*step
+            radius: 10
+            color: "black"
+            Text{
+                id: upText
+                anchors.fill: parent
+                font.pixelSize: step
+                anchors.rightMargin: 0.5*step
+                color: Style.text
+                horizontalAlignment: Text.AlignRight
+                verticalAlignment: Text.AlignVCenter
+                text: "???"
+            }
+            Text{
+                anchors.fill: parent
+                font.pixelSize: step
+                color: Style.text
+                verticalAlignment: Text.AlignVCenter
+                text: "deg"
+                anchors.leftMargin: 2.5*step
+            }
         }
     }
 
@@ -104,19 +132,33 @@ Rectangle {
     Rectangle {
         x: parent.width/2 - width/2 - parent.width/3.2
         y: parent.height/2 - height/2 - parent.height/5
-        width: 4.5*step
+        width: 4*step
         height: 1.5*step
         radius: 10
-        color: Style.secondary
-        Text{
-            id: leftText
-            anchors.fill: parent
-            font.pixelSize: step
-            anchors.rightMargin: 0.5*step
-            color: Style.text
-            horizontalAlignment: Text.AlignRight
-            verticalAlignment: Text.AlignVCenter
-            text: "?? deg"
+        color: Style.background
+        Rectangle {
+            width: 2.2*step
+            height: 1.5*step
+            radius: 10
+            color: "black"
+            Text{
+                id: leftText
+                anchors.fill: parent
+                font.pixelSize: step
+                anchors.rightMargin: 0.5*step
+                color: Style.text
+                horizontalAlignment: Text.AlignRight
+                verticalAlignment: Text.AlignVCenter
+                text: "???"
+            }
+            Text{
+                anchors.fill: parent
+                font.pixelSize: step
+                color: Style.text
+                verticalAlignment: Text.AlignVCenter
+                text: "deg"
+                anchors.leftMargin: 2.5*step
+            }
         }
     }
 
@@ -150,19 +192,33 @@ Rectangle {
     Rectangle {
         x: parent.width/2 - width/2 + parent.width/3.2
         y: parent.height/2 - height/2 + parent.height/5
-        width: 4.5*step
+        width: 4*step
         height: 1.5*step
         radius: 10
-        color: Style.secondary
-        Text{
-            id: rightText
-            anchors.fill: parent
-            font.pixelSize: step
-            anchors.rightMargin: 0.5*step
-            color: Style.text
-            horizontalAlignment: Text.AlignRight
-            verticalAlignment: Text.AlignVCenter
-            text: "?? deg"
+        color: Style.background
+        Rectangle {
+            width: 2.2*step
+            height: 1.5*step
+            radius: 10
+            color: "black"
+            Text{
+                id: rightText
+                anchors.fill: parent
+                font.pixelSize: step
+                anchors.rightMargin: 0.5*step
+                color: Style.text
+                horizontalAlignment: Text.AlignRight
+                verticalAlignment: Text.AlignVCenter
+                text: "???"
+            }
+            Text{
+                anchors.fill: parent
+                font.pixelSize: step
+                color: Style.text
+                verticalAlignment: Text.AlignVCenter
+                text: "deg"
+                anchors.leftMargin: 2.5*step
+            }
         }
     }
 
@@ -283,7 +339,7 @@ Rectangle {
         }
         leftWingSlide.height = Math.abs(angle) / 30 * leftWing.height/2
         leftWingSlide.height *= 0.75
-        leftText.text = Math.floor(angle) + " deg"
+        leftText.text = Math.floor(angle)
     }
 
     function setRightWing(angle) {
@@ -297,7 +353,7 @@ Rectangle {
         }
         rightWingSlide.height = Math.abs(angle) / 30 * rightWing.height/2
         rightWingSlide.height *= 0.75
-        rightText.text = Math.floor(angle) + " deg"
+        rightText.text = Math.floor(angle)
     }
 
     function setUpWing(angle) {
@@ -311,7 +367,7 @@ Rectangle {
         }
         upWingSlide.width = Math.abs(angle) / 30 * upWing.height/2
         upWingSlide.width *= 0.75
-        upText.text = Math.floor(angle) + " deg"
+        upText.text = Math.floor(angle)
     }
 
     function setDownWing(angle) {
@@ -325,7 +381,7 @@ Rectangle {
         }
         downWingSlide.width = Math.abs(angle) / 30 * downWing.height/2
         downWingSlide.width *= 0.75
-        downText.text = Math.floor(angle) + " deg"
+        downText.text = Math.floor(angle)
     }
 
     Timer {

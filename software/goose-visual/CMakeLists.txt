@@ -19,7 +19,6 @@ add_executable(${PROJECT_NAME}
 	"src/communication/telnet.cpp"
 	"src/interface/escape_codes.cpp"
 	"src/interface/printer_writer.cpp"
-	"src/interface/throttle.cpp"
 
 	"qml/resources.qrc"
 )
