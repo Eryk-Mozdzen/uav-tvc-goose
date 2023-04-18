@@ -8,4 +8,13 @@ QtObject {
     readonly property color third: "#196B6F"
     readonly property color background: "#222831"
     readonly property color text: "#EEEEEE"
+
+    readonly property color loggerDebug: "#AAAAAA"
+    readonly property color loggerInfo: primary
+    readonly property color loggerWarning: "#DDDD00"
+    readonly property color loggerError: "#DD0000"
+
+    readonly property color batteryFull: primary
+    readonly property color batteryMedium: "#DDDD00"
+    readonly property color batteryEmpty: "#DD0000"
 }

@@ -11,8 +11,9 @@ Telnet::Telnet(const QString address, const int port, QObject *parent) : QObject
 }
 
 void Telnet::transmit(const Transfer::FrameTX &frame) {
-    if(!socket.isOpen())
-		return;
+    if(!socket.isOpen()) {
+        return;
+    }
 
 	socket.write(reinterpret_cast<const char *>(frame.buffer), frame.length);
 }
@@ -30,12 +31,13 @@ void Telnet::handleDisconnected() {
 void Telnet::handleReadyRead() {
     const QByteArray data = socket.readAll();
 
-	for(int i=0; i<data.size(); i++) {
-		transfer.consume(data[i]);
+    for(int i=0; i<data.size(); i++) {
+        transfer.consume(data[i]);
 
-		Transfer::FrameRX frame;
+        Transfer::FrameRX frame;
 
-		if(transfer.receive(frame))
-			receive(frame);
-	}
+        if(transfer.receive(frame)) {
+            receive(frame);
+        }
+    }
 }
