@@ -5,6 +5,7 @@
 enum EscapeCode {
 	CYAN = 14,
 	GRAY = 7,
+	GREEN = 10,
 	YELLOW = 11,
 	RED = 9,
 	MAGENTA = 13
