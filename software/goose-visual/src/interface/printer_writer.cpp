@@ -31,24 +31,24 @@ void PrinterWriter::onReceive(const Transfer::FrameRX &frame) {
 		return;
 	}
 
-	if(frame.id==Transfer::ID::TELEMETRY_ESTIMATION_ATTITUDE) {
-		/*struct Quaternion {float w, i, j, k;} q;
+	/*if(frame.id==Transfer::ID::TELEMETRY_ESTIMATION_ATTITUDE) {
+		struct Quaternion {float w, i, j, k;} q;
 		frame.getPayload(q);
 
 		const std::ios_base::fmtflags default_flags = std::cout.flags();
 		std::cout << EscapeCode::MAGENTA << std::showpos << std::fixed << std::setprecision(5);
 		std::cout << q.w << " " << q.i << " " << q.j << " " << q.k << std::endl;
-		std::cout.flags(default_flags);*/
+		std::cout.flags(default_flags);
 
 		return;
-	}
+	}*/
 
 	if(frame.id==Transfer::ID::TELEMETRY_SENSOR_DISTANCE) {
 		float dist;
 		frame.getPayload(dist);
 
 		const std::ios_base::fmtflags default_flags = std::cout.flags();
-		std::cout << EscapeCode::GREEN << std::showpos << std::fixed << std::setprecision(3);
+		std::cout << EscapeCode::GREEN << std::fixed << std::setprecision(3);
 		std::cout << dist << std::endl;
 		std::cout.flags(default_flags);
 

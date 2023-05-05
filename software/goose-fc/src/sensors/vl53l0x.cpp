@@ -1,4 +1,5 @@
 #include "TaskCPP.h"
+#include "TimerCPP.h"
 
 #include "logger.h"
 #include "transport.h"
@@ -7,31 +8,81 @@
 #include "vl53l0x_api.h"
 
 class VL53L0X : TaskClassS<1024> {
-	VL53L0X_Dev_t sensor;
 	I2C_HandleTypeDef hi2c3;
 
-	VL53L0X_RangingMeasurementData_t ranging_data;
+	TimerMember<VL53L0X> slave_recovery_timer;
 
-public:
-	VL53L0X();
+	void slaveRecovery();
+	void slaveRecoveryTimeout();
 
 	void gpioInit();
 	void busInit();
 	void sensorInit();
 
-	bool readData();
+public:
+	VL53L0X();
+
 	float getDistance() const;
 
 	void task();
 };
 
-TaskHandle_t dist_task;
+VL53L0X_Dev_t vlx_sensor;
+VL53L0X_RangingMeasurementData_t vlx_ranging_data;
+TaskHandle_t vlx_task;
 
 VL53L0X laser;
 
-VL53L0X::VL53L0X() : TaskClassS{"VL53L0X reader", TaskPrio_Low} {
-	sensor.I2cHandle = &hi2c3;
-	sensor.I2cDevAddr = 0x52;
+VL53L0X::VL53L0X() : TaskClassS{"VL53L0X reader", TaskPrio_Low},
+		slave_recovery_timer{"VLX slave recovery timeout", this, &VL53L0X::slaveRecoveryTimeout, 1000, pdFALSE} {
+
+	vlx_sensor.I2cHandle = &hi2c3;
+	vlx_sensor.I2cDevAddr = 0x52;
+}
+
+void VL53L0X::slaveRecovery() {
+	// config I2C SDA and SCL pin as IO pins
+	// manualy toggle SCL line to generate clock pulses until 10 consecutive 1 on SDA occure
+
+	slave_recovery_timer.start();
+
+	__HAL_RCC_GPIOB_CLK_ENABLE();
+
+	GPIO_InitTypeDef GPIO_InitStruct;
+	GPIO_InitStruct.Pin = GPIO_PIN_8;
+	GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_OD;
+	GPIO_InitStruct.Pull = GPIO_NOPULL;
+	GPIO_InitStruct.Speed = GPIO_SPEED_LOW;
+	HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
+
+	GPIO_InitStruct.Pin = GPIO_PIN_9;
+	GPIO_InitStruct.Mode = GPIO_MODE_INPUT;
+	HAL_GPIO_Init(GPIOC, &GPIO_InitStruct);
+
+	HAL_GPIO_WritePin(GPIOA, GPIO_PIN_8, GPIO_PIN_RESET);
+
+	Logger::getInstance().log(Logger::INFO, "vlx: performing recovery from slaves...");
+
+	int ones = 0;
+	while(ones<=10) {
+		if(!HAL_GPIO_ReadPin(GPIOC, GPIO_PIN_9)) {
+			ones = 0;
+		}
+
+		HAL_GPIO_TogglePin(GPIOA, GPIO_PIN_8);
+		//HAL_Delay(10);
+		vTaskDelay(10);
+
+		ones++;
+	}
+
+	slave_recovery_timer.stop();
+
+	Logger::getInstance().log(Logger::INFO, "vlx: recovery from slaves complete");
+}
+
+void VL53L0X::slaveRecoveryTimeout() {
+	Logger::getInstance().log(Logger::ERROR, "vlx: recovery from slaves timeout");
 }
 
 void VL53L0X::gpioInit() {
@@ -40,15 +91,17 @@ void VL53L0X::gpioInit() {
 	// interrupt
 	__HAL_RCC_GPIOC_CLK_ENABLE();
 	GPIO_InitStruct.Pin = GPIO_PIN_14;
-	GPIO_InitStruct.Mode = GPIO_MODE_IT_RISING;
-	GPIO_InitStruct.Pull = GPIO_NOPULL;
+	GPIO_InitStruct.Mode = GPIO_MODE_IT_FALLING;
+	GPIO_InitStruct.Pull = GPIO_PULLUP;
 	HAL_GPIO_Init(GPIOC, &GPIO_InitStruct);
 	HAL_NVIC_SetPriority(EXTI15_10_IRQn, 6, 0);
 	HAL_NVIC_EnableIRQ(EXTI15_10_IRQn);
 
 	// xshut
+	__HAL_RCC_GPIOC_CLK_ENABLE();
 	GPIO_InitStruct.Pin = GPIO_PIN_13;
 	GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
+	GPIO_InitStruct.Pull = GPIO_NOPULL;
 	GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
 	HAL_GPIO_Init(GPIOC, &GPIO_InitStruct);
 }
@@ -78,56 +131,52 @@ void VL53L0X::sensorInit() {
     uint8_t VhvSettings;
     uint8_t PhaseCal;
 
-	VL53L0X_WaitDeviceBooted(&sensor);
-	VL53L0X_DataInit(&sensor);
-	VL53L0X_StaticInit(&sensor);
-	VL53L0X_PerformRefCalibration(&sensor, &VhvSettings, &PhaseCal);
-	VL53L0X_PerformRefSpadManagement(&sensor, &refSpadCount, &isApertureSpads);
-	//VL53L0X_SetDeviceMode(&sensor, VL53L0X_DEVICEMODE_CONTINUOUS_RANGING);
+	VL53L0X_Error status = VL53L0X_ERROR_NONE;
 
-	VL53L0X_SetDeviceMode(&sensor, VL53L0X_DEVICEMODE_SINGLE_RANGING);
+	HAL_NVIC_DisableIRQ(EXTI15_10_IRQn);
 
-	//VL53L0X_SetLimitCheckEnable(&sensor, VL53L0X_CHECKENABLE_SIGMA_FINAL_RANGE, 1);
-	//VL53L0X_SetLimitCheckEnable(&sensor, VL53L0X_CHECKENABLE_SIGNAL_RATE_FINAL_RANGE, 1);
-	//VL53L0X_SetLimitCheckValue(&sensor, VL53L0X_CHECKENABLE_SIGNAL_RATE_FINAL_RANGE, (FixPoint1616_t)(0.1*65536));
-	//VL53L0X_SetLimitCheckValue(&sensor, VL53L0X_CHECKENABLE_SIGMA_FINAL_RANGE, (FixPoint1616_t)(60*65536));
-	VL53L0X_SetMeasurementTimingBudgetMicroSeconds(&sensor, 33000);
-	VL53L0X_SetVcselPulsePeriod(&sensor, VL53L0X_VCSEL_PERIOD_PRE_RANGE, 18);
-	VL53L0X_SetVcselPulsePeriod(&sensor, VL53L0X_VCSEL_PERIOD_FINAL_RANGE, 14);
+	VL53L0X_WaitDeviceBooted(&vlx_sensor);
+	if(status==VL53L0X_ERROR_NONE) status = VL53L0X_DataInit(&vlx_sensor);
+	if(status==VL53L0X_ERROR_NONE) status = VL53L0X_StaticInit(&vlx_sensor);
+	if(status==VL53L0X_ERROR_NONE) status = VL53L0X_PerformRefCalibration(&vlx_sensor, &VhvSettings, &PhaseCal);
+	if(status==VL53L0X_ERROR_NONE) status = VL53L0X_PerformRefSpadManagement(&vlx_sensor, &refSpadCount, &isApertureSpads);
+	if(status==VL53L0X_ERROR_NONE) status = VL53L0X_SetDeviceMode(&vlx_sensor, VL53L0X_DEVICEMODE_CONTINUOUS_RANGING);
 
-	VL53L0X_StartMeasurement(&sensor);
+	if(status==VL53L0X_ERROR_NONE) status = VL53L0X_SetLimitCheckEnable(&vlx_sensor, VL53L0X_CHECKENABLE_SIGMA_FINAL_RANGE, 1);
+	if(status==VL53L0X_ERROR_NONE) status = VL53L0X_SetLimitCheckEnable(&vlx_sensor, VL53L0X_CHECKENABLE_SIGNAL_RATE_FINAL_RANGE, 1);
+	if(status==VL53L0X_ERROR_NONE) status = VL53L0X_SetLimitCheckValue(&vlx_sensor, VL53L0X_CHECKENABLE_SIGNAL_RATE_FINAL_RANGE, (FixPoint1616_t)(0.1*65536));
+	if(status==VL53L0X_ERROR_NONE) status = VL53L0X_SetLimitCheckValue(&vlx_sensor, VL53L0X_CHECKENABLE_SIGMA_FINAL_RANGE, (FixPoint1616_t)(60*65536));
+	if(status==VL53L0X_ERROR_NONE) status = VL53L0X_SetMeasurementTimingBudgetMicroSeconds(&vlx_sensor, 33000);
+	if(status==VL53L0X_ERROR_NONE) status = VL53L0X_SetVcselPulsePeriod(&vlx_sensor, VL53L0X_VCSEL_PERIOD_PRE_RANGE, 18);
+	if(status==VL53L0X_ERROR_NONE) status = VL53L0X_SetVcselPulsePeriod(&vlx_sensor, VL53L0X_VCSEL_PERIOD_FINAL_RANGE, 14);
+
+	if(status==VL53L0X_ERROR_NONE) status = VL53L0X_StartMeasurement(&vlx_sensor);
+
+	HAL_NVIC_EnableIRQ(EXTI15_10_IRQn);
+
+	if(status!=VL53L0X_ERROR_NONE) {
+		Logger::getInstance().log(Logger::ERROR, "vlx: initialization error: %d", status);
+		return;
+	}
 
 	Logger::getInstance().log(Logger::INFO, "vlx: initialization complete");
 }
 
-bool VL53L0X::readData() {
-
-	//VL53L0X_GetRangingMeasurementData(&sensor, &ranging_data);
-	//VL53L0X_ClearInterruptMask(&sensor, VL53L0X_REG_SYSTEM_INTERRUPT_GPIO_NEW_SAMPLE_READY);
-
-	VL53L0X_PerformSingleRangingMeasurement(&sensor, &ranging_data);
-
-	return (ranging_data.RangeStatus==0);
-}
-
 float VL53L0X::getDistance() const {
-	return ranging_data.RangeMilliMeter*0.001f;
+	return vlx_ranging_data.RangeMilliMeter*0.001f;
 }
 
 void VL53L0X::task() {
-	dist_task = getTaskHandle();
+	vlx_task = getTaskHandle();
 
 	gpioInit();
 	busInit();
 	sensorInit();
 
-	TickType_t time = xTaskGetTickCount();
-
 	while(1) {
-		vTaskDelayUntil(&time, 33);
-		//ulTaskNotifyTakeIndexed(1, pdTRUE, portMAX_DELAY);
 
-		if(!readData()) {
+		if(!ulTaskNotifyTakeIndexed(1, pdTRUE, 1000)) {
+			Logger::getInstance().log(Logger::WARNING, "vlx: interrupt timeout");
 			continue;
 		}
 
