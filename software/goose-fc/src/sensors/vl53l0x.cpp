@@ -1,5 +1,4 @@
 #include "TaskCPP.h"
-#include "TimerCPP.h"
 
 #include "logger.h"
 #include "transport.h"
@@ -11,10 +10,6 @@ class VL53L0X : TaskClassS<1024> {
 	I2C_HandleTypeDef hi2c3;
 	VL53L0X_Dev_t vlx_sensor;
 	VL53L0X_RangingMeasurementData_t vlx_ranging_data;
-
-	TimerMember<VL53L0X> data_timer;
-
-	void dataTimeout();
 
 	void gpioInit();
 	void busInit();
@@ -33,8 +28,7 @@ TaskHandle_t vlx_task;
 
 VL53L0X laser;
 
-VL53L0X::VL53L0X() : TaskClassS{"VL53L0X reader", TaskPrio_Low},
-		data_timer{"VLX data timeout", this, &VL53L0X::dataTimeout, 1000, pdFALSE} {
+VL53L0X::VL53L0X() : TaskClassS{"VL53L0X reader", TaskPrio_Low} {
 	vlx_sensor.I2cHandle = &hi2c3;
 	vlx_sensor.I2cDevAddr = 0x52;
 }
@@ -116,10 +110,6 @@ void VL53L0X::sensorInit() {
 	Logger::getInstance().log(Logger::INFO, "vlx: initialization complete");
 }
 
-void VL53L0X::dataTimeout() {
-	Logger::getInstance().log(Logger::WARNING, "vlx: data timeout");
-}
-
 bool VL53L0X::readData() {
 	VL53L0X_Error status = VL53L0X_ERROR_NONE;
 
@@ -140,8 +130,6 @@ void VL53L0X::task() {
 	busInit();
 	sensorInit();
 
-	data_timer.start();
-
 	while(1) {
 
 		ulTaskNotifyTakeIndexed(1, pdTRUE, portMAX_DELAY);
@@ -149,8 +137,6 @@ void VL53L0X::task() {
 		if(!readData()) {
 			continue;
 		}
-
-		data_timer.start();
 
 		const float dist = getDistance();
 
