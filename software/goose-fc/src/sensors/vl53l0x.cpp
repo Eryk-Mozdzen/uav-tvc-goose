@@ -6,10 +6,12 @@
 #include "stm32f4xx_hal.h"
 #include "vl53l0x_api.h"
 
-class VL53L0X : TaskClassS<1024> {
+class VL53L0X : TaskClassS<2048> {
 	I2C_HandleTypeDef hi2c3;
 	VL53L0X_Dev_t vlx_sensor;
 	VL53L0X_RangingMeasurementData_t vlx_ranging_data;
+
+	void slaveRecovery();
 
 	void gpioInit();
 	void busInit();
@@ -33,6 +35,43 @@ VL53L0X::VL53L0X() : TaskClassS{"VL53L0X reader", TaskPrio_Low} {
 	vlx_sensor.I2cDevAddr = 0x52;
 }
 
+void VL53L0X::slaveRecovery() {
+	// config I2C SDA and SCL pin as IO pins
+	// manualy toggle SCL line to generate clock pulses until 10 consecutive 1 on SDA occure
+
+	__HAL_RCC_GPIOA_CLK_ENABLE();
+	__HAL_RCC_GPIOC_CLK_ENABLE();
+
+	GPIO_InitTypeDef GPIO_InitStruct;
+	GPIO_InitStruct.Pin = GPIO_PIN_8;
+	GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_OD;
+	GPIO_InitStruct.Pull = GPIO_NOPULL;
+	GPIO_InitStruct.Speed = GPIO_SPEED_LOW;
+	HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
+
+	GPIO_InitStruct.Pin = GPIO_PIN_9;
+	GPIO_InitStruct.Mode = GPIO_MODE_INPUT;
+	HAL_GPIO_Init(GPIOC, &GPIO_InitStruct);
+
+	HAL_GPIO_WritePin(GPIOA, GPIO_PIN_8, GPIO_PIN_RESET);
+
+	Logger::getInstance().log(Logger::DEBUG, "vlx: performing recovery from slaves...");
+
+	int ones = 0;
+	while(ones<=10) {
+		if(!HAL_GPIO_ReadPin(GPIOC, GPIO_PIN_9)) {
+			ones = 0;
+		}
+
+		HAL_GPIO_TogglePin(GPIOA, GPIO_PIN_8);
+		vTaskDelay(10);
+
+		ones++;
+	}
+
+	Logger::getInstance().log(Logger::DEBUG, "vlx: recovery from slaves complete");
+}
+
 void VL53L0X::gpioInit() {
 	GPIO_InitTypeDef GPIO_InitStruct;
 
@@ -52,6 +91,8 @@ void VL53L0X::gpioInit() {
 	GPIO_InitStruct.Pull = GPIO_NOPULL;
 	GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
 	HAL_GPIO_Init(GPIOC, &GPIO_InitStruct);
+
+	HAL_GPIO_WritePin(GPIOC, GPIO_PIN_13, GPIO_PIN_SET);
 }
 
 void VL53L0X::busInit() {
@@ -64,7 +105,15 @@ void VL53L0X::busInit() {
 	hi2c3.Init.OwnAddress2 = 0;
 	hi2c3.Init.GeneralCallMode = I2C_GENERALCALL_DISABLE;
 	hi2c3.Init.NoStretchMode = I2C_NOSTRETCH_DISABLE;
-	HAL_I2C_Init(&hi2c3);
+
+	const HAL_StatusTypeDef status = HAL_I2C_Init(&hi2c3);
+
+	if(status!=HAL_OK) {
+		Logger::getInstance().log(Logger::ERROR, "vlx: I2C initialization error: %d", status);
+		return;
+	}
+
+	Logger::getInstance().log(Logger::DEBUG, "vlx: I2C initialization success");
 }
 
 void VL53L0X::sensorInit() {
@@ -125,6 +174,8 @@ float VL53L0X::getDistance() const {
 
 void VL53L0X::task() {
 	vlx_task = getTaskHandle();
+
+	slaveRecovery();
 
 	gpioInit();
 	busInit();
