@@ -9,11 +9,12 @@
 
 class VL53L0X : TaskClassS<1024> {
 	I2C_HandleTypeDef hi2c3;
+	VL53L0X_Dev_t vlx_sensor;
+	VL53L0X_RangingMeasurementData_t vlx_ranging_data;
 
-	TimerMember<VL53L0X> slave_recovery_timer;
+	TimerMember<VL53L0X> data_timer;
 
-	void slaveRecovery();
-	void slaveRecoveryTimeout();
+	void dataTimeout();
 
 	void gpioInit();
 	void busInit();
@@ -22,67 +23,20 @@ class VL53L0X : TaskClassS<1024> {
 public:
 	VL53L0X();
 
+	bool readData();
 	float getDistance() const;
 
 	void task();
 };
 
-VL53L0X_Dev_t vlx_sensor;
-VL53L0X_RangingMeasurementData_t vlx_ranging_data;
 TaskHandle_t vlx_task;
 
 VL53L0X laser;
 
 VL53L0X::VL53L0X() : TaskClassS{"VL53L0X reader", TaskPrio_Low},
-		slave_recovery_timer{"VLX slave recovery timeout", this, &VL53L0X::slaveRecoveryTimeout, 1000, pdFALSE} {
-
+		data_timer{"VLX data timeout", this, &VL53L0X::dataTimeout, 1000, pdFALSE} {
 	vlx_sensor.I2cHandle = &hi2c3;
 	vlx_sensor.I2cDevAddr = 0x52;
-}
-
-void VL53L0X::slaveRecovery() {
-	// config I2C SDA and SCL pin as IO pins
-	// manualy toggle SCL line to generate clock pulses until 10 consecutive 1 on SDA occure
-
-	slave_recovery_timer.start();
-
-	__HAL_RCC_GPIOB_CLK_ENABLE();
-
-	GPIO_InitTypeDef GPIO_InitStruct;
-	GPIO_InitStruct.Pin = GPIO_PIN_8;
-	GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_OD;
-	GPIO_InitStruct.Pull = GPIO_NOPULL;
-	GPIO_InitStruct.Speed = GPIO_SPEED_LOW;
-	HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
-
-	GPIO_InitStruct.Pin = GPIO_PIN_9;
-	GPIO_InitStruct.Mode = GPIO_MODE_INPUT;
-	HAL_GPIO_Init(GPIOC, &GPIO_InitStruct);
-
-	HAL_GPIO_WritePin(GPIOA, GPIO_PIN_8, GPIO_PIN_RESET);
-
-	Logger::getInstance().log(Logger::INFO, "vlx: performing recovery from slaves...");
-
-	int ones = 0;
-	while(ones<=10) {
-		if(!HAL_GPIO_ReadPin(GPIOC, GPIO_PIN_9)) {
-			ones = 0;
-		}
-
-		HAL_GPIO_TogglePin(GPIOA, GPIO_PIN_8);
-		//HAL_Delay(10);
-		vTaskDelay(10);
-
-		ones++;
-	}
-
-	slave_recovery_timer.stop();
-
-	Logger::getInstance().log(Logger::INFO, "vlx: recovery from slaves complete");
-}
-
-void VL53L0X::slaveRecoveryTimeout() {
-	Logger::getInstance().log(Logger::ERROR, "vlx: recovery from slaves timeout");
 }
 
 void VL53L0X::gpioInit() {
@@ -162,6 +116,19 @@ void VL53L0X::sensorInit() {
 	Logger::getInstance().log(Logger::INFO, "vlx: initialization complete");
 }
 
+void VL53L0X::dataTimeout() {
+	Logger::getInstance().log(Logger::WARNING, "vlx: data timeout");
+}
+
+bool VL53L0X::readData() {
+	VL53L0X_Error status = VL53L0X_ERROR_NONE;
+
+	if(status==VL53L0X_ERROR_NONE) status = VL53L0X_GetRangingMeasurementData(&vlx_sensor, &vlx_ranging_data);
+	if(status==VL53L0X_ERROR_NONE) status = VL53L0X_ClearInterruptMask(&vlx_sensor, VL53L0X_REG_SYSTEM_INTERRUPT_GPIO_NEW_SAMPLE_READY);
+
+	return (status==VL53L0X_ERROR_NONE && vlx_ranging_data.RangeStatus==0);
+}
+
 float VL53L0X::getDistance() const {
 	return vlx_ranging_data.RangeMilliMeter*0.001f;
 }
@@ -173,12 +140,17 @@ void VL53L0X::task() {
 	busInit();
 	sensorInit();
 
+	data_timer.start();
+
 	while(1) {
 
-		if(!ulTaskNotifyTakeIndexed(1, pdTRUE, 1000)) {
-			Logger::getInstance().log(Logger::WARNING, "vlx: interrupt timeout");
+		ulTaskNotifyTakeIndexed(1, pdTRUE, portMAX_DELAY);
+
+		if(!readData()) {
 			continue;
 		}
+
+		data_timer.start();
 
 		const float dist = getDistance();
 
