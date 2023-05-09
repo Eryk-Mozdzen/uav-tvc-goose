@@ -77,7 +77,7 @@ Rectangle {
         }
     }
 
-    function add(type, text) {
+    function add(type: string, text: string) {
 
         if(loggerColumn.count>=50) {
             loggerColumn.remove(0)
@@ -96,21 +96,6 @@ Rectangle {
 
         if(!loggerSliderBar.pressed) {
             logListView.positionViewAtEnd()
-        }
-    }
-
-    // TEST
-    Timer {
-        interval: 500
-        running: true
-        repeat: true
-        onTriggered: {
-            let types = ["DEBUG", "INFO", "WARNING", "ERROR"]
-            let texts = ["witajcie w mojej kuchni", "sztosiwo kabanosiwo sztosiwo kabanosiwo sztosiwo kabanosiwo sztosiwo kabanosiwo sztosiwo kabanosiwo sztosiwo kabanosiwo"]
-            let rand1 = Math.floor(Math.random()*types.length)
-            let rand2 = Math.floor(Math.random()*texts.length)
-
-            add(types[rand1], texts[rand2])
         }
     }
 
