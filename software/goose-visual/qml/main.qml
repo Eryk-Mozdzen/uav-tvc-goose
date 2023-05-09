@@ -59,9 +59,9 @@ ApplicationWindow {
 			}
 		}
 
-
 		Logger {
 			id: logger
+			objectName: "logger"
 			anchors.top: actuators.bottom
 			anchors.left: parent.left
 			anchors.right: batterAltimeterCol.left
