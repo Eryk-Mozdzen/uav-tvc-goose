@@ -18,5 +18,7 @@
         <file>components/Battery.qml</file>
         <file>components/Logger.qml</file>
         <file>components/Scene.qml</file>
+
+        <file>models/rocket.obj</file>
     </qresource>
 </RCC>
