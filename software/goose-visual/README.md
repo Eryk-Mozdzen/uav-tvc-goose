@@ -9,5 +9,6 @@ sudo apt-get install -y \
     qtwayland5 \
     qml-module-qtquick-controls \
     qml-module-qtquick-controls2 \
-    libqt5serialport5-dev
+    libqt5serialport5-dev \
+    doxygen
 ```
