@@ -20,6 +20,7 @@
  * @see https://en.wikipedia.org/wiki/Cyclic_redundancy_check
  */
 class Transfer {
+private:
 	static constexpr size_t max_length = 250;		/*!< Maximal size od payload */
 	static constexpr uint8_t start_byte = 0x00;		/*!< Frame start byte */
 
