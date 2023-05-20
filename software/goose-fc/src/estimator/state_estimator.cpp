@@ -197,6 +197,11 @@ void StateEstimator::task() {
 				case Transport::Sensors::BAROMETER: {
 
 				} break;
+				case Transport::Sensors::LASER: {
+					float dist = 0.f;
+					Transport::getInstance().sensor_queue.getValue(dist);
+					Logger::getInstance().send(Transfer::ID::TELEMETRY_SENSOR_DISTANCE, dist);
+				} break;
 			}
 
 			if(acc_ready) {
