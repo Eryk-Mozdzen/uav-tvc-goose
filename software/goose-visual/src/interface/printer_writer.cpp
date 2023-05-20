@@ -43,7 +43,7 @@ void PrinterWriter::onReceive(const Transfer::FrameRX &frame) {
 		return;
 	}*/
 
-	if(frame.id==Transfer::ID::TELEMETRY_SENSOR_DISTANCE) {
+	/*if(frame.id==Transfer::ID::TELEMETRY_SENSOR_DISTANCE) {
 		float dist;
 		frame.getPayload(dist);
 
@@ -53,7 +53,58 @@ void PrinterWriter::onReceive(const Transfer::FrameRX &frame) {
 		std::cout.flags(default_flags);
 
 		return;
+	}*/
+
+	if(frame.id==Transfer::ID::TELEMETRY_SENSOR_VOLTAGE) {
+		float voltage;
+		frame.getPayload(voltage);
+
+		const std::ios_base::fmtflags default_flags = std::cout.flags();
+		std::cout.setf(std::ios::fixed, std::ios::floatfield);
+		std::cout << EscapeCode::BLUE << std::fixed << std::setprecision(2) << std::setw(5);
+		std::cout << voltage << " V" << std::endl;
+		std::cout.flags(default_flags);
+
+		return;
 	}
+
+	if(frame.id==Transfer::ID::TELEMETRY_SENSOR_CURRENT) {
+		float current;
+		frame.getPayload(current);
+
+		const std::ios_base::fmtflags default_flags = std::cout.flags();
+		std::cout << EscapeCode::BLUE << std::fixed << std::setprecision(2) << std::setw(5);
+		std::cout << current << " A" << std::endl;
+		std::cout.flags(default_flags);
+
+		return;
+	}
+
+	//if(frame.id==Transfer::ID::TELEMETRY_SENSOR_MAGNETIC_FIELD) {
+	//if(frame.id==Transfer::ID::TELEMETRY_SENSOR_ACCELERATION) {
+	/*if(frame.id==Transfer::ID::TELEMETRY_SENSOR_GYRATION) {
+		struct Vector {float x, y, z; } vec;
+		frame.getPayload(vec);
+
+		const std::ios_base::fmtflags default_flags = std::cout.flags();
+		std::cout << EscapeCode::GREEN << std::showpos << std::fixed << std::setprecision(3);
+		std::cout << std::setw(10) << vec.x << " " << std::setw(10) << vec.y << " " << std::setw(10) << vec.z << std::endl;
+		std::cout.flags(default_flags);
+
+		return;
+	}*/
+
+	/*if(frame.id==Transfer::ID::TELEMETRY_SENSOR_PRESSURE) {
+		float pressure;
+		frame.getPayload(pressure);
+
+		const std::ios_base::fmtflags default_flags = std::cout.flags();
+		std::cout << EscapeCode::BLUE << std::fixed << std::setprecision(2) << std::setw(5);
+		std::cout << pressure << std::endl;
+		std::cout.flags(default_flags);
+
+		return;
+	}*/
 
 	/*std::cout << EscapeCode::MAGENTA << frame.id << "\t";
 	for(size_t i=0; i<frame.length; i++)
