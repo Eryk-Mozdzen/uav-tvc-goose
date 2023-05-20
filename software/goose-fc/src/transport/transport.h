@@ -15,7 +15,9 @@ public:
 		GYROSCOPE,
 		MAGNETOMETER,
 		BAROMETER,
-		LASER
+		LASER,
+		VOLTAGE,
+		CURRENT
 	};
 
 	MultiQueue<Sensors, 16, Vector, float> sensor_queue;

@@ -202,6 +202,16 @@ void StateEstimator::task() {
 					Transport::getInstance().sensor_queue.getValue(dist);
 					Logger::getInstance().send(Transfer::ID::TELEMETRY_SENSOR_DISTANCE, dist);
 				} break;
+				case Transport::Sensors::VOLTAGE: {
+					float voltage = 0.f;
+					Transport::getInstance().sensor_queue.getValue(voltage);
+					Logger::getInstance().send(Transfer::ID::TELEMETRY_SENSOR_VOLTAGE, voltage);
+				} break;
+				case Transport::Sensors::CURRENT: {
+					float current = 0.f;
+					Transport::getInstance().sensor_queue.getValue(current);
+					Logger::getInstance().send(Transfer::ID::TELEMETRY_SENSOR_CURRENT, current);
+				} break;
 			}
 
 			if(acc_ready) {
