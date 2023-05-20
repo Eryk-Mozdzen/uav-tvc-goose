@@ -2,6 +2,7 @@
 
 #include "logger.h"
 #include "transport.h"
+#include "interval_logger.h"
 
 #include "stm32f4xx_hal.h"
 
@@ -28,6 +29,9 @@ class PowerStats : TaskClassS<512> {
 
 	ADC_HandleTypeDef hadc1;
 
+	IntervalLogger<float> telemetry_voltage;
+	IntervalLogger<float> telemetry_current;
+
 	uint16_t readings[2];
 
 	void adcInit();
@@ -44,7 +48,9 @@ public:
 DMA_HandleTypeDef hdma_adc1;
 PowerStats power_stats;
 
-PowerStats::PowerStats() : TaskClassS{"Power Stats reader", TaskPrio_Low} {
+PowerStats::PowerStats() : TaskClassS{"Power Stats reader", TaskPrio_Low},
+		telemetry_voltage{"Power Stats telemetry voltage", Transfer::ID::TELEMETRY_SENSOR_VOLTAGE},
+		telemetry_current{"Power Stats telemetry current", Transfer::ID::TELEMETRY_SENSOR_CURRENT} {
 
 }
 
@@ -109,7 +115,7 @@ void PowerStats::task() {
 		Transport::getInstance().sensor_queue.add(Transport::Sensors::VOLTAGE, voltage, 0);
 		Transport::getInstance().sensor_queue.add(Transport::Sensors::CURRENT, current, 0);
 
-		Logger::getInstance().send(Transfer::ID::TELEMETRY_SENSOR_VOLTAGE, voltage);
-		Logger::getInstance().send(Transfer::ID::TELEMETRY_SENSOR_CURRENT, current);
+		telemetry_voltage.feed(voltage);
+		telemetry_current.feed(current);
 	}
 }
