@@ -17,7 +17,7 @@ void PrinterWriter::sendSomething() {
 
 void PrinterWriter::onReceive(const Transfer::FrameRX &frame) {
 
-	/*if(frame.id<=Transfer::ID::LOG_ERROR) {
+	if(frame.id<=Transfer::ID::LOG_ERROR) {
 		switch(frame.id) {
 			case Transfer::ID::LOG_DEBUG:	std::cout << EscapeCode::GRAY;		break;
 			case Transfer::ID::LOG_INFO:	std::cout << EscapeCode::CYAN;		break;
@@ -29,7 +29,7 @@ void PrinterWriter::onReceive(const Transfer::FrameRX &frame) {
 		std::cout << std::string(reinterpret_cast<const char *>(frame.payload), frame.length) << std::endl;
 
 		return;
-	}*/
+	}
 
 	/*if(frame.id==Transfer::ID::TELEMETRY_ESTIMATION_ATTITUDE) {
 		struct Quaternion {float w, i, j, k;} q;
@@ -79,6 +79,32 @@ void PrinterWriter::onReceive(const Transfer::FrameRX &frame) {
 
 		return;
 	}
+
+	//if(frame.id==Transfer::ID::TELEMETRY_SENSOR_MAGNETIC_FIELD) {
+	//if(frame.id==Transfer::ID::TELEMETRY_SENSOR_ACCELERATION) {
+	/*if(frame.id==Transfer::ID::TELEMETRY_SENSOR_GYRATION) {
+		struct Vector {float x, y, z; } vec;
+		frame.getPayload(vec);
+
+		const std::ios_base::fmtflags default_flags = std::cout.flags();
+		std::cout << EscapeCode::GREEN << std::showpos << std::fixed << std::setprecision(3);
+		std::cout << std::setw(10) << vec.x << " " << std::setw(10) << vec.y << " " << std::setw(10) << vec.z << std::endl;
+		std::cout.flags(default_flags);
+
+		return;
+	}*/
+
+	/*if(frame.id==Transfer::ID::TELEMETRY_SENSOR_PRESSURE) {
+		float pressure;
+		frame.getPayload(pressure);
+
+		const std::ios_base::fmtflags default_flags = std::cout.flags();
+		std::cout << EscapeCode::BLUE << std::fixed << std::setprecision(2) << std::setw(5);
+		std::cout << pressure << std::endl;
+		std::cout.flags(default_flags);
+
+		return;
+	}*/
 
 	/*std::cout << EscapeCode::MAGENTA << frame.id << "\t";
 	for(size_t i=0; i<frame.length; i++)

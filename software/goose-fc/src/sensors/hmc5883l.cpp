@@ -5,6 +5,7 @@
 #include "transport.h"
 #include "sensor_bus.h"
 #include "matrix.h"
+#include "interval_logger.h"
 
 #define HMC5883L_ADDR				0x1E
 
@@ -53,6 +54,8 @@
 class HMC5883L : public TaskClassS<1024> {
 	Vector magnetic_field;
 
+	IntervalLogger<Vector> telemetry;
+
 public:
 
 	HMC5883L();
@@ -69,7 +72,8 @@ TaskHandle_t mag_task;
 
 HMC5883L magnetometer;
 
-HMC5883L::HMC5883L() : TaskClassS{"HMC5883L reader", TaskPrio_Low} {
+HMC5883L::HMC5883L() : TaskClassS{"HMC5883L reader", TaskPrio_Low},
+		telemetry{"HMC5883L telemetry", Transfer::ID::TELEMETRY_SENSOR_MAGNETIC_FIELD} {
 
 }
 
@@ -152,5 +156,7 @@ void HMC5883L::task() {
 		const Vector mag = getMagneticField();
 
 		Transport::getInstance().sensor_queue.add(Transport::Sensors::MAGNETOMETER, mag, 0);
+
+		telemetry.feed(mag);
 	}
 }

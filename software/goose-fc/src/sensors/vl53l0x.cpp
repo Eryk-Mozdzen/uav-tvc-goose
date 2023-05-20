@@ -2,6 +2,7 @@
 
 #include "logger.h"
 #include "transport.h"
+#include "interval_logger.h"
 
 #include "stm32f4xx_hal.h"
 #include "vl53l0x_api.h"
@@ -11,8 +12,9 @@ class VL53L0X : TaskClassS<2048> {
 	VL53L0X_Dev_t vlx_sensor;
 	VL53L0X_RangingMeasurementData_t vlx_ranging_data;
 
-	void slaveRecovery();
+	IntervalLogger<float> telemetry;
 
+	void slaveRecovery();
 	void gpioInit();
 	void busInit();
 	void sensorInit();
@@ -30,7 +32,8 @@ TaskHandle_t vlx_task;
 
 VL53L0X laser;
 
-VL53L0X::VL53L0X() : TaskClassS{"VL53L0X reader", TaskPrio_Low} {
+VL53L0X::VL53L0X() : TaskClassS{"VL53L0X reader", TaskPrio_Low},
+		telemetry{"VL53L0X telemetry", Transfer::ID::TELEMETRY_SENSOR_DISTANCE} {
 	vlx_sensor.I2cHandle = &hi2c3;
 	vlx_sensor.I2cDevAddr = 0x52;
 }
@@ -182,7 +185,6 @@ void VL53L0X::task() {
 	sensorInit();
 
 	while(1) {
-
 		ulTaskNotifyTakeIndexed(1, pdTRUE, portMAX_DELAY);
 
 		if(!readData()) {
@@ -192,5 +194,7 @@ void VL53L0X::task() {
 		const float dist = getDistance();
 
 		Transport::getInstance().sensor_queue.add(Transport::Sensors::LASER, dist, 0);
+
+		telemetry.feed(dist);
 	}
 }

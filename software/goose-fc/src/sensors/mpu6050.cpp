@@ -4,6 +4,7 @@
 #include "logger.h"
 #include "transport.h"
 #include "sensor_bus.h"
+#include "interval_logger.h"
 
 #define MPU6050_ADDR		0x68
 
@@ -202,6 +203,9 @@ class MPU6050 : public TaskClassS<1024> {
 	Vector gyration;
 	Vector acceleration;
 
+	IntervalLogger<Vector> telemetry_acc;
+	IntervalLogger<Vector> telemetry_gyr;
+
 public:
 
 	MPU6050();
@@ -219,7 +223,9 @@ TaskHandle_t imu_task;
 
 MPU6050 imu;
 
-MPU6050::MPU6050() : TaskClassS{"MPU6050 reader", TaskPrio_Low} {
+MPU6050::MPU6050() : TaskClassS{"MPU6050 reader", TaskPrio_Low},
+		telemetry_acc{"MPU6050 telemetry acc", Transfer::ID::TELEMETRY_SENSOR_ACCELERATION},
+		telemetry_gyr{"MPU6050 telemetry gyr", Transfer::ID::TELEMETRY_SENSOR_GYRATION} {
 
 }
 
@@ -340,5 +346,8 @@ void MPU6050::task() {
 
 		Transport::getInstance().sensor_queue.add(Transport::Sensors::ACCELEROMETER, acc, 0);
 		Transport::getInstance().sensor_queue.add(Transport::Sensors::GYROSCOPE, gyr, 0);
+
+		telemetry_acc.feed(acc);
+		telemetry_gyr.feed(gyr);
 	}
 }
