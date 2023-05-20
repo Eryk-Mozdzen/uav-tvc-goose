@@ -108,5 +108,8 @@ void PowerStats::task() {
 
 		Transport::getInstance().sensor_queue.add(Transport::Sensors::VOLTAGE, voltage, 0);
 		Transport::getInstance().sensor_queue.add(Transport::Sensors::CURRENT, current, 0);
+
+		Logger::getInstance().send(Transfer::ID::TELEMETRY_SENSOR_VOLTAGE, voltage);
+		Logger::getInstance().send(Transfer::ID::TELEMETRY_SENSOR_CURRENT, current);
 	}
 }

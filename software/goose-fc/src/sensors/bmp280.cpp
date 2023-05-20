@@ -261,5 +261,7 @@ void BMP280::task() {
 		const float press = getPressure();
 
 		Transport::getInstance().sensor_queue.add(Transport::Sensors::BAROMETER, press, 0);
+
+		Logger::getInstance().send(Transfer::ID::TELEMETRY_SENSOR_PRESSURE, press);
 	}
 }
