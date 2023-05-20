@@ -16,7 +16,7 @@ class PowerStats : TaskClassS<512> {
 	struct SupplyVoltage {
 		static constexpr float R11 = 470000.f;
 		static constexpr float R12 = 100000.f;
-		static constexpr float gain = R11/(R11+R12);
+		static constexpr float gain = R12/(R11+R12);
 	};
 
 	struct SupplyCurrent {
@@ -30,7 +30,6 @@ class PowerStats : TaskClassS<512> {
 
 	uint16_t readings[2];
 
-	void gpioInit();
 	void adcInit();
 
 public:
@@ -42,18 +41,46 @@ public:
 	void task();
 };
 
+DMA_HandleTypeDef hdma_adc1;
 PowerStats power_stats;
 
 PowerStats::PowerStats() : TaskClassS{"Power Stats reader", TaskPrio_Low} {
 
 }
 
-void PowerStats::gpioInit() {
-
-}
-
 void PowerStats::adcInit() {
+	__HAL_RCC_DMA2_CLK_ENABLE();
 
+	HAL_NVIC_SetPriority(DMA2_Stream0_IRQn, 6, 0);
+	HAL_NVIC_EnableIRQ(DMA2_Stream0_IRQn);
+
+	hadc1.Instance = ADC1;
+	hadc1.Init.ClockPrescaler = ADC_CLOCK_SYNC_PCLK_DIV4;
+	hadc1.Init.Resolution = ADC_RESOLUTION_12B;
+	hadc1.Init.ScanConvMode = ENABLE;
+	hadc1.Init.ContinuousConvMode = ENABLE;
+	hadc1.Init.DiscontinuousConvMode = DISABLE;
+	hadc1.Init.ExternalTrigConvEdge = ADC_EXTERNALTRIGCONVEDGE_NONE;
+	hadc1.Init.ExternalTrigConv = ADC_SOFTWARE_START;
+	hadc1.Init.DataAlign = ADC_DATAALIGN_RIGHT;
+	hadc1.Init.NbrOfConversion = 2;
+	hadc1.Init.DMAContinuousRequests = ENABLE;
+	hadc1.Init.EOCSelection = ADC_EOC_SINGLE_CONV;
+	HAL_ADC_Init(&hadc1);
+
+	ADC_ChannelConfTypeDef sConfig;
+
+	sConfig.Channel = ADC_CHANNEL_4;
+	sConfig.Rank = 1;
+	sConfig.SamplingTime = ADC_SAMPLETIME_480CYCLES;
+	HAL_ADC_ConfigChannel(&hadc1, &sConfig);
+
+	sConfig.Channel = ADC_CHANNEL_5;
+	sConfig.Rank = 2;
+	sConfig.SamplingTime = ADC_SAMPLETIME_480CYCLES;
+	HAL_ADC_ConfigChannel(&hadc1, &sConfig);
+
+	HAL_ADC_Start_DMA(&hadc1, (uint32_t *)readings, 2);
 }
 
 float PowerStats::getSupplyVoltage() const {
@@ -69,7 +96,6 @@ float PowerStats::getSupplyCurrent() const {
 }
 
 void PowerStats::task() {
-	gpioInit();
 	adcInit();
 
 	TickType_t time = xTaskGetTickCount();
