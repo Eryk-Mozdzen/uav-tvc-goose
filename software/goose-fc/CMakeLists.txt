@@ -54,6 +54,7 @@ add_executable(${TARGET}
 
 	"FreeRTOS/ARM_CM4F/port.c"
 	"FreeRTOS/freertos_exceptions.c"
+	"FreeRTOS/freertos_runtime_stats.c"
 
 	"HAL/stm32f4xx_hal_it.c"
 	"HAL/stm32f4xx_hal_msp.c"
@@ -68,6 +69,7 @@ add_executable(${TARGET}
 
 	"src/main.cpp"
 	"src/blink.cpp"
+	"src/stats.cpp"
 	"src/sensors/sensor_bus.cpp"
 	"src/sensors/bmp280.cpp"
 	"src/sensors/mpu6050.cpp"

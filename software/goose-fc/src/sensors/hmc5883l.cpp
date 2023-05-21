@@ -51,7 +51,7 @@
 #define HMC5883L_MODE_SINGLE			(0x01<<0)
 #define HMC5883L_MODE_IDLE				(0x02<<0)
 
-class HMC5883L : public TaskClassS<1024> {
+class HMC5883L : public TaskClassS<512> {
 	Vector magnetic_field;
 
 	IntervalLogger<Vector> telemetry;

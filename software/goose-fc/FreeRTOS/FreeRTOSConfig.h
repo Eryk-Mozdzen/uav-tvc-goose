@@ -31,7 +31,6 @@
 #define configMINIMAL_STACK_SIZE			( ( unsigned short ) 130 )
 #define configTOTAL_HEAP_SIZE				( ( size_t ) ( 75 * 1024 ) )
 #define configMAX_TASK_NAME_LEN				( 32 )
-#define configUSE_TRACE_FACILITY			1
 #define configUSE_16_BIT_TICKS				0
 #define configIDLE_SHOULD_YIELD				1
 #define configUSE_MUTEXES					1
@@ -41,8 +40,15 @@
 #define configUSE_MALLOC_FAILED_HOOK		1
 #define configUSE_APPLICATION_TASK_TAG		0
 #define configUSE_COUNTING_SEMAPHORES		1
-#define configGENERATE_RUN_TIME_STATS		0
 #define configTASK_NOTIFICATION_ARRAY_ENTRIES   	5
+
+extern void runtime_stats_init();
+extern uint32_t runtime_stats_get();
+
+#define configGENERATE_RUN_TIME_STATS              1
+#define configUSE_TRACE_FACILITY                   1
+#define portCONFIGURE_TIMER_FOR_RUN_TIME_STATS()   runtime_stats_init()
+#define portGET_RUN_TIME_COUNTER_VALUE()           runtime_stats_get()
 
 /* Co-routine definitions. */
 #define configUSE_CO_ROUTINES			      0

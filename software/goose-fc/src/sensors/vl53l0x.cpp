@@ -7,7 +7,7 @@
 #include "stm32f4xx_hal.h"
 #include "vl53l0x_api.h"
 
-class VL53L0X : TaskClassS<1024> {
+class VL53L0X : TaskClassS<512> {
 	I2C_HandleTypeDef hi2c3;
 	VL53L0X_Dev_t vlx_sensor;
 	VL53L0X_RangingMeasurementData_t vlx_ranging_data;

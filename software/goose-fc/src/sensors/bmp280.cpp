@@ -84,7 +84,7 @@
 #define BMP280_CONFIG_SPI_3WIRE_DISABLE			(0x00<<0)
 #define BMP280_CONFIG_SPI_3WIRE_ENABLE			(0x01<<0)
 
-class BMP280 : public TaskClassS<1024> {
+class BMP280 : public TaskClassS<512> {
 
 	struct Calibration {
 		uint16_t dig_T1;

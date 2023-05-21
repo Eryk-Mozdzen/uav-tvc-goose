@@ -199,7 +199,7 @@
 
 #define MPU6050_WHO_AM_I_VALUE						(0x68<<0)
 
-class MPU6050 : public TaskClassS<1024> {
+class MPU6050 : public TaskClassS<512> {
 	Vector gyration;
 	Vector acceleration;
 
