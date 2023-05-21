@@ -43,6 +43,32 @@ void PrinterWriter::onReceive(const Transfer::FrameRX &frame) {
 		return;
 	}*/
 
+	/*if(frame.id==Transfer::ID::TELEMETRY_ESTIMATION_ALTITUDE) {
+		float altitude;
+		frame.getPayload(altitude);
+
+		const std::ios_base::fmtflags default_flags = std::cout.flags();
+		std::cout.setf(std::ios::fixed, std::ios::floatfield);
+		std::cout << EscapeCode::BLUE << std::fixed << std::setprecision(2) << std::setw(5);
+		std::cout << altitude << " m" << std::endl;
+		std::cout.flags(default_flags);
+
+		return;
+	}*/
+
+	if(frame.id==Transfer::ID::TELEMETRY_ESTIMATION_BATTERY_LEVEL) {
+		float battery;
+		frame.getPayload(battery);
+
+		const std::ios_base::fmtflags default_flags = std::cout.flags();
+		std::cout.setf(std::ios::fixed, std::ios::floatfield);
+		std::cout << EscapeCode::BLUE << std::fixed << std::setprecision(0) << std::setw(3);
+		std::cout << battery*100 << " %" << std::endl;
+		std::cout.flags(default_flags);
+
+		return;
+	}
+
 	/*if(frame.id==Transfer::ID::TELEMETRY_SENSOR_DISTANCE) {
 		float dist;
 		frame.getPayload(dist);
@@ -55,7 +81,7 @@ void PrinterWriter::onReceive(const Transfer::FrameRX &frame) {
 		return;
 	}*/
 
-	if(frame.id==Transfer::ID::TELEMETRY_SENSOR_VOLTAGE) {
+	/*if(frame.id==Transfer::ID::TELEMETRY_SENSOR_VOLTAGE) {
 		float voltage;
 		frame.getPayload(voltage);
 
@@ -78,7 +104,7 @@ void PrinterWriter::onReceive(const Transfer::FrameRX &frame) {
 		std::cout.flags(default_flags);
 
 		return;
-	}
+	}*/
 
 	//if(frame.id==Transfer::ID::TELEMETRY_SENSOR_MAGNETIC_FIELD) {
 	//if(frame.id==Transfer::ID::TELEMETRY_SENSOR_ACCELERATION) {
