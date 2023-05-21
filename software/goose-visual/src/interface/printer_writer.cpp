@@ -31,7 +31,7 @@ void PrinterWriter::onReceive(const Transfer::FrameRX &frame) {
 		return;
 	}
 
-	/*if(frame.id==Transfer::ID::TELEMETRY_ESTIMATION_ATTITUDE) {
+	if(frame.id==Transfer::ID::TELEMETRY_ESTIMATION_ATTITUDE) {
 		struct Quaternion {float w, i, j, k;} q;
 		frame.getPayload(q);
 
@@ -41,7 +41,7 @@ void PrinterWriter::onReceive(const Transfer::FrameRX &frame) {
 		std::cout.flags(default_flags);
 
 		return;
-	}*/
+	}
 
 	/*if(frame.id==Transfer::ID::TELEMETRY_SENSOR_DISTANCE) {
 		float dist;
@@ -55,7 +55,7 @@ void PrinterWriter::onReceive(const Transfer::FrameRX &frame) {
 		return;
 	}*/
 
-	if(frame.id==Transfer::ID::TELEMETRY_SENSOR_VOLTAGE) {
+	/*if(frame.id==Transfer::ID::TELEMETRY_SENSOR_VOLTAGE) {
 		float voltage;
 		frame.getPayload(voltage);
 
@@ -78,7 +78,7 @@ void PrinterWriter::onReceive(const Transfer::FrameRX &frame) {
 		std::cout.flags(default_flags);
 
 		return;
-	}
+	}*/
 
 	//if(frame.id==Transfer::ID::TELEMETRY_SENSOR_MAGNETIC_FIELD) {
 	//if(frame.id==Transfer::ID::TELEMETRY_SENSOR_ACCELERATION) {

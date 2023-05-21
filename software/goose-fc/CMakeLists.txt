@@ -80,6 +80,7 @@ add_executable(${TARGET}
 	"src/communication/communication_bus.cpp"
 	"src/communication/wireless_transmitter.cpp"
 	"src/communication/wireless_receiver.cpp"
+	"src/estimator/attitude_estimator.cpp"
 	"src/estimator/state_estimator.cpp"
 	"src/utils/quaternion.cpp"
 	"src/utils/vector.cpp"
