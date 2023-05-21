@@ -5,12 +5,18 @@
 #include "logger.h"
 #include "transport.h"
 #include "attitude_estimator.h"
+#include "altitude_estimator.h"
+#include "battery_estimator.h"
 #include "interval_logger.h"
 
 class StateEstimator : TaskClassS<2048> {
 	AttitudeEstimator attitude_estimator;
+	AltitudeEstimator altitude_estimator;
+	BatteryEstimator battery_estimator;
 
 	IntervalLogger<Quaternion> telemetry_attitude;
+	IntervalLogger<float> telemetry_altitude;
+	IntervalLogger<float> telemetry_battery;
 
 public:
 	StateEstimator();
@@ -21,7 +27,9 @@ public:
 StateEstimator estimator;
 
 StateEstimator::StateEstimator() : TaskClassS{"State Estimator", TaskPrio_Mid},
-		telemetry_attitude{"attitude telemetry", Transfer::ID::TELEMETRY_ESTIMATION_ATTITUDE} {
+		telemetry_attitude{"attitude telemetry", Transfer::ID::TELEMETRY_ESTIMATION_ATTITUDE},
+		telemetry_altitude{"altitude telemetry", Transfer::ID::TELEMETRY_ESTIMATION_ALTITUDE},
+		telemetry_battery{"SOC telemetry", Transfer::ID::TELEMETRY_ESTIMATION_BATTERY_LEVEL} {
 
 }
 
@@ -41,6 +49,7 @@ void StateEstimator::task() {
 					Vector acc;
 					Transport::getInstance().sensor_queue.getValue(acc);
 					attitude_estimator.feedAcceleration(acc);
+					altitude_estimator.feedAcceleration(acc);
 				} break;
 				case Transport::Sensors::GYROSCOPE: {
 					Vector gyr;
@@ -53,22 +62,37 @@ void StateEstimator::task() {
 					attitude_estimator.feedMagneticField(mag);
 				} break;
 				case Transport::Sensors::BAROMETER: {
-
+					float press;
+					Transport::getInstance().sensor_queue.getValue(press);
+					altitude_estimator.feedPressure(press);
 				} break;
 				case Transport::Sensors::LASER: {
-
+					float dist;
+					Transport::getInstance().sensor_queue.getValue(dist);
+					altitude_estimator.feedDistance(dist);
 				} break;
 				case Transport::Sensors::VOLTAGE: {
-
+					float voltage;
+					Transport::getInstance().sensor_queue.getValue(voltage);
+					battery_estimator.feedVoltage(voltage);
 				} break;
 				case Transport::Sensors::CURRENT: {
-
+					float current;
+					Transport::getInstance().sensor_queue.getValue(current);
+					battery_estimator.feedCurrent(current);
 				} break;
 			}
 		}
 
-		const Quaternion q = attitude_estimator.getAttitude();
+		const Quaternion attitude = attitude_estimator.getAttitude();
 
-		telemetry_attitude.feed(q);
+		altitude_estimator.feedAttitude(attitude);
+
+		const float altitude = altitude_estimator.getAltitude();
+		const float battery = battery_estimator.getStateOfCharge()*100;
+
+		telemetry_attitude.feed(attitude);
+		telemetry_altitude.feed(altitude);
+		telemetry_battery.feed(battery);
 	}
 }
