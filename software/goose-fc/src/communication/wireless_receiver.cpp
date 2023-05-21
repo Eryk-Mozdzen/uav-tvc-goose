@@ -4,7 +4,7 @@
 #include "transfer.h"
 #include "communication_bus.h"
 
-class WirelessReceiver : public TaskClassS<2048> {
+class WirelessReceiver : public TaskClassS<512> {
 public:
 
 	WirelessReceiver();

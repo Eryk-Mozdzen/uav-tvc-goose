@@ -39,16 +39,15 @@ void Stats::task() {
 
 		if(ulTotalTime>0) {
 			for(uint32_t x=0; x<uxArraySize; x++) {
-				const uint32_t ulStatsAsPercentage = pxTaskStatusArray[x].ulRunTimeCounter/ulTotalTime;
-
-				Logger::getInstance().log(Logger::DEBUG, "%-20s%8lu %3lu%%",
+				Logger::getInstance().log(Logger::DEBUG, "%-20s%8lu %3lu%%%6u",
 					pxTaskStatusArray[x].pcTaskName,
 					pxTaskStatusArray[x].ulRunTimeCounter,
-					ulStatsAsPercentage
+					pxTaskStatusArray[x].ulRunTimeCounter/ulTotalTime,
+					pxTaskStatusArray[x].usStackHighWaterMark
 				);
 			}
 		}
 
-		vTaskDelay(1000);
+		vTaskDelay(10000);
 	}
 }

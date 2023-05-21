@@ -5,7 +5,7 @@
 #include "transport.h"
 #include "transfer.h"
 
-class WireTransmitter : public TaskClassS<1024> {
+class WireTransmitter : public TaskClassS<512> {
 public:
 
 	WireTransmitter();

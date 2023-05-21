@@ -1,7 +1,7 @@
 #include "stm32f4xx_hal.h"
 #include "TaskCPP.h"
 
-class Blink : public TaskClassS<512> {
+class Blink : public TaskClassS<128> {
 public:
 	Blink();
 	void task();
