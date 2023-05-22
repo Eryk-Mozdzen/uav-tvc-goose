@@ -144,7 +144,27 @@ Rectangle {
         }
     }
 
+    Timer {
+        id: altimeterPressureTimeout
+        interval: 100
+        onTriggered: altimeterPressureText.text = "???"
+    }
+
+    Timer {
+        id: altimeterDistanceTimeout
+        interval: 100
+        onTriggered: altimeterDistanceText.text = "???"
+    }
+
+    Timer {
+        id: altimeteraltitudeTimeout
+        interval: 100
+        onTriggered: altimeterText.text = "???"
+    }
+
     function setAltitude(altitude) {
+        altimeteraltitudeTimeout.restart()
+
         if(altitude<0)
             altitude = 0
 
@@ -160,10 +180,12 @@ Rectangle {
     }
 
     function setPressure(pressure) {
+        altimeterPressureTimeout.restart()
         altimeterPressureText.text = pressure.toFixed(3)
     }
 
     function setDistance(distance) {
+        altimeterDistanceTimeout.restart()
         altimeterDistanceText.text = distance.toFixed(3)
     }
 }
