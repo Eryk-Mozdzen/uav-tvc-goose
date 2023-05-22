@@ -56,7 +56,7 @@ void PrinterWriter::onReceive(const Transfer::FrameRX &frame) {
 		return;
 	}*/
 
-	if(frame.id==Transfer::ID::TELEMETRY_ESTIMATION_BATTERY_LEVEL) {
+	/*if(frame.id==Transfer::ID::TELEMETRY_ESTIMATION_BATTERY_LEVEL) {
 		float battery;
 		frame.getPayload(battery);
 
@@ -67,7 +67,7 @@ void PrinterWriter::onReceive(const Transfer::FrameRX &frame) {
 		std::cout.flags(default_flags);
 
 		return;
-	}
+	}*/
 
 	/*if(frame.id==Transfer::ID::TELEMETRY_SENSOR_DISTANCE) {
 		float dist;
