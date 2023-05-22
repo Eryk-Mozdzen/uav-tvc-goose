@@ -33,6 +33,7 @@ add_executable(${PROJECT_NAME}
 	"src/interface/printer_writer.cpp"
 	"src/interface/logger.cpp"
 	"src/interface/battery.cpp"
+	"src/interface/altimeter.cpp"
 
 	"qml/resources.qrc"
 )
