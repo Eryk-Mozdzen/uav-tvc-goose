@@ -306,8 +306,9 @@ bool MPU6050::readData() {
 
 	constexpr float acc_gain = 8192.f;
 	constexpr float g_to_ms2 = 9.81f;
+	constexpr float calib = 1.0285f;
 
-	acceleration = Vector(acc_raw_x, acc_raw_y, acc_raw_z)*g_to_ms2/acc_gain;
+	acceleration = Vector(acc_raw_x, acc_raw_y, acc_raw_z)*g_to_ms2/acc_gain*calib;
 
 	const int16_t gyr_raw_x = (((int16_t)buffer[8])<<8) | buffer[9];
 	const int16_t gyr_raw_y = (((int16_t)buffer[10])<<8) | buffer[11];

@@ -97,6 +97,26 @@ Matrix<3, 3> Quaternion::getRotation() const {
 	};
 }
 
+Matrix<3, 1> Quaternion::getRollPitchYaw() const {
+    const float sinr_cosp = 2.f*(w*i + j*k);
+    const float cosr_cosp = 1.f - 2.f*(i*i + j*j);
+    const float roll = atan2f(sinr_cosp, cosr_cosp);
+
+    const float sinp = 2.f*(w*j - k*i);
+	float pitch;
+    if(std::abs(sinp)>1.f) {
+        pitch = copysignf(3.1415f/2.f, sinp);
+    } else {
+        pitch = asinf(sinp);
+	}
+
+    const float  siny_cosp = 2.f*(w*k + i*j);
+    const float  cosy_cosp = 1.f - 2.f*(j*j + k*k);
+    const float yaw = atan2f(siny_cosp, cosy_cosp);
+
+    return {roll, pitch, yaw};
+}
+
 void Quaternion::normalize() {
 	const float len = abs();
 

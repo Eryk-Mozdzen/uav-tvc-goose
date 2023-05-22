@@ -2,6 +2,7 @@
 #include <iostream>
 #include <iomanip>
 #include "escape_codes.h"
+#include <cmath>
 
 PrinterWriter::PrinterWriter(QObject *parent) : QObject{parent} {
 
@@ -56,7 +57,7 @@ void PrinterWriter::onReceive(const Transfer::FrameRX &frame) {
 		return;
 	}*/
 
-	if(frame.id==Transfer::ID::TELEMETRY_ESTIMATION_BATTERY_LEVEL) {
+	/*if(frame.id==Transfer::ID::TELEMETRY_ESTIMATION_BATTERY_LEVEL) {
 		float battery;
 		frame.getPayload(battery);
 
@@ -67,19 +68,20 @@ void PrinterWriter::onReceive(const Transfer::FrameRX &frame) {
 		std::cout.flags(default_flags);
 
 		return;
-	}
+	}*/
 
-	/*if(frame.id==Transfer::ID::TELEMETRY_SENSOR_DISTANCE) {
+	//if(frame.id==Transfer::ID::TELEMETRY_SENSOR_DISTANCE) {
+	if(frame.id==Transfer::ID::TELEMETRY_ESTIMATION_ALTITUDE) {
 		float dist;
 		frame.getPayload(dist);
 
 		const std::ios_base::fmtflags default_flags = std::cout.flags();
-		std::cout << EscapeCode::GREEN << std::fixed << std::setprecision(3);
+		std::cout << EscapeCode::BLUE << std::showpos << std::fixed << std::setprecision(3) << std::setw(10);
 		std::cout << dist << std::endl;
 		std::cout.flags(default_flags);
 
 		return;
-	}*/
+	}
 
 	/*if(frame.id==Transfer::ID::TELEMETRY_SENSOR_VOLTAGE) {
 		float voltage;
@@ -108,13 +110,26 @@ void PrinterWriter::onReceive(const Transfer::FrameRX &frame) {
 
 	//if(frame.id==Transfer::ID::TELEMETRY_SENSOR_MAGNETIC_FIELD) {
 	//if(frame.id==Transfer::ID::TELEMETRY_SENSOR_ACCELERATION) {
-	/*if(frame.id==Transfer::ID::TELEMETRY_SENSOR_GYRATION) {
+	//if(frame.id==Transfer::ID::TELEMETRY_SENSOR_GYRATION) {
+	/*if(frame.id==Transfer::ID::TELEMETRY_ESTIMATION_LINEAR_ACCELERATION) {
 		struct Vector {float x, y, z; } vec;
 		frame.getPayload(vec);
 
 		const std::ios_base::fmtflags default_flags = std::cout.flags();
 		std::cout << EscapeCode::GREEN << std::showpos << std::fixed << std::setprecision(3);
-		std::cout << std::setw(10) << vec.x << " " << std::setw(10) << vec.y << " " << std::setw(10) << vec.z << std::endl;
+		std::cout << std::setw(10) << vec.x << " " << std::setw(10) << vec.y << " " << std::setw(10) << vec.z << " " << std::sqrt(vec.x*vec.x + vec.y*vec.y + vec.z*vec.z) << std::endl;
+		std::cout.flags(default_flags);
+
+		return;
+	}*/
+
+	/*if(frame.id==Transfer::ID::TELEMETRY_SENSOR_ACCELERATION) {
+		struct Vector {float x, y, z; } vec;
+		frame.getPayload(vec);
+
+		const std::ios_base::fmtflags default_flags = std::cout.flags();
+		std::cout << EscapeCode::MAGENTA << std::showpos << std::fixed << std::setprecision(3);
+		std::cout << std::setw(10) << vec.x << " " << std::setw(10) << vec.y << " " << std::setw(10) << vec.z << " " << std::sqrt(vec.x*vec.x + vec.y*vec.y + vec.z*vec.z) << std::endl;
 		std::cout.flags(default_flags);
 
 		return;
