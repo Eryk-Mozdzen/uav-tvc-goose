@@ -47,7 +47,7 @@ Rectangle {
                 color: Style.batteryFull
                 radius: 0.5*step
                 width: parent.width - 2*step
-                height: parent.height - step
+                height: parent.height - 2*step
                 anchors.margins: step
                 anchors.bottom: parent.bottom
                 anchors.horizontalCenter: parent.horizontalCenter
@@ -197,22 +197,5 @@ Rectangle {
 
     function setCurrent(current) {
         batteryCurrentText.text = current.toFixed(2)
-    }
-
-    // TEST
-    Timer {
-        interval: 10
-        running: true
-        repeat: true
-
-        property real time: 0
-
-        onTriggered: {
-            time +=0.002
-
-            setLevel(0.55*Math.sin(time) + 0.5)
-            setVoltage(14.8 + 4*Math.sin(10*time))
-            setCurrent(5 + 5*Math.sin(2*time))
-        }
     }
 }
