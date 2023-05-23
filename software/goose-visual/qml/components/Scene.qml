@@ -113,38 +113,18 @@ Rectangle {
         x: step
         y: step
         width: 14*step
-        height: 6*step
+        height: 6.5*step
+        RowLayout{
+            anchors.fill: parent
+            spacing: step*0.5
+            anchors.rightMargin: step*0.5
+            anchors.leftMargin: step*0.5
 
+        }
         RowLayout{
             anchors.fill: parent
             spacing: step*0.5
             anchors.margins: step*0.5
-
-            Rectangle{
-                color: "transparent"
-                Layout.fillWidth: true
-                Layout.fillHeight: true
-                Text {
-                    text: "roll:\npitch:\nyaw:"
-                    color: Style.text
-                    font.pixelSize: step*0.8
-                    anchors.fill: parent
-                    anchors.rightMargin: 0.5*step
-                    horizontalAlignment: Text.AlignRight
-                    verticalAlignment: Text.AlignVCenter
-                }
-            }
-            
-
-            // Text {
-            //     text: "State"
-            //     color: Style.text
-            //     font.pixelSize: step*0.8
-            //     // anchors.fill: parent
-            //     // anchors.rightMargin: 0.5*step
-            //     // verticalAlignment: Text.AlignVCenter
-            //     // horizontalAlignment: Text.AlignHCenter
-            // }
 
             Rectangle{
                 color: "transparent"
@@ -155,8 +135,39 @@ Rectangle {
                     radius: step*0.5
                     anchors.left: parent.left
                     anchors.right: parent.right
+                    color: "transparent"
+                    anchors.bottom: parent.bottom
+                    Text {
+                        text: "roll:\npitch:\nyaw:"
+                        color: Style.text
+                        font.pixelSize: step*0.8
+                        anchors.fill: parent
+                        anchors.rightMargin: 0.5*step
+                        verticalAlignment: Text.AlignVCenter
+                        horizontalAlignment: Text.AlignRight
+                    }
+                }
+            }
+            Rectangle{
+                color: "transparent"
+                Layout.fillWidth: true
+                Layout.fillHeight: true
+                Text {
+                    width:parent.width
+                    Layout.fillWidth: true
+                    Layout.fillHeight: true
+                    text: "state"
+                    color: Style.text
+                    font.pixelSize: step*0.8
+                    horizontalAlignment: Text.AlignHCenter
+                }
+                Rectangle{
+                    height: width
+                    radius: step*0.5
+                    anchors.left: parent.left
+                    anchors.right: parent.right
                     color: "Black"
-                    anchors.verticalCenter: parent.verticalCenter
+                    anchors.bottom: parent.bottom
                     border.color: Style.primary
                     border.width: step*0.1
                     Text {
@@ -175,13 +186,22 @@ Rectangle {
                 color: "transparent"
                 Layout.fillWidth: true
                 Layout.fillHeight: true
+                Text {
+                    width:parent.width
+                    Layout.fillWidth: true
+                    Layout.fillHeight: true
+                    text: "command"
+                    color: Style.text
+                    font.pixelSize: step*0.8
+                    horizontalAlignment: Text.AlignHCenter
+                }
                 Rectangle{
                     height: width
                     radius: step*0.5
                     anchors.left: parent.left
                     anchors.right: parent.right
                     color: "Black"
-                    anchors.verticalCenter: parent.verticalCenter
+                    anchors.bottom: parent.bottom
                     border.color: "Grey"
                     border.width: step*0.1
                     Text {
