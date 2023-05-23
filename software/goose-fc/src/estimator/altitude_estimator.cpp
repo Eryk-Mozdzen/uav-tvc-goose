@@ -43,7 +43,7 @@ void AltitudeEstimator::feedAcceleration(const Vector &acc) {
 }
 
 Vector AltitudeEstimator::getLinearAcceleration() const {
-    const Vector gravity(0, 0, -9.81);
+    constexpr Vector gravity = -Vector::Z()*9.81f;
 
     const Matrix<3, 3> rot = attitude.getRotation();
 

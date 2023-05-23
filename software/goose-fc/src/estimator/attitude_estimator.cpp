@@ -122,7 +122,7 @@ void AttitudeEstimator::zeroAzimuth() {
 
 	const float azimuth = std::atan2(2.f*(q.w*q.k + q.i*q.j), q.w*q.w + q.i*q.i - q.j*q.j - q.k*q.k);
 
-    body_to_world = Quaternion(-azimuth, Vector::Z);
+    body_to_world = Quaternion(-azimuth, Vector::Z());
 
     constexpr float pi = 3.14159265359f;
 
