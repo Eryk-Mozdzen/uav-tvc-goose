@@ -1,32 +1,27 @@
 
-def get_calib_data(acc):
-    offset = [
-        0.5*(acc[0][0] + acc[0][1]),
-        0.5*(acc[1][0] + acc[1][1]),
-        0.5*(acc[2][0] + acc[2][1])
-    ]
+class Axis:
+    def __init__(self, min, max):
+        self.min = min
+        self.max = max
 
-    acc_centered = [
-        [acc[0][0] - offset[0], acc[0][1] - offset[0]],
-        [acc[1][0] - offset[1], acc[1][1] - offset[1]],
-        [acc[2][0] - offset[2], acc[2][1] - offset[2]]
-    ]
+    def get_offset(self):
+        return 0.5*(self.min + self.max)
 
-    g = 9.81
+    def get_scale(self):
+        offset = self.get_offset()
+        centered = self.max - offset
+        g = 9.81
+        scale = g/centered
+        return scale
 
-    scale = [
-        g/acc_centered[0][1],
-        g/acc_centered[1][1],
-        g/acc_centered[2][1]
-    ]
+axes = [
+    Axis(min=- 9.77, max =10.01),
+    Axis(min=- 9.87, max = 9.83),
+    Axis(min=-10.24, max = 9.57)
+]
 
-    return offset, scale
-
-offset, scale = get_calib_data([
-    [- 9.77, 10.01],
-    [- 9.89,  9.84],
-    [-10.24,  9.67],
-])
+offset = [a.get_offset() for a in axes]
+scale  = [a.get_scale()  for a in axes]
 
 print(offset)
 print(scale)

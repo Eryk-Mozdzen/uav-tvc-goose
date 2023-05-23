@@ -55,3 +55,9 @@ float AltitudeEstimator::getAltitude() const {
 
     return x(0, 0);
 }
+
+float AltitudeEstimator::getVerticalVelocity() const {
+    const Matrix<2, 1> x = kf.getState();
+
+    return x(1, 0);
+}

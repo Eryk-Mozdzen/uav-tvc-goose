@@ -38,4 +38,5 @@ public:
 
     Vector getLinearAcceleration() const;
     float getAltitude() const;
+    float getVerticalVelocity() const;
 };
