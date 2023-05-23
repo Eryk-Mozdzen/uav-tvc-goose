@@ -40,6 +40,7 @@ ApplicationWindow {
 
 		ColumnLayout {
 			id: batterAltimeterCol
+			objectName: "batterAltimeterCol"
 			spacing: 20
 			width: (1/1.618)*0.5*parent.height
 			anchors.top: parent.top
@@ -48,12 +49,14 @@ ApplicationWindow {
 
 			Altimeter {
 				id: altimeter
+				objectName: "altimeter"
 				Layout.fillWidth: true
 				Layout.fillHeight: true
 			}
 
 			Battery {
 				id: battery
+				objectName: "battery"
 				Layout.fillWidth: true
 				Layout.fillHeight: true
 			}

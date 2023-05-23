@@ -47,7 +47,7 @@ Rectangle {
                 color: Style.batteryFull
                 radius: 0.5*step
                 width: parent.width - 2*step
-                height: parent.height - step
+                height: parent.height - 2*step
                 anchors.margins: step
                 anchors.bottom: parent.bottom
                 anchors.horizontalCenter: parent.horizontalCenter
@@ -174,7 +174,27 @@ Rectangle {
         return Qt.rgba(r, g, b, a);
     }
 
+    Timer {
+        id: batteryVoltageTimeout
+        interval: 100
+        onTriggered: batteryVoltageText.text = "???"
+    }
+
+    Timer {
+        id: batteryCurrentTimeout
+        interval: 100
+        onTriggered: batteryCurrentText.text = "???"
+    }
+
+    Timer {
+        id: batteryLevelTimeout
+        interval: 100
+        onTriggered: batteryText.text = "???"
+    }
+
     function setLevel(level) {
+        batteryLevelTimeout.restart()
+
         if(level>1)
             level = 1
 
@@ -192,27 +212,12 @@ Rectangle {
     }
 
     function setVoltage(voltage) {
+        batteryVoltageTimeout.restart()
         batteryVoltageText.text = voltage.toFixed(2)
     }
 
     function setCurrent(current) {
+        batteryCurrentTimeout.restart()
         batteryCurrentText.text = current.toFixed(2)
-    }
-
-    // TEST
-    Timer {
-        interval: 10
-        running: true
-        repeat: true
-
-        property real time: 0
-
-        onTriggered: {
-            time +=0.002
-
-            setLevel(0.55*Math.sin(time) + 0.5)
-            setVoltage(14.8 + 4*Math.sin(10*time))
-            setCurrent(5 + 5*Math.sin(2*time))
-        }
     }
 }

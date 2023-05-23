@@ -29,9 +29,11 @@ add_executable(${PROJECT_NAME}
 	"../transfer/transfer.cpp"
 	"src/communication/usb.cpp"
 	"src/communication/telnet.cpp"
-	"src/interface/escape_codes.cpp"
-	"src/interface/printer_writer.cpp"
-	"src/interface/logger.cpp"
+	"src/cli-interface/escape_codes.cpp"
+	"src/cli-interface/printer_writer.cpp"
+	"src/gui-interface/logger.cpp"
+	"src/gui-interface/battery.cpp"
+	"src/gui-interface/altimeter.cpp"
 
 	"qml/resources.qrc"
 )
@@ -40,7 +42,8 @@ target_include_directories(${PROJECT_NAME} PRIVATE
 	"src"
 	"../transfer"
 	"src/communication"
-	"src/interface"
+	"src/cli-interface"
+	"src/gui-interface"
 )
 
 target_compile_options(${PROJECT_NAME} PRIVATE
