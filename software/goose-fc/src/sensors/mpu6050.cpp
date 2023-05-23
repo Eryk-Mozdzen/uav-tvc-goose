@@ -310,13 +310,11 @@ bool MPU6050::readData() {
 
 	const Vector acc_pre_calibrated = Vector(acc_raw_x, acc_raw_y, acc_raw_z)*g_to_ms2/acc_gain;
 
-	Logger::getInstance().log(Logger::DEBUG, "%+10.3f %+10.3f %+10.3f", (double)acc_pre_calibrated.x, (double)acc_pre_calibrated.y, (double)acc_pre_calibrated.z);
-
-	constexpr Vector acc_offset = {0.f, 0.f, 0.f};
+	constexpr Vector acc_offset = {0.12f, -0.025f, -0.285f};
 	constexpr Matrix<3, 3> acc_scale = {
-		1.f, 0,	  0,
-		0,	 1.f, 0,
-		0,	 0,	  1.f
+		0.9919f,	0,			0,
+		0,			0.9944f,	0,
+		0,			0,			0.9854f
 	};
 
 	acceleration = acc_scale*(acc_pre_calibrated - acc_offset);

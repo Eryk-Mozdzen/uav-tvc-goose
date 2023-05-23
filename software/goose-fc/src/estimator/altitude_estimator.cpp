@@ -5,7 +5,7 @@ AltitudeEstimator::AltitudeEstimator() :
         kf {
             A, B, H,
             Matrix<2, 2>::identity()*1.f,
-            Matrix<1, 1>::identity()*0.01f,
+            Matrix<1, 1>::identity()*0.1f,
             {0.f, 0.f}
         } {
 
