@@ -17,6 +17,7 @@ class StateEstimator : TaskClassS<2048> {
 	IntervalLogger<Quaternion> telemetry_attitude;
 	IntervalLogger<float> telemetry_altitude;
 	IntervalLogger<float> telemetry_battery;
+	IntervalLogger<Vector> telemetry_linear_acceleration;
 
 public:
 	StateEstimator();
@@ -29,7 +30,8 @@ StateEstimator estimator;
 StateEstimator::StateEstimator() : TaskClassS{"State Estimator", TaskPrio_Mid},
 		telemetry_attitude{"attitude telemetry", Transfer::ID::TELEMETRY_ESTIMATION_ATTITUDE},
 		telemetry_altitude{"altitude telemetry", Transfer::ID::TELEMETRY_ESTIMATION_ALTITUDE},
-		telemetry_battery{"SOC telemetry", Transfer::ID::TELEMETRY_ESTIMATION_BATTERY_LEVEL} {
+		telemetry_battery{"SOC telemetry", Transfer::ID::TELEMETRY_ESTIMATION_BATTERY_LEVEL},
+		telemetry_linear_acceleration{"linear acceleration telemetry", Transfer::ID::TELEMETRY_ESTIMATION_LINEAR_ACCELERATION} {
 
 }
 
@@ -88,11 +90,13 @@ void StateEstimator::task() {
 
 		altitude_estimator.feedAttitude(attitude);
 
+		const Vector lin_acc = altitude_estimator.getLinearAcceleration();
 		const float altitude = altitude_estimator.getAltitude();
 		const float battery = battery_estimator.getStateOfCharge()*100;
 
 		telemetry_attitude.feed(attitude);
 		telemetry_altitude.feed(altitude);
 		telemetry_battery.feed(battery);
+		telemetry_linear_acceleration.feed(lin_acc);
 	}
 }

@@ -87,7 +87,6 @@ add_executable(${TARGET}
 	"src/estimator/battery_estimator.cpp"
 	"src/estimator/state_estimator.cpp"
 	"src/utils/quaternion.cpp"
-	"src/utils/vector.cpp"
 	"src/utils/message.cpp"
 	"src/transport/transport.cpp"
 	"src/control/control.cpp"

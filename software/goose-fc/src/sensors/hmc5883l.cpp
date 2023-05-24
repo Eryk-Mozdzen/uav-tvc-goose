@@ -125,8 +125,8 @@ bool HMC5883L::readData() {
 
 	const Vector mag_raw = Vector(raw_x, raw_y, raw_z)/gain;
 
-	const Vector offset = {0.04157f, -0.10032f, -0.06273f};
-	const Matrix<3, 3> scale = {
+	constexpr Vector offset = {0.04157f, -0.10032f, -0.06273f};
+	constexpr Matrix<3, 3> scale = {
 		1.98471f, 0,		0,
 		0,		  2.07220f, 0,
 		0,		  0,		2.31329f

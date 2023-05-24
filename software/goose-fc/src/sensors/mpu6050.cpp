@@ -5,6 +5,7 @@
 #include "transport.h"
 #include "sensor_bus.h"
 #include "interval_logger.h"
+#include "matrix.h"
 
 #define MPU6050_ADDR		0x68
 
@@ -307,7 +308,16 @@ bool MPU6050::readData() {
 	constexpr float acc_gain = 8192.f;
 	constexpr float g_to_ms2 = 9.81f;
 
-	acceleration = Vector(acc_raw_x, acc_raw_y, acc_raw_z)*g_to_ms2/acc_gain;
+	const Vector acc_pre_calibrated = Vector(acc_raw_x, acc_raw_y, acc_raw_z)*g_to_ms2/acc_gain;
+
+	constexpr Vector acc_offset = {0.1200f, -0.0200f, -0.3350f};
+	constexpr Matrix<3, 3> acc_scale = {
+		0.9919f,	0,			0,
+		0,			0.9959f,	0,
+		0,			0,			0.9904f
+	};
+
+	acceleration = acc_scale*(acc_pre_calibrated - acc_offset);
 
 	const int16_t gyr_raw_x = (((int16_t)buffer[8])<<8) | buffer[9];
 	const int16_t gyr_raw_y = (((int16_t)buffer[10])<<8) | buffer[11];
