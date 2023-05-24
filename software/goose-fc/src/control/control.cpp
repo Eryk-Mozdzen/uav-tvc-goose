@@ -26,6 +26,6 @@ void Control::task() {
 		Transport::getInstance().frame_rx_queue.pop(frame, portMAX_DELAY);
 		counter++;
 
-		Logger::getInstance().log(Logger::INFO, "message num: %d [length = %u\tid = %u\t]", counter, frame.length, frame.id);
+		Logger::getInstance().log(Logger::DEBUG, "message num: %d [length = %u\tid = %u\t]", counter, frame.length, frame.id);
 	}
 }

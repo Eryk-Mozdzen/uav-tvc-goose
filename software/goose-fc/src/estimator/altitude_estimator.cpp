@@ -14,12 +14,14 @@ AltitudeEstimator::AltitudeEstimator() :
 
 void AltitudeEstimator::timer_timeout() {
     if(source==Source::DISTANCE) {
+        Logger::getInstance().log(Logger::INFO, "alt: switching source to barometer...");
         source = Source::BAROMETER;
         return;
     }
 
     if(source==Source::BAROMETER) {
         if(counter>20) {
+            Logger::getInstance().log(Logger::INFO, "alt: switching source to distance sensor...");
             source = Source::DISTANCE;
         }
         counter = 0;
@@ -63,7 +65,7 @@ void AltitudeEstimator::feedPressure(const float press) {
     if(source==Source::BAROMETER) {
         const float height = 44330.f*(1.f - powf(press/ground_pressure, 0.1903f));
 
-        kf.update({height}, {150.f});
+        kf.update({height}, {1000.f});
         return;
     }
 }
