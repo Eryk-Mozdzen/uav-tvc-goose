@@ -2,13 +2,29 @@
 #include <cmath>
 
 AltitudeEstimator::AltitudeEstimator() :
-        kf {
-            A, B, H,
-            Matrix<2, 2>::identity()*1.f,
-            Matrix<1, 1>::identity()*0.1f,
-            {0.f, 0.f}
-        } {
+        kf {A, B, H, {0.f, 0.f}},
+        ground_pressure{100030.f},
+        distance_compensated{0.f},
+        source{Source::DISTANCE},
+        timer{"altitude source", this, &AltitudeEstimator::timer_timeout, 1000, pdTRUE},
+        counter{0} {
 
+    timer.start();
+}
+
+void AltitudeEstimator::timer_timeout() {
+    if(source==Source::DISTANCE) {
+        source = Source::BAROMETER;
+        return;
+    }
+
+    if(source==Source::BAROMETER) {
+        if(counter>20) {
+            source = Source::DISTANCE;
+        }
+        counter = 0;
+        return;
+    }
 }
 
 void AltitudeEstimator::feedAttitude(const Quaternion &att) {
@@ -16,22 +32,40 @@ void AltitudeEstimator::feedAttitude(const Quaternion &att) {
 }
 
 void AltitudeEstimator::feedDistance(const float dist) {
-    const Matrix<3, 1> rpy = attitude.getRollPitchYaw();
-    const float roll = rpy(0, 0);
-    const float pitch = rpy(1, 0);
+    if(source==Source::DISTANCE) {
+        timer.reset();
 
-    const float dist_comp = std::abs(dist*cosf(roll)*cosf(pitch));
+        const Matrix<3, 1> rpy = attitude.getRollPitchYaw();
+        const float roll = rpy(0, 0);
+        const float pitch = rpy(1, 0);
 
-    kf.update({dist_comp});
+        distance_compensated = std::abs(dist*cosf(roll)*cosf(pitch));
+
+        kf.update({distance_compensated}, {5.f});
+        return;
+    }
+
+    if(source==Source::BAROMETER) {
+        counter++;
+        return;
+    }
 }
 
 void AltitudeEstimator::feedPressure(const float press) {
-    const float press_0 = 100030.f;
-    const float height = 44330.f*(1.f - powf(press/press_0, 0.1903f));
+    if(source==Source::DISTANCE) {
+        const float press_0 = press/powf(1.f - distance_compensated/44330.f, 5.255f);
+        constexpr float alpha = 0.1f;
 
-    (void)height;
+        ground_pressure = (1.f - alpha)*ground_pressure + alpha*press_0;
+        return;
+    }
 
-    //kf.update({height});
+    if(source==Source::BAROMETER) {
+        const float height = 44330.f*(1.f - powf(press/ground_pressure, 0.1903f));
+
+        kf.update({height}, {150.f});
+        return;
+    }
 }
 
 void AltitudeEstimator::feedAcceleration(const Vector &acc) {
@@ -39,7 +73,7 @@ void AltitudeEstimator::feedAcceleration(const Vector &acc) {
 
     const Vector lin = getLinearAcceleration();
 
-    kf.predict({-lin.z});
+    kf.predict({-lin.z}, Matrix<2, 2>::identity()*1.f);
 }
 
 Vector AltitudeEstimator::getLinearAcceleration() const {
@@ -60,4 +94,8 @@ float AltitudeEstimator::getVerticalVelocity() const {
     const Matrix<2, 1> x = kf.getState();
 
     return x(1, 0);
+}
+
+AltitudeEstimator::Source AltitudeEstimator::getSource() const {
+    return source;
 }
