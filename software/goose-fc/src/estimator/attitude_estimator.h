@@ -2,14 +2,14 @@
 
 #include "TimerCPP.h"
 
-#include "extended_kalman_filter.h"
+#include "ekf.h"
 #include "quaternion.h"
 #include "vector.h"
 
 class AttitudeEstimator {
     static constexpr float dt = 0.005;
 
-    ExtendedKalmanFilter<7, 3, 6> ekf;
+    EKF<7, 3, 6> ekf;
 
     Vector acceleration;
 	Vector magnetic_field;

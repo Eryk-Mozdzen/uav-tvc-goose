@@ -3,7 +3,7 @@
 #include "matrix.h"
 
 template<int X, int U, int Z>
-class KalmanFilter {
+class KF {
 	const Matrix<X, X> F;	// state-transition model
 	const Matrix<X, U> B;	// control-input model
 	const Matrix<Z, X> H;	// observation model
@@ -13,7 +13,7 @@ class KalmanFilter {
 
 public:
 
-	KalmanFilter(
+	KF(
 		const Matrix<X, X> F_p,
 		const Matrix<X, U> B_p,
 		const Matrix<Z, X> H_p,

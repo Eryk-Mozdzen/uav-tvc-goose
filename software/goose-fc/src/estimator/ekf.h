@@ -4,7 +4,7 @@
 #include <functional>
 
 template<int X, int U, int Z>
-class ExtendedKalmanFilter {
+class EKF {
 		const std::function<Matrix<X, 1>(const Matrix<X, 1>, const Matrix<U, 1>)> f;
 		const std::function<Matrix<Z, 1>(const Matrix<X, 1>)> h;
 
@@ -19,7 +19,7 @@ class ExtendedKalmanFilter {
 
 	public:
 
-		ExtendedKalmanFilter(
+		EKF(
 			const std::function<Matrix<X, 1>(const Matrix<X, 1>, const Matrix<U, 1>)> f_p,
 			const std::function<Matrix<Z, 1>(const Matrix<X, 1>)> h_p,
 			const std::function<Matrix<X, X>(const Matrix<X, 1>, const Matrix<U, 1>)> f_tangent_p,
