@@ -2,6 +2,7 @@
 
 AttitudeEstimator::AttitudeEstimator() :
         ekf{
+            this,
             &AttitudeEstimator::f,
             &AttitudeEstimator::h,
             &AttitudeEstimator::f_tangent,

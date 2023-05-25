@@ -18,7 +18,7 @@ public:
 		const Matrix<X, U> B_p,
 		const Matrix<Z, X> H_p,
 		const Matrix<X, 1> x_init_p
-	) : F{F_p}, B{B_p}, H{H_p}, x{x_init_p} {
+	) : F{F_p}, B{B_p}, H{H_p}, P{Matrix<X, X>::identity()*10000.f}, x{x_init_p} {
 
 	}
 

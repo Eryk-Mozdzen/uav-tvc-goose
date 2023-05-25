@@ -13,7 +13,7 @@ public:
 
     void feed(const float y, const Matrix<N, 1> phi);
 
-    Matrix<N, 1> & getParameters() const;
+    const Matrix<N, 1> & getParameters() const;
 };
 
 template<int N>
@@ -28,15 +28,15 @@ template<int N>
 void AFFRLS<N>::feed(const float y, const Matrix<N, 1> phi) {
     const Matrix<1, N> phi_t = phi.transposition();
 
-    const Matrix<N, 1> K = P*phi/(lambda + phi_t*P*phi);
-    theta = theta + K*(y - phi_t*theta);
+    const Matrix<N, 1> K = P*phi/(lambda + (phi_t*P*phi)(0, 0));
+    theta = theta + K*(y - (phi_t*theta)(0, 0));
     P = (Matrix<N, N>::identity() - K*phi_t)*P/lambda;
 
-    const float e = y - phi_t*theta;
-    lambda = 1.f - e*e/(1.f + phi_t*P*phi);
+    const float e = y - (phi_t*theta)(0, 0);
+    lambda = 1.f - e*e/(1.f + (phi_t*P*phi)(0, 0));
 }
 
 template<int N>
-Matrix<N, 1> & AFFRLS<N>::getParameters() const {
+const Matrix<N, 1> & AFFRLS<N>::getParameters() const {
     return theta;
 }
