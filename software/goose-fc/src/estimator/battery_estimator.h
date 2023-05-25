@@ -6,6 +6,7 @@
 class BatteryEstimator {
     static constexpr float freq = 50.f;
     static constexpr float T = 1/freq;
+    static constexpr float C = 1.f;
 
     AFFRLS<5> affrls;
     EKF<3, 1, 1, BatteryEstimator> ekf;
@@ -18,11 +19,11 @@ class BatteryEstimator {
 
     struct Parameters {
         float Rs;
-        float R1xC1;
-        float R2xC2;
+        float R1, C1;
+        float R2, C2;
     };
 
-    Parameters parameters;
+    Parameters params;
 
     Matrix<3, 1> f(const Matrix<3, 1> x, const Matrix<1, 1> u);
     Matrix<1, 1> h(const Matrix<3, 1> x);
