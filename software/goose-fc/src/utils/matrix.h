@@ -134,6 +134,16 @@ public:
 	}
 
 	constexpr Matrix<N, N> inverse() const {
+		if(N==1 && M==1) {
+			if(elements[0]<0.002f) {
+				Logger::getInstance().log(Logger::WARNING, "mat: can't inverse 1x1 matrix");
+				return Matrix<N, N>();
+			}
+
+			Matrix<N, N> inv;
+			inv(0, 0) = 1.f/elements[0];
+			return inv;
+		}
 
 		Matrix<N, 2*N> combined;
 

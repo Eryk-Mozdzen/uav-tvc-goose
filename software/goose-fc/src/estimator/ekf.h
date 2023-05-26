@@ -34,7 +34,6 @@ class EKF {
 			h_tangent{h_tangent_p},
 			Q{Q_p},
 			R{R_p},
-			P{Matrix<X, X>::identity()*10000.f},
 			x{x_init} {
 
 		}

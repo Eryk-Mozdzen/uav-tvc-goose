@@ -1,37 +1,24 @@
 #pragma once
 
 #include "ekf.h"
-#include "affrls.h"
 
 class BatteryEstimator {
     static constexpr float freq = 50.f;
-    static constexpr float T = 1/freq;
-    static constexpr float C = 1.f;
+    static constexpr float dt = 1/freq;
 
-    AFFRLS<5> affrls;
-    EKF<3, 1, 1, BatteryEstimator> ekf;
-
-    bool voltage_ready, current_ready;
-    float voltage_val, current_val;
-
-    float V[3];
-    float I[3];
-
-    struct Parameters {
-        float Rs;
-        float R1, C1;
-        float R2, C2;
+    struct Battery {
+        static constexpr float capacity = 1.f;
+        static constexpr uint8_t cell_num = 5;
     };
 
-    Parameters params;
+    EKF<1, 1, 1, BatteryEstimator> ekf;
 
-    Matrix<3, 1> f(const Matrix<3, 1> x, const Matrix<1, 1> u);
-    Matrix<1, 1> h(const Matrix<3, 1> x);
-    Matrix<3, 3> f_tangent(const Matrix<3, 1> x, const Matrix<1, 1> u);
-    Matrix<1, 3> h_tangent(const Matrix<3, 1> x);
+    Matrix<1, 1> f(const Matrix<1, 1> x, const Matrix<1, 1> u);
+    Matrix<1, 1> h(const Matrix<1, 1> x);
+    Matrix<1, 1> f_tangent(const Matrix<1, 1> x, const Matrix<1, 1> u);
+    Matrix<1, 1> h_tangent(const Matrix<1, 1> x);
 
-    void params_update();
-    static Parameters discret2phisic(const Matrix<5, 1> &phi);
+    static float poly_value(const float *poly, const uint8_t coeff_num, const float arg);
 
 public:
     BatteryEstimator();
