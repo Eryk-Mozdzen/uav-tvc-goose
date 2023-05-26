@@ -25,6 +25,7 @@ struct Quaternion {
 	void normalize();
 
 	Matrix<3, 3> getRotation() const;
+	Matrix<3, 1> getRollPitchYaw() const;
 };
 
 Quaternion operator*(const float, const Quaternion &);

@@ -2,9 +2,10 @@
 
 Transport::Transport() :
 	sensor_queue("sensor readings"),
+	wire_rx_queue("wire rx queue"),
 	wire_tx_queue("wire tx queue"),
 	wireless_tx_queue("wireless tx queue"),
-	wireless_rx_queue("wireless rx queue") {
+	frame_rx_queue("main rx queue") {
 
 }
 

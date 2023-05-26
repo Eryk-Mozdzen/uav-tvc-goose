@@ -1,15 +1,11 @@
 #include "stm32f4xx_hal.h"
+#include "usb_device.h"
+#include "usbd_cdc_if.h"
 #include "TaskCPP.h"
-
-extern "C" {
-	#include "usb_device.h"
-	#include "usbd_cdc_if.h"
-}
-
 #include "transport.h"
 #include "transfer.h"
 
-class WireTransmitter : public TaskClassS<1024> {
+class WireTransmitter : public TaskClassS<512> {
 public:
 
 	WireTransmitter();

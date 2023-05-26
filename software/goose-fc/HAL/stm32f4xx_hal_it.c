@@ -7,6 +7,7 @@ extern DMA_HandleTypeDef hdma_i2c1_rx;
 extern UART_HandleTypeDef huart1;
 extern DMA_HandleTypeDef hdma_usart1_tx;
 extern DMA_HandleTypeDef hdma_usart1_rx;
+extern DMA_HandleTypeDef hdma_adc1;
 
 void TIM1_TRG_COM_TIM11_IRQHandler() {
 	HAL_TIM_IRQHandler(&htim11);
@@ -32,6 +33,10 @@ void USART1_IRQHandler() {
 	HAL_UART_IRQHandler(&huart1);
 }
 
+void DMA2_Stream0_IRQHandler() {
+	HAL_DMA_IRQHandler(&hdma_adc1);
+}
+
 void DMA2_Stream2_IRQHandler() {
 	HAL_DMA_IRQHandler(&hdma_usart1_rx);
 }
@@ -45,5 +50,6 @@ void EXTI9_5_IRQHandler() {
 }
 
 void EXTI15_10_IRQHandler() {
+	HAL_GPIO_EXTI_IRQHandler(GPIO_PIN_14);
 	HAL_GPIO_EXTI_IRQHandler(GPIO_PIN_15);
 }

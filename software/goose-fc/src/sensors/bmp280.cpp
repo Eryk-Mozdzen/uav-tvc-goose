@@ -5,6 +5,7 @@
 #include "logger.h"
 #include "transport.h"
 #include "sensor_bus.h"
+#include "interval_logger.h"
 
 #define BMP280_ADDR				0x77
 
@@ -83,7 +84,7 @@
 #define BMP280_CONFIG_SPI_3WIRE_DISABLE			(0x00<<0)
 #define BMP280_CONFIG_SPI_3WIRE_ENABLE			(0x01<<0)
 
-class BMP280 : public TaskClassS<1024> {
+class BMP280 : public TaskClassS<512> {
 
 	struct Calibration {
 		uint16_t dig_T1;
@@ -113,6 +114,8 @@ class BMP280 : public TaskClassS<1024> {
 	BMP280_S32_t t_fine;
 	BMP280_S32_t bmp280_compensate_T_int32(BMP280_S32_t adc_T);
 	BMP280_U32_t bmp280_compensate_P_int64(BMP280_S32_t adc_P);
+
+	IntervalLogger<float> telemetry;
 
 	public:
 
@@ -168,7 +171,8 @@ BMP280::BMP280_U32_t BMP280::bmp280_compensate_P_int64(BMP280_S32_t adc_P) {
 	return (BMP280_U32_t)p;
 }
 
-BMP280::BMP280() : TaskClassS{"BMP280 reader", TaskPrio_Low}, pressure{0}, temperature{0} {
+BMP280::BMP280() : TaskClassS{"BMP280 reader", TaskPrio_Low}, pressure{0}, temperature{0},
+		telemetry{"BMP280 telemetry", Transfer::ID::TELEMETRY_SENSOR_PRESSURE} {
 
 	memset(&calib, 0, sizeof(Calibration));
 }
@@ -252,7 +256,7 @@ void BMP280::task() {
 	TickType_t time = xTaskGetTickCount();
 
 	while(1) {
-		vTaskDelayUntil(&time, 100);
+		vTaskDelayUntil(&time, 50);
 
 		if(!readData()) {
 			continue;
@@ -261,5 +265,7 @@ void BMP280::task() {
 		const float press = getPressure();
 
 		Transport::getInstance().sensor_queue.add(Transport::Sensors::BAROMETER, press, 0);
+
+		telemetry.feed(press);
 	}
 }

@@ -39,6 +39,14 @@ add_executable(${TARGET}
 	"../third-party/stm32_mw_usb_device/Core/Src/usbd_ioreq.c"
 	"../third-party/stm32_mw_usb_device/Class/CDC/Src/usbd_cdc.c"
 
+	"../third-party/VL53L0X/core/src/vl53l0x_api_calibration.c"
+	"../third-party/VL53L0X/core/src/vl53l0x_api_core.c"
+	"../third-party/VL53L0X/core/src/vl53l0x_api_ranging.c"
+	"../third-party/VL53L0X/core/src/vl53l0x_api_strings.c"
+	"../third-party/VL53L0X/core/src/vl53l0x_api.c"
+	"../third-party/VL53L0X/platform/src/vl53l0x_platform_log.c"
+	"../third-party/VL53L0X/platform/src/vl53l0x_platform.c"
+
 	"../transfer/transfer.cpp"
 
 	"startup/system_stm32f4xx.c"
@@ -46,6 +54,7 @@ add_executable(${TARGET}
 
 	"FreeRTOS/ARM_CM4F/port.c"
 	"FreeRTOS/freertos_exceptions.c"
+	"FreeRTOS/freertos_runtime_stats.c"
 
 	"HAL/stm32f4xx_hal_it.c"
 	"HAL/stm32f4xx_hal_msp.c"
@@ -53,25 +62,31 @@ add_executable(${TARGET}
 	"HAL/hal_callbacks.c"
 	"HAL/hal_exceptions.c"
 
-	"USB/usbd_cdc_if.c"
+	"USB/usbd_cdc_if.cpp"
 	"USB/usbd_conf.c"
 	"USB/usbd_desc.c"
 	"USB/usb_device.c"
 
 	"src/main.cpp"
 	"src/blink.cpp"
+	"src/stats.cpp"
 	"src/sensors/sensor_bus.cpp"
 	"src/sensors/bmp280.cpp"
 	"src/sensors/mpu6050.cpp"
 	"src/sensors/hmc5883l.cpp"
+	"src/sensors/vl53l0x.cpp"
+	"src/sensors/power_stats.cpp"
 	"src/communication/logger.cpp"
 	"src/communication/wire_transmitter.cpp"
+	"src/communication/wire_receiver.cpp"
 	"src/communication/communication_bus.cpp"
 	"src/communication/wireless_transmitter.cpp"
 	"src/communication/wireless_receiver.cpp"
+	"src/estimator/attitude_estimator.cpp"
+	"src/estimator/altitude_estimator.cpp"
+	"src/estimator/battery_estimator.cpp"
 	"src/estimator/state_estimator.cpp"
 	"src/utils/quaternion.cpp"
-	"src/utils/vector.cpp"
 	"src/utils/message.cpp"
 	"src/transport/transport.cpp"
 	"src/control/control.cpp"
@@ -91,6 +106,9 @@ target_include_directories(${TARGET} PRIVATE
 
 	"../third-party/stm32_mw_usb_device/Core/Inc"
 	"../third-party/stm32_mw_usb_device/Class/CDC/Inc"
+
+	"../third-party/VL53L0X/core/inc"
+	"../third-party/VL53L0X/platform/inc"
 
 	"../third-party/FreeRTOScpp"
 
@@ -130,7 +148,6 @@ target_compile_options(${TARGET} PRIVATE
 		-std=c17
 
 		-Wall
-		-Wpedantic
 		-Wdouble-promotion
 
 		-ffunction-sections
@@ -147,7 +164,7 @@ target_compile_options(${TARGET} PRIVATE
 	$<$<COMPILE_LANGUAGE:CXX>:
 		#-O0 -g3
 		-Os -g
-		-std=c++2a
+		-std=c++17
 
 		-Wall
 		-Wextra

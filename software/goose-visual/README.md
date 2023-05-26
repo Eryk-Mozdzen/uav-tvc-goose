@@ -13,5 +13,6 @@ sudo apt-get install -y \
     qml-module-qtquick-scene3d \
     qt3d-defaultgeometryloader-plugin \
     libqt53dcore5 \
-    libqt5serialport5-dev
+    libqt5serialport5-dev \
+    doxygen
 ```

@@ -4,6 +4,8 @@
 #include "logger.h"
 #include "transport.h"
 #include "sensor_bus.h"
+#include "interval_logger.h"
+#include "matrix.h"
 
 #define MPU6050_ADDR		0x68
 
@@ -198,9 +200,12 @@
 
 #define MPU6050_WHO_AM_I_VALUE						(0x68<<0)
 
-class MPU6050 : public TaskClassS<1024> {
+class MPU6050 : public TaskClassS<512> {
 	Vector gyration;
 	Vector acceleration;
+
+	IntervalLogger<Vector> telemetry_acc;
+	IntervalLogger<Vector> telemetry_gyr;
 
 public:
 
@@ -219,7 +224,9 @@ TaskHandle_t imu_task;
 
 MPU6050 imu;
 
-MPU6050::MPU6050() : TaskClassS{"MPU6050 reader", TaskPrio_Low} {
+MPU6050::MPU6050() : TaskClassS{"MPU6050 reader", TaskPrio_Low},
+		telemetry_acc{"MPU6050 telemetry acc", Transfer::ID::TELEMETRY_SENSOR_ACCELERATION},
+		telemetry_gyr{"MPU6050 telemetry gyr", Transfer::ID::TELEMETRY_SENSOR_GYRATION} {
 
 }
 
@@ -301,7 +308,16 @@ bool MPU6050::readData() {
 	constexpr float acc_gain = 8192.f;
 	constexpr float g_to_ms2 = 9.81f;
 
-	acceleration = Vector(acc_raw_x, acc_raw_y, acc_raw_z)*g_to_ms2/acc_gain;
+	const Vector acc_pre_calibrated = Vector(acc_raw_x, acc_raw_y, acc_raw_z)*g_to_ms2/acc_gain;
+
+	constexpr Vector acc_offset = {0.1200f, -0.0200f, -0.3350f};
+	constexpr Matrix<3, 3> acc_scale = {
+		0.9919f,	0,			0,
+		0,			0.9959f,	0,
+		0,			0,			0.9904f
+	};
+
+	acceleration = acc_scale*(acc_pre_calibrated - acc_offset);
 
 	const int16_t gyr_raw_x = (((int16_t)buffer[8])<<8) | buffer[9];
 	const int16_t gyr_raw_y = (((int16_t)buffer[10])<<8) | buffer[11];
@@ -340,5 +356,8 @@ void MPU6050::task() {
 
 		Transport::getInstance().sensor_queue.add(Transport::Sensors::ACCELEROMETER, acc, 0);
 		Transport::getInstance().sensor_queue.add(Transport::Sensors::GYROSCOPE, gyr, 0);
+
+		telemetry_acc.feed(acc);
+		telemetry_gyr.feed(gyr);
 	}
 }

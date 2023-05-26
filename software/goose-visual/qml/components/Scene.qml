@@ -275,7 +275,6 @@ Rectangle {
                             anchors.left: parent.left
                             anchors.right: parent.right
                             anchors.verticalCenter: parent.verticalCenter
-                            anchors.horizontalCenter: parent.horizontalCenter
                             color: "Black"
 
                             Text {
@@ -356,7 +355,6 @@ Rectangle {
                             anchors.left: parent.left
                             anchors.right: parent.right
                             anchors.verticalCenter: parent.verticalCenter
-                            anchors.horizontalCenter: parent.horizontalCenter
                             color: "Black"
 
                             Text {

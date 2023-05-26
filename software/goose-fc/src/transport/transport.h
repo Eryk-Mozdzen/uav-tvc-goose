@@ -14,13 +14,18 @@ public:
 		ACCELEROMETER,
 		GYROSCOPE,
 		MAGNETOMETER,
-		BAROMETER
+		BAROMETER,
+		LASER,
+		VOLTAGE,
+		CURRENT
 	};
 
 	MultiQueue<Sensors, 16, Vector, float> sensor_queue;
-	Queue<Transfer::FrameTX, 32> wire_tx_queue;
+	Queue<uint8_t, 512> wire_rx_queue;
+
+	Queue<Transfer::FrameTX, 100> wire_tx_queue;
 	Queue<Transfer::FrameTX, 32> wireless_tx_queue;
-	Queue<Transfer::FrameRX, 32> wireless_rx_queue;
+	Queue<Transfer::FrameRX, 16> frame_rx_queue;
 
 	Transport(Transport &) = delete;
 	void operator=(const Transport &) = delete;

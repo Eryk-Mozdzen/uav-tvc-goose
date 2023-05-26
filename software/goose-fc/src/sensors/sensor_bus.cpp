@@ -70,6 +70,8 @@ void SensorBus::slaveRecovery() {
 
 		ones++;
 	}
+
+	Logger::getInstance().log(Logger::INFO, "bus: recovery from slaves complete");
 }
 
 void SensorBus::write(const uint8_t device, const uint8_t reg, uint8_t src) {

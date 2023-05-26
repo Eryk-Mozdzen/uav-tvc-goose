@@ -12,13 +12,28 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 find_package(Qt5 COMPONENTS Quick Widgets SerialPort REQUIRED)
 
+find_package(Doxygen REQUIRED)
+
+set(DOXYGEN_IN ${CMAKE_CURRENT_SOURCE_DIR}/Doxyfile.in)
+set(DOXYGEN_OUT ${CMAKE_CURRENT_BINARY_DIR}/Doxyfile)
+configure_file(${DOXYGEN_IN} ${DOXYGEN_OUT} @ONLY)
+
+add_custom_target(doc_doxygen ALL
+	COMMAND ${DOXYGEN_EXECUTABLE} ${DOXYGEN_OUT}
+	WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
+	COMMENT "Generating API documentation with Doxygen"
+)
+
 add_executable(${PROJECT_NAME}
 	"src/main.cpp"
 	"../transfer/transfer.cpp"
 	"src/communication/usb.cpp"
 	"src/communication/telnet.cpp"
-	"src/interface/escape_codes.cpp"
-	"src/interface/printer_writer.cpp"
+	"src/cli-interface/escape_codes.cpp"
+	"src/cli-interface/printer_writer.cpp"
+	"src/gui-interface/logger.cpp"
+	"src/gui-interface/battery.cpp"
+	"src/gui-interface/altimeter.cpp"
 
 	"qml/resources.qrc"
 )
@@ -27,7 +42,8 @@ target_include_directories(${PROJECT_NAME} PRIVATE
 	"src"
 	"../transfer"
 	"src/communication"
-	"src/interface"
+	"src/cli-interface"
+	"src/gui-interface"
 )
 
 target_compile_options(${PROJECT_NAME} PRIVATE
