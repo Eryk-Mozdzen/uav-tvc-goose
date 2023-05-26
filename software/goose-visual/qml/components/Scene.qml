@@ -224,7 +224,7 @@ Rectangle {
         radius: 0.5*step
         x: parent.width - step - width
         y: step
-        width: 10*step
+        width: 12*step
         height: 12*step
 
         ColumnLayout{
@@ -232,20 +232,244 @@ Rectangle {
             spacing: step*0.5
             anchors.margins: step*0.5
 
+            // Acceleration
             Rectangle{
-                color: "Red"
+                color: "transparent"
                 Layout.fillWidth: true
                 Layout.fillHeight: true
+                RowLayout{
+                    anchors.fill: parent
+                    spacing: step*0.5
+                    // anchors.margins: step*0.5
+
+                    Rectangle{
+                        color: "transparent"
+                        Layout.fillWidth: true
+                        Layout.fillHeight: true
+                        Rectangle{
+                            height: parent.height
+                            radius: step*0.5
+                            anchors.left: parent.left
+                            anchors.right: parent.right
+                            color: "transparent"
+                            anchors.bottom: parent.bottom
+                            Text {
+                                text: "acc:"
+                                color: Style.text
+                                font.pixelSize: step*0.8
+                                anchors.fill: parent
+                                anchors.rightMargin: 0.5*step
+                                verticalAlignment: Text.AlignVCenter
+                                horizontalAlignment: Text.AlignRight
+                            }
+                        }
+                    }
+                    Rectangle{
+                        color: "transparent"
+                        Layout.fillWidth: true
+                        Layout.fillHeight: true
+                        Rectangle{
+                            height: width
+                            radius: step*0.5
+
+                            anchors.left: parent.left
+                            anchors.right: parent.right
+                            anchors.verticalCenter: parent.verticalCenter
+                            anchors.horizontalCenter: parent.horizontalCenter
+                            color: "Black"
+
+                            Text {
+                                text: "???\n???\n???"
+                                color: Style.text
+                                font.pixelSize: step*0.7
+                                anchors.fill: parent
+                                verticalAlignment: Text.AlignVCenter
+                                horizontalAlignment: Text.AlignHCenter
+                            }
+                        }
+                    }
+                    Rectangle{
+                        color: "transparent"
+                        Layout.fillWidth: true
+                        Layout.fillHeight: true
+                        Rectangle{
+                            height: parent.height
+                            radius: step*0.5
+                            anchors.left: parent.left
+                            anchors.right: parent.right
+                            color: "transparent"
+                            anchors.bottom: parent.bottom
+                            Text {
+                                text: "m/s^2"
+                                color: Style.text
+                                font.pixelSize: step*0.8
+                                anchors.fill: parent
+                                anchors.rightMargin: 0.5*step
+                                verticalAlignment: Text.AlignVCenter
+                                horizontalAlignment: Text.AlignRight
+                            }
+                        }
+                    }
+                }
             }
+
+            // gyration
             Rectangle{
-                color: "Green"
+                color: "transparent"
                 Layout.fillWidth: true
                 Layout.fillHeight: true
+                RowLayout{
+                    anchors.fill: parent
+                    spacing: step*0.5
+                    // anchors.margins: step*0.5
+
+                    Rectangle{
+                        color: "transparent"
+                        Layout.fillWidth: true
+                        Layout.fillHeight: true
+                        Rectangle{
+                            height: parent.height
+                            radius: step*0.5
+                            anchors.left: parent.left
+                            anchors.right: parent.right
+                            color: "transparent"
+                            anchors.bottom: parent.bottom
+                            Text {
+                                text: "gyro:"
+                                color: Style.text
+                                font.pixelSize: step*0.8
+                                anchors.fill: parent
+                                anchors.rightMargin: 0.5*step
+                                verticalAlignment: Text.AlignVCenter
+                                horizontalAlignment: Text.AlignRight
+                            }
+                        }
+                    }
+                    Rectangle{
+                        color: "transparent"
+                        Layout.fillWidth: true
+                        Layout.fillHeight: true
+                        Rectangle{
+                            height: width
+                            radius: step*0.5
+
+                            anchors.left: parent.left
+                            anchors.right: parent.right
+                            anchors.verticalCenter: parent.verticalCenter
+                            anchors.horizontalCenter: parent.horizontalCenter
+                            color: "Black"
+
+                            Text {
+                                text: "???\n???\n???"
+                                color: Style.text
+                                font.pixelSize: step*0.7
+                                anchors.fill: parent
+                                verticalAlignment: Text.AlignVCenter
+                                horizontalAlignment: Text.AlignHCenter
+                            }
+                        }
+                    }
+                    Rectangle{
+                        color: "transparent"
+                        Layout.fillWidth: true
+                        Layout.fillHeight: true
+                        Rectangle{
+                            height: parent.height
+                            radius: step*0.5
+                            anchors.left: parent.left
+                            anchors.right: parent.right
+                            color: "transparent"
+                            anchors.bottom: parent.bottom
+                            Text {
+                                text: "rad/s"
+                                color: Style.text
+                                font.pixelSize: step*0.8
+                                anchors.fill: parent
+                                anchors.rightMargin: 0.5*step
+                                verticalAlignment: Text.AlignVCenter
+                                horizontalAlignment: Text.AlignRight
+                            }
+                        }
+                    }
+                }
             }
+            // magnetometer
             Rectangle{
-                color: "Blue"
+                color: "transparent"
                 Layout.fillWidth: true
                 Layout.fillHeight: true
+                RowLayout{
+                    anchors.fill: parent
+                    spacing: step*0.5
+
+                    Rectangle{
+                        color: "transparent"
+                        Layout.fillWidth: true
+                        Layout.fillHeight: true
+                        Rectangle{
+                            height: parent.height
+                            radius: step*0.5
+                            anchors.left: parent.left
+                            anchors.right: parent.right
+                            color: "transparent"
+                            anchors.bottom: parent.bottom
+                            Text {
+                                text: "mag:"
+                                color: Style.text
+                                font.pixelSize: step*0.8
+                                anchors.fill: parent
+                                anchors.rightMargin: 0.5*step
+                                verticalAlignment: Text.AlignVCenter
+                                horizontalAlignment: Text.AlignRight
+                            }
+                        }
+                    }
+                    Rectangle{
+                        color: "transparent"
+                        Layout.fillWidth: true
+                        Layout.fillHeight: true
+                        Rectangle{
+                            height: width
+                            radius: step*0.5
+
+                            anchors.left: parent.left
+                            anchors.right: parent.right
+                            anchors.verticalCenter: parent.verticalCenter
+                            color: "Black"
+
+                            Text {
+                                text: "???\n???\n???"
+                                color: Style.text
+                                font.pixelSize: step*0.7
+                                anchors.fill: parent
+                                verticalAlignment: Text.AlignVCenter
+                                horizontalAlignment: Text.AlignHCenter
+                            }
+                        }
+                    }
+                    Rectangle{
+                        color: "transparent"
+                        Layout.fillWidth: true
+                        Layout.fillHeight: true
+                        Rectangle{
+                            height: parent.height
+                            radius: step*0.5
+                            anchors.left: parent.left
+                            anchors.right: parent.right
+                            color: "transparent"
+                            anchors.bottom: parent.bottom
+                            Text {
+                                text: "mGa"
+                                color: Style.text
+                                font.pixelSize: step*0.8
+                                anchors.fill: parent
+                                anchors.rightMargin: 0.5*step
+                                verticalAlignment: Text.AlignVCenter
+                                horizontalAlignment: Text.AlignRight
+                            }
+                        }
+                    }
+                }
             }
         }
     }
