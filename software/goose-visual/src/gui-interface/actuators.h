@@ -1,8 +1,8 @@
 /**
- * @file battery.h
- * @author Eryk Możdżeń (ermozdzen@@gmail.com)
- * @brief Implementation of batter interface class
- * @date 2023-05-23
+ * @file actuators.h
+ * @author Jakub Delicat (delicat.kuba@gmail.com)
+ * @brief Implementation of actuators interface class
+ * @date 2023-05-27
  *
  * @copyright Copyright (c) 2023
  *
@@ -25,16 +25,25 @@ class Actuators : public QObject {
     Q_OBJECT
 
 signals:
-
+    /**
+     * @brief Set throttle inside actuators window in QML.
+     *
+     * @param throttle throttle fill in percentages
+     */
     void setThrottle(QVariant throttle);
 
+    /**
+     * @brief Set actuators angles inside actuators window in QML.
+     *
+     * @param actuators list of actuators' angles in degees
+     */
     void setActuators(QVariant actuators);
 
 public slots:
     /**
      * @brief New frame received callback
      *
-     * @param frame received frame od data
+     * @param frame received frame of the data
      */
 	void receive(const Transfer::FrameRX &frame);
 
