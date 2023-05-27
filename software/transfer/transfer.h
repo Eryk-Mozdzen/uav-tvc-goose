@@ -127,7 +127,7 @@ public:
 	 */
 	static FrameTX encode(const void *payload, const size_t length, const ID id) {
 		FrameTX frame;
-	
+
 		memcpy(&frame.buffer[5], payload, length);
 		frame.buffer[4] = id;
 		frame.buffer[3] = length;
@@ -153,7 +153,7 @@ public:
 		static_assert(sizeof(T)<=max_length, "payload too big to encode");
 
 		FrameTX frame;
-	
+
 		memcpy(&frame.buffer[5], &payload, sizeof(T));
 		frame.buffer[4] = id;
 		frame.buffer[3] = sizeof(T);

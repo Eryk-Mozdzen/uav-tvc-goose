@@ -7,6 +7,7 @@
 #include "logger.h"
 #include "battery.h"
 #include "altimeter.h"
+#include "scene.h"
 
 int main(int argc, char *argv[]) {
 	QApplication app(argc, argv);
@@ -14,7 +15,7 @@ int main(int argc, char *argv[]) {
 	QQmlApplicationEngine engine;
 	engine.load(QUrl(QStringLiteral("qrc:/main.qml")));
 
-	USB usb("/dev/ttyACM0");
+	USB usb("/dev/pts/4");
 	Telnet telnet("192.168.64.29", 23);
 
 	PrinterWriter printer_writer;
@@ -34,6 +35,10 @@ int main(int argc, char *argv[]) {
 	Altimeter altimeter(engine);
 	QObject::connect(&usb,    &USB::receive,    &altimeter, &Altimeter::receive);
 	QObject::connect(&telnet, &Telnet::receive, &altimeter, &Altimeter::receive);
+
+	Scene scene(engine);
+	QObject::connect(&usb,    &USB::receive,    &scene, &Scene::receive);
+	QObject::connect(&telnet, &Telnet::receive, &scene, &Scene::receive);
 
 	return app.exec();
 }

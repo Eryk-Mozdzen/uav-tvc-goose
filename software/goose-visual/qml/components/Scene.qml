@@ -14,14 +14,6 @@ Rectangle {
     radius: 15
     Scene3D {
         id: scene3d
-        property real state_roll: 0.0
-        property real state_pitch: 0.0
-        property real state_yaw: 0.0
-
-        property real cmd_roll: 0.0
-        property real cmd_pitch: 0.0
-        property real cmd_yaw: 0.0
-
         anchors.fill: parent
         focus: true
 
@@ -71,9 +63,9 @@ Rectangle {
                         id: stateGooseTransform
                         rotation:{
                             fromAxesAndAngles(
-                                        Qt.vector3d(0, 1, 0), scene3d.state_roll,
-                                        Qt.vector3d(1, 0, 1), scene3d.state_pitch,
-                                        Qt.vector3d(0, 0, 1), scene3d.state_yaw)
+                                        Qt.vector3d(0, 1, 0), 0,
+                                        Qt.vector3d(1, 0, 1), 0,
+                                        Qt.vector3d(0, 0, 1), 0)
                         }
                     }
                 ]
@@ -96,9 +88,9 @@ Rectangle {
                         id: cmdGooseTransform
                         rotation:{
                             fromAxesAndAngles(
-                                        Qt.vector3d(0, 1, 0), scene3d.cmd_roll,
-                                        Qt.vector3d(1, 0, 1), scene3d.cmd_pitch,
-                                        Qt.vector3d(0, 0, 1), scene3d.cmd_yaw)
+                                        Qt.vector3d(0, 1, 0), 0,
+                                        Qt.vector3d(1, 0, 1), 0,
+                                        Qt.vector3d(0, 0, 1), 0)
                         }
                     }
                 ]
@@ -176,7 +168,6 @@ Rectangle {
                         color: Style.text
                         font.pixelSize: step*0.8
                         anchors.fill: parent
-                        anchors.rightMargin: 0.5*step
                         verticalAlignment: Text.AlignVCenter
                         horizontalAlignment: Text.AlignHCenter
                     }
@@ -210,7 +201,6 @@ Rectangle {
                         color: Style.text
                         font.pixelSize: step*0.8
                         anchors.fill: parent
-                        anchors.rightMargin: 0.5*step
                         verticalAlignment: Text.AlignVCenter
                         horizontalAlignment: Text.AlignHCenter
                     }
@@ -278,6 +268,7 @@ Rectangle {
                             color: "Black"
 
                             Text {
+                                id: sceneAccelerationText
                                 text: "???\n???\n???"
                                 color: Style.text
                                 font.pixelSize: step*0.7
@@ -358,6 +349,7 @@ Rectangle {
                             color: "Black"
 
                             Text {
+                                id: sceneGyrationText
                                 text: "???\n???\n???"
                                 color: Style.text
                                 font.pixelSize: step*0.7
@@ -436,6 +428,7 @@ Rectangle {
                             color: "Black"
 
                             Text {
+                                id: sceneMagnitudeText
                                 text: "???\n???\n???"
                                 color: Style.text
                                 font.pixelSize: step*0.7
@@ -473,16 +466,63 @@ Rectangle {
     }
 
     Timer {
-        interval: 10; running: true; repeat: true
-        property double time: 0
-        onTriggered: {
-            time += 0.002
-            scene3d.state_yaw = 30* Math.sin(time*10)
-            scene3d.state_pitch = 30* Math.sin(time*5)
-            scene3d.state_roll = 30* Math.sin(time*30)
-            scene3d.cmd_yaw = 30* Math.sin(time*10+0.5)
-            scene3d.cmd_pitch = 30* Math.sin(time*5+0.5)
-            scene3d.cmd_roll = 30* Math.sin(time*30+.05)
-        }
+        id: sceneAccelerationTimeout
+        interval: 100
+        onTriggered: sceneAccelerationText.text = "???\n???\n???"
+    }
+
+    Timer {
+        id: sceneGyrationTimeout
+        interval: 100
+        onTriggered: sceneGyrationText.text = "???\n???\n???"
+    }
+
+    Timer {
+        id: sceneMagnitudeTimeout
+        interval: 100
+        onTriggered: sceneMagnitudeText.text = "???\n???\n???"
+    }
+
+    Timer {
+        id: sceneStateTimeout
+        interval: 100
+        onTriggered: sceneStateText.text = "???\n???\n???"
+    }
+
+    Timer {
+        id: sceneCmdTimeout
+        interval: 100
+        onTriggered: sceneCmdText.text = "???\n???\n???"
+    }
+
+    function setAcceleration(acceleration) {
+        sceneAccelerationTimeout.restart()
+        sceneAccelerationText.text = acceleration.x.toFixed(2) + "\n" + acceleration.y.toFixed(2) + "\n" + acceleration.z.toFixed(2)
+    }
+
+    function setGyration(gyration) {
+        sceneAccelerationTimeout.restart()
+        sceneGyrationText.text = gyration.x.toFixed(2) + "\n" + gyration.y.toFixed(2) + "\n" + gyration.z.toFixed(2)
+    }
+
+    function setMagnitude(magnitude) {
+        sceneAccelerationTimeout.restart()
+        sceneMagnitudeText.text = magnitude.x.toFixed(2) + "\n" + magnitude.y.toFixed(2) + "\n" + magnitude.z.toFixed(2)
+    }
+
+    function setState(state) {
+        sceneStateTimeout.restart()
+        sceneStateText.text = state.x.toFixed(2) + "\n" + state.y.toFixed(2) + "\n" + state.z.toFixed(2)
+        stateGooseTransform.rotationX = state.x
+        stateGooseTransform.rotationY = state.y
+        stateGooseTransform.rotationZ = state.z
+    }
+
+    function setCommand(command) {
+        sceneCmdTimeout.restart()
+        sceneCmdText.text = command.x.toFixed(2) + "\n" + command.y.toFixed(2) + "\n" + command.z.toFixed(2)
+        cmdGooseTransform.rotationX = command.x
+        cmdGooseTransform.rotationY = command.y
+        cmdGooseTransform.rotationZ = command.z
     }
 }
