@@ -8,6 +8,7 @@
 #include "battery.h"
 #include "altimeter.h"
 #include "scene.h"
+#include "actuators.h"
 
 int main(int argc, char *argv[]) {
 	QApplication app(argc, argv);
@@ -39,6 +40,10 @@ int main(int argc, char *argv[]) {
 	Scene scene(engine);
 	QObject::connect(&usb,    &USB::receive,    &scene, &Scene::receive);
 	QObject::connect(&telnet, &Telnet::receive, &scene, &Scene::receive);
+
+	Actuators actuators(engine);
+	QObject::connect(&usb,    &USB::receive,    &actuators, &Actuators::receive);
+	QObject::connect(&telnet, &Telnet::receive, &actuators, &Actuators::receive);
 
 	return app.exec();
 }

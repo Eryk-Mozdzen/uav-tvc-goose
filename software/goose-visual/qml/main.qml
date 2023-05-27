@@ -23,6 +23,7 @@ ApplicationWindow {
 
 		Actuators {
 			id: actuators
+			objectName: "actuators"
 			anchors.top: parent.top
 			anchors.left: parent.left
 			anchors.bottom: scene.bottom

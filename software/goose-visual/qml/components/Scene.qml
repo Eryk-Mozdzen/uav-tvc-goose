@@ -486,13 +486,23 @@ Rectangle {
     Timer {
         id: sceneStateTimeout
         interval: 100
-        onTriggered: sceneStateText.text = "???\n???\n???"
+        onTriggered: {
+            sceneStateText.text = "???\n???\n???"
+            stateGooseTransform.rotationX = 0
+            stateGooseTransform.rotationY = 0
+            stateGooseTransform.rotationZ = 0
+        }
     }
 
     Timer {
         id: sceneCmdTimeout
         interval: 100
-        onTriggered: sceneCmdText.text = "???\n???\n???"
+        onTriggered: {
+            sceneCmdText.text = "???\n???\n???"
+            cmdGooseTransform.rotationX = 0
+            cmdGooseTransform.rotationY = 0
+            cmdGooseTransform.rotationZ = 0
+        }
     }
 
     function setAcceleration(acceleration) {

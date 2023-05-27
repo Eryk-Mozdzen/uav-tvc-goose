@@ -98,6 +98,7 @@ int main(int argc, char **argv) {
         Generator trottle_generator(0.2, 50.0, 50.0);
 
         Quaternion estimation_attitude = {0.0, 0.0, sinf(Generator::angle), cosf(Generator::angle)};
+        std::size_t i = 0;
         while (1) {
             send_log();
             estimation_attitude.z = sinf(Generator::angle);
@@ -136,7 +137,7 @@ int main(int argc, char **argv) {
             send(preasure, Transfer::TELEMETRY_SENSOR_PRESSURE);
 
             float trottle = trottle_generator.get_cos();
-            send(trottle, Transfer::TELEMETRY_INPUTS_MOTOR);
+            send(trottle, Transfer::CONTROL_MOTOR_THROTTLE);
 
             float angle_rad[4] = {servo_generators[0].get_sin(), servo_generators[1].get_sin(), servo_generators[2].get_sin(), servo_generators[3].get_sin()};
             Transfer::FrameTX tx = Transfer::encode(angle_rad, 4*sizeof(float), Transfer::TELEMETRY_INPUTS_SERVOS);
@@ -146,6 +147,7 @@ int main(int argc, char **argv) {
             }
             usleep(100000);
             Generator::update();
+            ++i;
         }
     } catch (const LibSerial::OpenFailed &) {
         std::cerr << "The serial port did not open correctly." << std::endl;
