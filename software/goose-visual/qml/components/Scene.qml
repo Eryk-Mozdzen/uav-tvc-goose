@@ -178,7 +178,8 @@ Rectangle {
                             font.pixelSize: step*0.7
                             anchors.fill: parent
                             verticalAlignment: Text.AlignVCenter
-                            horizontalAlignment: Text.AlignHCenter
+                            horizontalAlignment: Text.AlignRight
+                            padding: parent.width/4
                         }
                     }
                 }
@@ -214,7 +215,8 @@ Rectangle {
                             font.pixelSize: step*0.7
                             anchors.fill: parent
                             verticalAlignment: Text.AlignVCenter
-                            horizontalAlignment: Text.AlignHCenter
+                            horizontalAlignment: Text.AlignRight
+                            padding: parent.width/4
                         }
                     }
                 }
@@ -227,7 +229,7 @@ Rectangle {
         radius: 0.5*step
         x: parent.width - step - width
         y: step
-        width:  Math.min(13*step, parent.width/2 - 2*step)
+        width:  Math.min(13*step, parent.width/2 - step*0.6)
         height: 12*step
 
         ColumnLayout{
@@ -287,7 +289,8 @@ Rectangle {
                                 font.pixelSize: step*0.7
                                 anchors.fill: parent
                                 verticalAlignment: Text.AlignVCenter
-                                horizontalAlignment: Text.AlignHCenter
+                                horizontalAlignment: Text.AlignRight
+                                padding: parent.width/12
                             }
                         }
                     }
@@ -368,7 +371,8 @@ Rectangle {
                                 font.pixelSize: step*0.7
                                 anchors.fill: parent
                                 verticalAlignment: Text.AlignVCenter
-                                horizontalAlignment: Text.AlignHCenter
+                                horizontalAlignment: Text.AlignRight
+                                padding: parent.width/12
                             }
                         }
                     }
@@ -447,7 +451,8 @@ Rectangle {
                                 font.pixelSize: step*0.7
                                 anchors.fill: parent
                                 verticalAlignment: Text.AlignVCenter
-                                horizontalAlignment: Text.AlignHCenter
+                                horizontalAlignment: Text.AlignRight
+                                padding: parent.width/12
                             }
                         }
                     }
@@ -518,36 +523,40 @@ Rectangle {
         }
     }
 
+    function add_spaces_and_sign_with_fixing(x, f){
+        return x >= 0 ? "+" + x.toFixed(f) : "-" + Math.abs(x.toFixed(f))
+    }
+
     function setAcceleration(acceleration) {
         sceneAccelerationTimeout.restart()
-        var x = acceleration.x >= 0.0 ? '+' + acceleration.x.toFixed(3) : acceleration.x.toFixed(3)
-        var y = acceleration.y >= 0.0 ? '+' + acceleration.y.toFixed(3) : acceleration.y.toFixed(3)
-        var z = acceleration.z >= 0.0 ? '+' + acceleration.z.toFixed(3) : acceleration.z.toFixed(3)
+        var x = add_spaces_and_sign_with_fixing(acceleration.x, 3)
+        var y = add_spaces_and_sign_with_fixing(acceleration.y, 3)
+        var z = add_spaces_and_sign_with_fixing(acceleration.z, 3)
         sceneAccelerationText.text = x + "\n" + y + "\n" + z
     }
 
     function setGyration(gyration) {
         sceneGyrationTimeout.restart()
-        var x = gyration.x >= 0.0 ? '+' + gyration.x.toFixed(3) : gyration.x.toFixed(3)
-        var y = gyration.y >= 0.0 ? '+' + gyration.y.toFixed(3) : gyration.y.toFixed(3)
-        var z = gyration.z >= 0.0 ? '+' + gyration.z.toFixed(3) : gyration.z.toFixed(3)
+        var x = add_spaces_and_sign_with_fixing(gyration.x, 3)
+        var y = add_spaces_and_sign_with_fixing(gyration.y, 3)
+        var z = add_spaces_and_sign_with_fixing(gyration.z, 3)
         sceneGyrationText.text = x + "\n" + y + "\n" + z
     }
 
     function setMagnitude(magnitude) {
         sceneMagnitudeTimeout.restart()
-        var x = magnitude.x >= 0.0 ? '+' + magnitude.x.toFixed(3) : magnitude.x.toFixed(3)
-        var y = magnitude.y >= 0.0 ? '+' + magnitude.y.toFixed(3) : magnitude.y.toFixed(3)
-        var z = magnitude.z >= 0.0 ? '+' + magnitude.z.toFixed(3) : magnitude.z.toFixed(3)
+        var x = add_spaces_and_sign_with_fixing(magnitude.x, 3)
+        var y = add_spaces_and_sign_with_fixing(magnitude.y, 3)
+        var z = add_spaces_and_sign_with_fixing(magnitude.z, 3)
         sceneMagnitudeText.text = x + "\n" + y + "\n" + z
     }
 
     function setState(state) {
         sceneStateTimeout.restart()
         state.y *= -1
-        var x = state.x >= 0.0 ? '+' + state.x.toFixed(0) : state.x.toFixed(0)
-        var y = state.y >= 0.0 ? '+' + state.y.toFixed(0) : state.y.toFixed(0)
-        var z = state.z >= 0.0 ? '+' + state.z.toFixed(0) : state.z.toFixed(0)
+        var x = add_spaces_and_sign_with_fixing(state.x, 0)
+        var y = add_spaces_and_sign_with_fixing(state.y, 0)
+        var z = add_spaces_and_sign_with_fixing(state.z, 0)
         sceneStateText.text = z + "\n" + y + "\n" + x
 
         // Z - north, Y - donw, -X - east
@@ -559,9 +568,9 @@ Rectangle {
     function setCommand(command) {
         sceneCmdTimeout.restart()
         command.y *= -1
-        var x = command.x >= 0.0 ? '+' + command.x.toFixed(0) : command.x.toFixed(0)
-        var y = command.y >= 0.0 ? '+' + command.y.toFixed(0) : command.y.toFixed(0)
-        var z = command.z >= 0.0 ? '+' + command.z.toFixed(0) : command.z.toFixed(0)
+        var x = add_spaces_and_sign_with_fixing(command.x, 0)
+        var y = add_spaces_and_sign_with_fixing(command.y, 0)
+        var z = add_spaces_and_sign_with_fixing(command.z, 0)
         sceneCmdText.text = z + "\n" + y + "\n" + x
 
         // Z - north, Y - donw, -X - east

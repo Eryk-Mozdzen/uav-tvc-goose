@@ -19,7 +19,7 @@ struct Generator {
     }
 
     inline static void update() {
-        angle += 0.1;
+        angle += 0.05;
     }
 
     float get_sin() {
@@ -101,8 +101,23 @@ int main(int argc, char **argv) {
         std::size_t i = 0;
         while (1) {
             send_log();
-            estimation_attitude.z = sinf(Generator::angle);
-            estimation_attitude.w = cosf(Generator::angle);
+            
+            if(i%4 == 1){
+                estimation_attitude.z = 1;
+                estimation_attitude.w = 0;
+            }
+            // if(i%4 == 2){
+            //     estimation_attitude.z = 0;
+            //     estimation_attitude.w = 1;
+            // }
+            // if(i%4 == 3){
+            //     estimation_attitude.z = 0.707;
+            //     estimation_attitude.w = 0.707;
+            // }
+            // if(i%4 == 0){
+            //     estimation_attitude.z = 0.707;
+            //     estimation_attitude.w = -0.707;
+            // }
             send(estimation_attitude, Transfer::ID::TELEMETRY_ESTIMATION_ATTITUDE);
 
             estimation_attitude.z = sinf(Generator::angle + 0.1);
