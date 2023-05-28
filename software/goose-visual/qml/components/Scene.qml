@@ -104,8 +104,8 @@ Rectangle {
         radius: 0.5*step
         x: step
         y: step
-        width: 14*step
-        height: 6.5*step
+        width: Math.min(14*step, parent.width/2 - 2*step)
+        height: Math.min(7*step, parent.width/5.2 )
         RowLayout{
             anchors.fill: parent
             spacing: step*0.5
@@ -122,87 +122,105 @@ Rectangle {
                 color: "transparent"
                 Layout.fillWidth: true
                 Layout.fillHeight: true
-                Rectangle{
-                    height: width
-                    radius: step*0.5
-                    anchors.left: parent.left
-                    anchors.right: parent.right
-                    color: "transparent"
-                    anchors.bottom: parent.bottom
-                    Text {
-                        text: "roll:\npitch:\nyaw:"
-                        color: Style.text
-                        font.pixelSize: step*0.8
-                        anchors.fill: parent
-                        anchors.rightMargin: 0.5*step
-                        verticalAlignment: Text.AlignVCenter
-                        horizontalAlignment: Text.AlignRight
+                // width: parent.width*0.2
+                Text {
+                    width: parent.width
+                    text: ""
+                    anchors.top: parent.top
+                    color: Style.text
+                    font.pixelSize: step*0.7
+
+                    horizontalAlignment: Text.AlignHCenter
+
+                    Rectangle{
+                        height: width
+                        radius: step*0.5
+                        color: "transparent"
+
+                        anchors.left: parent.left
+                        anchors.right: parent.right
+                        anchors.top: parent.bottom
+
+                        Text {
+                            text: "roll:\npitch:\nyaw:"
+                            color: Style.text
+                            font.pixelSize: step*0.7
+                            anchors.fill: parent
+                            verticalAlignment: Text.AlignVCenter
+                            horizontalAlignment: Text.AlignHCenter
+                        }
                     }
                 }
             }
             Rectangle{
                 color: "transparent"
+                // width: parent.width*0.3
                 Layout.fillWidth: true
                 Layout.fillHeight: true
                 Text {
-                    width:parent.width
-                    Layout.fillWidth: true
-                    Layout.fillHeight: true
+                    width: parent.width
                     text: "state"
+                    anchors.top: parent.top
                     color: Style.text
-                    font.pixelSize: step*0.8
+                    font.pixelSize: step*0.7
                     horizontalAlignment: Text.AlignHCenter
-                }
-                Rectangle{
-                    height: width
-                    radius: step*0.5
-                    anchors.left: parent.left
-                    anchors.right: parent.right
-                    color: "Black"
-                    anchors.bottom: parent.bottom
-                    border.color: Style.primary
-                    border.width: step*0.1
-                    Text {
-                        id: sceneStateText
-                        text: "???\n???\n???"
-                        color: Style.text
-                        font.pixelSize: step*0.8
-                        anchors.fill: parent
-                        verticalAlignment: Text.AlignVCenter
-                        horizontalAlignment: Text.AlignHCenter
+
+                    Rectangle{
+                        height: width
+                        radius: step*0.5
+
+                        anchors.left: parent.left
+                        anchors.right: parent.right
+                        anchors.top: parent.bottom
+                        color: "Black"
+                        border.color: Style.primary
+                        border.width: step*0.1
+
+                        Text {
+                            id: sceneStateText
+                            text: "???\n???\n???"
+                            color: Style.text
+                            font.pixelSize: step*0.7
+                            anchors.fill: parent
+                            verticalAlignment: Text.AlignVCenter
+                            horizontalAlignment: Text.AlignHCenter
+                        }
                     }
                 }
             }
             Rectangle{
                 color: "transparent"
+                // width: parent.width*0.35
                 Layout.fillWidth: true
                 Layout.fillHeight: true
                 Text {
-                    width:parent.width
-                    Layout.fillWidth: true
-                    Layout.fillHeight: true
+                    width: parent.width
                     text: "command"
+                    anchors.top: parent.top
                     color: Style.text
-                    font.pixelSize: step*0.8
+                    font.pixelSize: step*0.7
                     horizontalAlignment: Text.AlignHCenter
-                }
-                Rectangle{
-                    height: width
-                    radius: step*0.5
-                    anchors.left: parent.left
-                    anchors.right: parent.right
-                    color: "Black"
-                    anchors.bottom: parent.bottom
-                    border.color: "Grey"
-                    border.width: step*0.1
-                    Text {
-                        id: sceneCmdText
-                        text: "???\n???\n???"
-                        color: Style.text
-                        font.pixelSize: step*0.8
-                        anchors.fill: parent
-                        verticalAlignment: Text.AlignVCenter
-                        horizontalAlignment: Text.AlignHCenter
+
+                    Rectangle{
+                        height: width
+                        radius: step*0.5
+
+                        anchors.left: parent.left
+                        anchors.right: parent.right
+                        anchors.top: parent.bottom
+                        color: "Black"
+                        border.color: "Grey"
+                        border.width: step*0.1
+
+                        Text {
+                            id: sceneCmdText
+                            text: "???\n???\n???"
+                            color: Style.text
+                            font.pixelSize: step*0.7
+                            anchors.fill: parent
+                            verticalAlignment: Text.AlignVCenter
+                            horizontalAlignment: Text.AlignHCenter
+                        }
                     }
                 }
             }
@@ -214,7 +232,7 @@ Rectangle {
         radius: 0.5*step
         x: parent.width - step - width
         y: step
-        width: 12*step
+        width:  Math.min(12*step, parent.width/2 - 2*step)
         height: 12*step
 
         ColumnLayout{
