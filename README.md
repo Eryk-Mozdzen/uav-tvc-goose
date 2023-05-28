@@ -5,3 +5,6 @@
 
 ## Program architecture
 ![Alt text](./docs/program_architecture.drawio.svg)
+
+## Program state machine
+![Alt text](./docs/state_machine.drawio.svg)
