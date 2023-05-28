@@ -61,12 +61,10 @@ Rectangle {
 
                     Transform {
                         id: stateGooseTransform
-                        rotation:{
-                            fromAxesAndAngles(
-                                        Qt.vector3d(0, 1, 0), 0,
-                                        Qt.vector3d(1, 0, 1), 0,
-                                        Qt.vector3d(0, 0, 1), 0)
-                        }
+                        // Z - north, Y - donw, -X - east
+                        rotationX: 0
+                        rotationY: 0
+                        rotationZ: 0
                     }
                 ]
             }
@@ -86,12 +84,9 @@ Rectangle {
 
                     Transform {
                         id: cmdGooseTransform
-                        rotation:{
-                            fromAxesAndAngles(
-                                        Qt.vector3d(0, 1, 0), 0,
-                                        Qt.vector3d(1, 0, 1), 0,
-                                        Qt.vector3d(0, 0, 1), 0)
-                        }
+                        rotationX: 0
+                        rotationY: 0
+                        rotationZ: 0
                     }
                 ]
             }
@@ -549,24 +544,29 @@ Rectangle {
 
     function setState(state) {
         sceneStateTimeout.restart()
+        state.y *= -1
         var x = state.x >= 0.0 ? '+' + state.x.toFixed(0) : state.x.toFixed(0)
         var y = state.y >= 0.0 ? '+' + state.y.toFixed(0) : state.y.toFixed(0)
         var z = state.z >= 0.0 ? '+' + state.z.toFixed(0) : state.z.toFixed(0)
-        sceneStateText.text = x + "\n" + y + "\n" + z
+        sceneStateText.text = z + "\n" + y + "\n" + x
 
-        stateGooseTransform.rotationX = state.x
-        stateGooseTransform.rotationY = state.y
-        stateGooseTransform.rotationZ = state.z
+        // Z - north, Y - donw, -X - east
+        stateGooseTransform.rotationX = -state.y
+        stateGooseTransform.rotationY = state.z
+        stateGooseTransform.rotationZ = state.x
     }
 
     function setCommand(command) {
         sceneCmdTimeout.restart()
+        command.y *= -1
         var x = command.x >= 0.0 ? '+' + command.x.toFixed(0) : command.x.toFixed(0)
         var y = command.y >= 0.0 ? '+' + command.y.toFixed(0) : command.y.toFixed(0)
         var z = command.z >= 0.0 ? '+' + command.z.toFixed(0) : command.z.toFixed(0)
-        sceneCmdText.text = x + "\n" + y + "\n" + z
-        cmdGooseTransform.rotationX = command.x
-        cmdGooseTransform.rotationY = command.y
-        cmdGooseTransform.rotationZ = command.z
+        sceneCmdText.text = z + "\n" + y + "\n" + x
+
+        // Z - north, Y - donw, -X - east
+        cmdGooseTransform.rotationX = -command.y
+        cmdGooseTransform.rotationY = command.z
+        cmdGooseTransform.rotationZ = command.x
     }
 }
