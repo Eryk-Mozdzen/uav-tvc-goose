@@ -115,7 +115,7 @@ int main(int argc, char **argv) {
             Vector3D gyration = {sinf(Generator::angle), sinf(Generator::angle)/cosf(Generator::angle), cosf(Generator::angle)};
             send(gyration, Transfer::ID::TELEMETRY_SENSOR_GYRATION);
 
-            Vector3D magnitude = {sinf(Generator::angle)/cosf(Generator::angle), cosf(Generator::angle), sinf(Generator::angle)};
+            Vector3D magnitude = {sinf(Generator::angle)/cosf(Generator::angle)*10, cosf(Generator::angle)*100, sinf(Generator::angle)*200};
             send(magnitude, Transfer::ID::TELEMETRY_SENSOR_MAGNETIC_FIELD);
 
             auto voltage = voltage_generator.get_sin();

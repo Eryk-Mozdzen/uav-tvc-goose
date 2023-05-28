@@ -232,7 +232,7 @@ Rectangle {
         radius: 0.5*step
         x: parent.width - step - width
         y: step
-        width:  Math.min(12*step, parent.width/2 - 2*step)
+        width:  Math.min(13*step, parent.width/2 - 2*step)
         height: 12*step
 
         ColumnLayout{
@@ -525,22 +525,35 @@ Rectangle {
 
     function setAcceleration(acceleration) {
         sceneAccelerationTimeout.restart()
-        sceneAccelerationText.text = acceleration.x.toFixed(2) + "\n" + acceleration.y.toFixed(2) + "\n" + acceleration.z.toFixed(2)
+        var x = acceleration.x >= 0.0 ? '+' + acceleration.x.toFixed(3) : acceleration.x.toFixed(3)
+        var y = acceleration.y >= 0.0 ? '+' + acceleration.y.toFixed(3) : acceleration.y.toFixed(3)
+        var z = acceleration.z >= 0.0 ? '+' + acceleration.z.toFixed(3) : acceleration.z.toFixed(3)
+        sceneAccelerationText.text = x + "\n" + y + "\n" + z
     }
 
     function setGyration(gyration) {
-        sceneAccelerationTimeout.restart()
-        sceneGyrationText.text = gyration.x.toFixed(2) + "\n" + gyration.y.toFixed(2) + "\n" + gyration.z.toFixed(2)
+        sceneGyrationTimeout.restart()
+        var x = gyration.x >= 0.0 ? '+' + gyration.x.toFixed(3) : gyration.x.toFixed(3)
+        var y = gyration.y >= 0.0 ? '+' + gyration.y.toFixed(3) : gyration.y.toFixed(3)
+        var z = gyration.z >= 0.0 ? '+' + gyration.z.toFixed(3) : gyration.z.toFixed(3)
+        sceneGyrationText.text = x + "\n" + y + "\n" + z
     }
 
     function setMagnitude(magnitude) {
-        sceneAccelerationTimeout.restart()
-        sceneMagnitudeText.text = magnitude.x.toFixed(2) + "\n" + magnitude.y.toFixed(2) + "\n" + magnitude.z.toFixed(2)
+        sceneMagnitudeTimeout.restart()
+        var x = magnitude.x >= 0.0 ? '+' + magnitude.x.toFixed(3) : magnitude.x.toFixed(3)
+        var y = magnitude.y >= 0.0 ? '+' + magnitude.y.toFixed(3) : magnitude.y.toFixed(3)
+        var z = magnitude.z >= 0.0 ? '+' + magnitude.z.toFixed(3) : magnitude.z.toFixed(3)
+        sceneMagnitudeText.text = x + "\n" + y + "\n" + z
     }
 
     function setState(state) {
         sceneStateTimeout.restart()
-        sceneStateText.text = state.x.toFixed(2) + "\n" + state.y.toFixed(2) + "\n" + state.z.toFixed(2)
+        var x = state.x >= 0.0 ? '+' + state.x.toFixed(0) : state.x.toFixed(0)
+        var y = state.y >= 0.0 ? '+' + state.y.toFixed(0) : state.y.toFixed(0)
+        var z = state.z >= 0.0 ? '+' + state.z.toFixed(0) : state.z.toFixed(0)
+        sceneStateText.text = x + "\n" + y + "\n" + z
+
         stateGooseTransform.rotationX = state.x
         stateGooseTransform.rotationY = state.y
         stateGooseTransform.rotationZ = state.z
@@ -548,7 +561,10 @@ Rectangle {
 
     function setCommand(command) {
         sceneCmdTimeout.restart()
-        sceneCmdText.text = command.x.toFixed(2) + "\n" + command.y.toFixed(2) + "\n" + command.z.toFixed(2)
+        var x = command.x >= 0.0 ? '+' + command.x.toFixed(0) : command.x.toFixed(0)
+        var y = command.y >= 0.0 ? '+' + command.y.toFixed(0) : command.y.toFixed(0)
+        var z = command.z >= 0.0 ? '+' + command.z.toFixed(0) : command.z.toFixed(0)
+        sceneCmdText.text = x + "\n" + y + "\n" + z
         cmdGooseTransform.rotationX = command.x
         cmdGooseTransform.rotationY = command.y
         cmdGooseTransform.rotationZ = command.z

@@ -16,7 +16,7 @@ Rectangle {
         radius: 10
         color: Style.background
         Rectangle {
-            width: 2.2*step
+            width: 2.5*step
             height: 1.5*step
             radius: 10
             color: "black"
@@ -76,7 +76,7 @@ Rectangle {
         radius: 10
         color: Style.background
         Rectangle {
-            width: 2.2*step
+            width: 2.5*step
             height: 1.5*step
             radius: 10
             color: "black"
@@ -137,7 +137,7 @@ Rectangle {
         radius: 10
         color: Style.background
         Rectangle {
-            width: 2.2*step
+            width: 2.5*step
             height: 1.5*step
             radius: 10
             color: "black"
@@ -197,7 +197,7 @@ Rectangle {
         radius: 10
         color: Style.background
         Rectangle {
-            width: 2.2*step
+            width: 2.5*step
             height: 1.5*step
             radius: 10
             color: "black"
@@ -312,7 +312,7 @@ Rectangle {
                         anchors.centerIn: parent
                         font.pixelSize: step*1.5
                         color: Style.text
-                        text: "???%"
+                        text: "???"
                         fontSizeMode: Text.Fit
                         font.bold: true
                     }
@@ -326,7 +326,7 @@ Rectangle {
         interval: 100
         onTriggered: {
             setThrottle(0)
-            throttleText.text = "???%"
+            throttleText.text = "???"
         }
     }
 
@@ -371,7 +371,7 @@ Rectangle {
         }
         leftWingSlide.height = Math.abs(angle) / 30 * leftWing.height/2
         leftWingSlide.height *= 0.75
-        leftText.text = Math.floor(angle)
+        leftText.text = Math.floor(angle) > 0.0 ? '+' + Math.floor(angle) : Math.floor(angle)
     }
 
     function setRightWing(angle) {
@@ -385,7 +385,7 @@ Rectangle {
         }
         rightWingSlide.height = Math.abs(angle)/30 * rightWing.height/2
         rightWingSlide.height *= 0.75
-        rightText.text = Math.floor(angle)
+        rightText.text = Math.floor(angle) > 0.0 ? '+' + Math.floor(angle) : Math.floor(angle)
     }
 
     function setUpWing(angle) {
@@ -399,7 +399,7 @@ Rectangle {
         }
         upWingSlide.width = Math.abs(angle)/30 * upWing.height/2
         upWingSlide.width *= 0.75
-        upText.text = Math.floor(angle)
+        upText.text = Math.floor(angle) > 0.0 ? '+' + Math.floor(angle) : Math.floor(angle)
     }
 
     function setDownWing(angle) {
@@ -413,6 +413,6 @@ Rectangle {
         }
         downWingSlide.width = Math.abs(angle)/30 * downWing.height/2
         downWingSlide.width *= 0.75
-        downText.text = Math.floor(angle)
+        downText.text = Math.floor(angle) > 0.0 ? '+' + Math.floor(angle) : Math.floor(angle)
     }
 }
