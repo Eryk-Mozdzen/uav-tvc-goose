@@ -34,6 +34,8 @@ add_executable(${PROJECT_NAME}
 	"src/gui-interface/logger.cpp"
 	"src/gui-interface/battery.cpp"
 	"src/gui-interface/altimeter.cpp"
+	"src/gui-interface/scene.cpp"
+	"src/gui-interface/actuators.cpp"
 
 	"qml/resources.qrc"
 )

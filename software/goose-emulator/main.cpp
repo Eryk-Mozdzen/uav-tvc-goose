@@ -1,5 +1,4 @@
-#include <frame_rx.h>
-#include <frame_tx.h>
+#include <frames.h>
 #include <libserial/SerialPort.h>
 #include <math.h>
 #include <unistd.h>
@@ -8,7 +7,7 @@
 
 #include "transfer.h"
 
-constexpr const char *const SERIAL_PORT_2 = "/dev/pts/7";
+constexpr const char *const SERIAL_PORT_2 = "/dev/pts/8";
 LibSerial::SerialPort serial;
 
 struct Generator {
@@ -20,7 +19,7 @@ struct Generator {
     }
 
     inline static void update() {
-        angle += 0.1;
+        angle += 0.05;
     }
 
     float get_sin() {
@@ -86,26 +85,74 @@ int main(int argc, char **argv) {
         struct __attribute__((packed)) Quaternion {
             float x, y, z, w;
         };
+        struct __attribute__((packed)) Vector3D {
+            float x, y, z;
+        };
         Generator voltage_generator(1.0, 1.7, 10.7);
+        Generator current_generator(1.0, 1.0, 1.0);
+        Generator battery_level_generator(-1.0, 100.0, 50.0);
+        Generator distace_generator(0.0, 4.0, 4.0);
+
         Generator preasure_generator(3.14, 100, 102400);
         Generator servo_generators[] = {{0.2, 0.2616}, {0.8, 0.2616}, {2.0, 0.2616}, {3.14, 0.2616}};
         Generator trottle_generator(0.2, 50.0, 50.0);
 
         Quaternion estimation_attitude = {0.0, 0.0, sinf(Generator::angle), cosf(Generator::angle)};
+        std::size_t i = 0;
         while (1) {
             send_log();
-            estimation_attitude.z = sinf(Generator::angle);
-            estimation_attitude.w = cosf(Generator::angle);
+            
+            if(i%4 == 1){
+                estimation_attitude.z = 1;
+                estimation_attitude.w = 0;
+            }
+            // if(i%4 == 2){
+            //     estimation_attitude.z = 0;
+            //     estimation_attitude.w = 1;
+            // }
+            // if(i%4 == 3){
+            //     estimation_attitude.z = 0.707;
+            //     estimation_attitude.w = 0.707;
+            // }
+            // if(i%4 == 0){
+            //     estimation_attitude.z = 0.707;
+            //     estimation_attitude.w = -0.707;
+            // }
             send(estimation_attitude, Transfer::ID::TELEMETRY_ESTIMATION_ATTITUDE);
+
+            estimation_attitude.z = sinf(Generator::angle + 0.1);
+            estimation_attitude.w = cosf(Generator::angle + 0.1);
+            send(estimation_attitude, Transfer::ID::CONTROL_ATTITUDE_SETPOINT);
+
+            Vector3D acceleration = {sinf(Generator::angle), cosf(Generator::angle), sinf(Generator::angle)/cosf(Generator::angle)};
+            send(acceleration, Transfer::ID::TELEMETRY_SENSOR_ACCELERATION);
+
+            Vector3D gyration = {sinf(Generator::angle), sinf(Generator::angle)/cosf(Generator::angle), cosf(Generator::angle)};
+            send(gyration, Transfer::ID::TELEMETRY_SENSOR_GYRATION);
+
+            Vector3D magnitude = {sinf(Generator::angle)/cosf(Generator::angle)*10, cosf(Generator::angle)*100, sinf(Generator::angle)*200};
+            send(magnitude, Transfer::ID::TELEMETRY_SENSOR_MAGNETIC_FIELD);
 
             auto voltage = voltage_generator.get_sin();
             send(voltage, Transfer::TELEMETRY_SENSOR_VOLTAGE);
+
+            auto current = current_generator.get_sin();
+            send(current, Transfer::TELEMETRY_SENSOR_CURRENT);
+
+            auto battery_level = battery_level_generator.get_sin();
+            send(battery_level, Transfer::TELEMETRY_ESTIMATION_BATTERY_LEVEL);
+
+            auto distance = distace_generator.get_sin();
+            send(distance, Transfer::TELEMETRY_SENSOR_DISTANCE);
+
+            auto altitude = distace_generator.get_sin() + 0.2;
+            send(altitude, Transfer::TELEMETRY_ESTIMATION_ALTITUDE);
 
             auto preasure = preasure_generator.get_sin();
             send(preasure, Transfer::TELEMETRY_SENSOR_PRESSURE);
 
             float trottle = trottle_generator.get_cos();
-            send(trottle, Transfer::TELEMETRY_INPUTS_MOTOR);
+            send(trottle, Transfer::CONTROL_MOTOR_THROTTLE);
 
             float angle_rad[4] = {servo_generators[0].get_sin(), servo_generators[1].get_sin(), servo_generators[2].get_sin(), servo_generators[3].get_sin()};
             Transfer::FrameTX tx = Transfer::encode(angle_rad, 4*sizeof(float), Transfer::TELEMETRY_INPUTS_SERVOS);
@@ -115,6 +162,7 @@ int main(int argc, char **argv) {
             }
             usleep(100000);
             Generator::update();
+            ++i;
         }
     } catch (const LibSerial::OpenFailed &) {
         std::cerr << "The serial port did not open correctly." << std::endl;

@@ -1,7 +1,7 @@
 /**
  * @file battery.h
  * @author Eryk Możdżeń (ermozdzen@@gmail.com)
- * @brief Implementation of batter interface class
+ * @brief Implementation of battery interface class
  * @date 2023-05-23
  *
  * @copyright Copyright (c) 2023
@@ -47,7 +47,7 @@ public slots:
     /**
      * @brief New frame received callback
      *
-     * @param frame received frame od data
+     * @param frame received frame of the data
      */
 	void receive(const Transfer::FrameRX &frame);
 

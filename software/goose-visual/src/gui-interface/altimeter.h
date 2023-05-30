@@ -47,7 +47,7 @@ public slots:
     /**
      * @brief New frame received callback
      *
-     * @param frame received frame od data
+     * @param frame received frame of the data
      */
 	void receive(const Transfer::FrameRX &frame);
 

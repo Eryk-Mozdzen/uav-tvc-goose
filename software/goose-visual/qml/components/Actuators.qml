@@ -16,7 +16,7 @@ Rectangle {
         radius: 10
         color: Style.background
         Rectangle {
-            width: 2.2*step
+            width: 2.5*step
             height: 1.5*step
             radius: 10
             color: "black"
@@ -76,7 +76,7 @@ Rectangle {
         radius: 10
         color: Style.background
         Rectangle {
-            width: 2.2*step
+            width: 2.5*step
             height: 1.5*step
             radius: 10
             color: "black"
@@ -137,7 +137,7 @@ Rectangle {
         radius: 10
         color: Style.background
         Rectangle {
-            width: 2.2*step
+            width: 2.5*step
             height: 1.5*step
             radius: 10
             color: "black"
@@ -197,7 +197,7 @@ Rectangle {
         radius: 10
         color: Style.background
         Rectangle {
-            width: 2.2*step
+            width: 2.5*step
             height: 1.5*step
             radius: 10
             color: "black"
@@ -312,7 +312,7 @@ Rectangle {
                         anchors.centerIn: parent
                         font.pixelSize: step*1.5
                         color: Style.text
-                        text: "???%"
+                        text: "???"
                         fontSizeMode: Text.Fit
                         font.bold: true
                     }
@@ -321,11 +321,43 @@ Rectangle {
         }
     }
 
+    Timer {
+        id: actuatorsThrottleTimeout
+        interval: 100
+        onTriggered: {
+            setThrottle(0)
+            throttleText.text = "???"
+        }
+    }
+
+    Timer {
+        id: actuatorsActuatorsTimeout
+        interval: 100
+        onTriggered: {
+            setLeftWing(0)
+            setRightWing(0)
+            setUpWing(0)
+            setDownWing(0)
+            leftText.text = "?"
+            rightText.text = "?"
+            upText.text = "?"
+            downText.text = "?"
+        }
+    }
 
     function setThrottle(throttle) {
+        actuatorsThrottleTimeout.restart()
         throttleText.text = throttle + "%"
         rotor1.rotation +=  throttle / 4
         rotor2.rotation +=  throttle / 4
+    }
+
+    function setActuators(actuators) {
+        actuatorsActuatorsTimeout.restart()
+        setLeftWing(actuators[0])
+        setRightWing(actuators[1])
+        setUpWing(actuators[2])
+        setDownWing(actuators[3])
     }
 
     function setLeftWing(angle) {
@@ -339,61 +371,48 @@ Rectangle {
         }
         leftWingSlide.height = Math.abs(angle) / 30 * leftWing.height/2
         leftWingSlide.height *= 0.75
-        leftText.text = Math.floor(angle)
+        leftText.text = Math.floor(angle) > 0.0 ? '+' + Math.floor(angle) : Math.floor(angle)
     }
 
     function setRightWing(angle) {
         if (angle >= 0.0){
             rightWingSlide.anchors.bottom = rightWingBar.top
-            rightWingSlide.anchors.top =rightWingBar.center
+            rightWingSlide.anchors.top = rightWingBar.center
         }
         else{
             rightWingSlide.anchors.bottom = rightWingBar.center
             rightWingSlide.anchors.top = rightWingBar.bottom
         }
-        rightWingSlide.height = Math.abs(angle) / 30 * rightWing.height/2
+        rightWingSlide.height = Math.abs(angle)/30 * rightWing.height/2
         rightWingSlide.height *= 0.75
-        rightText.text = Math.floor(angle)
+        rightText.text = Math.floor(angle) > 0.0 ? '+' + Math.floor(angle) : Math.floor(angle)
     }
 
     function setUpWing(angle) {
         if (angle >= 0.0){
             upWingSlide.anchors.left = upWingBar.right
-            upWingSlide.anchors.right =upWingBar.center
+            upWingSlide.anchors.right = upWingBar.center
         }
         else{
             upWingSlide.anchors.left = upWingBar.center
             upWingSlide.anchors.right = upWingBar.left
         }
-        upWingSlide.width = Math.abs(angle) / 30 * upWing.height/2
+        upWingSlide.width = Math.abs(angle)/30 * upWing.height/2
         upWingSlide.width *= 0.75
-        upText.text = Math.floor(angle)
+        upText.text = Math.floor(angle) > 0.0 ? '+' + Math.floor(angle) : Math.floor(angle)
     }
 
     function setDownWing(angle) {
         if (angle >= 0.0){
             downWingSlide.anchors.left = downWingBar.right
-            downWingSlide.anchors.right =downWingBar.center
+            downWingSlide.anchors.right = downWingBar.center
         }
         else{
             downWingSlide.anchors.left = downWingBar.center
             downWingSlide.anchors.right = downWingBar.left
         }
-        downWingSlide.width = Math.abs(angle) / 30 * downWing.height/2
+        downWingSlide.width = Math.abs(angle)/30 * downWing.height/2
         downWingSlide.width *= 0.75
-        downText.text = Math.floor(angle)
-    }
-
-    Timer {
-        interval: 100; running: true; repeat: true
-        property double time: 0
-        onTriggered: {
-            time += 0.002
-            setThrottle(Math.floor(50 * Math.sin(time*10) + 50))
-            setRightWing(30*Math.sin(50*time+.4))
-            setLeftWing(30*Math.sin(30*time+.4))
-            setDownWing(30*Math.sin(-50*time+.4))
-            setUpWing(30*Math.sin(-30*time+.4))
-        }
+        downText.text = Math.floor(angle) > 0.0 ? '+' + Math.floor(angle) : Math.floor(angle)
     }
 }

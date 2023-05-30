@@ -23,6 +23,7 @@ ApplicationWindow {
 
 		Actuators {
 			id: actuators
+			objectName: "actuators"
 			anchors.top: parent.top
 			anchors.left: parent.left
 			anchors.bottom: scene.bottom
@@ -30,6 +31,7 @@ ApplicationWindow {
 
 		Scene {
 			id: scene
+			objectName: "scene"
 			height: Math.min(0.65*parent.height, 0.5*(parent.width - batterAltimeterCol.width) - 20)
 			anchors.top: parent.top
 			anchors.left: actuators.right
