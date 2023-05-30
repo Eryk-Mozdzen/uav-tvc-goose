@@ -524,7 +524,7 @@ Rectangle {
     }
 
     function add_spaces_and_sign_with_fixing(x, f){
-        return x >= 0 ? "+" + x.toFixed(f) : "-" + Math.abs(x.toFixed(f))
+        return x >= 0 ? "+" + x.toFixed(f) : "-" + Math.abs(x).toFixed(f)
     }
 
     function setAcceleration(acceleration) {
@@ -552,30 +552,44 @@ Rectangle {
     }
 
     function setState(state) {
+        state.y +=180
+        while(state.y>180) state.y -=360
+        while(state.y<-180) state.y +=360
+
+        state.z +=180
+        while(state.z>180) state.z -=360
+        while(state.z<-180) state.z +=360
+
         sceneStateTimeout.restart()
-        state.y *= -1
-        var x = add_spaces_and_sign_with_fixing(state.x, 0)
-        var y = add_spaces_and_sign_with_fixing(state.y, 0)
+        var x = add_spaces_and_sign_with_fixing(state.y, 0)
+        var y = add_spaces_and_sign_with_fixing(-state.x, 0)
         var z = add_spaces_and_sign_with_fixing(state.z, 0)
-        sceneStateText.text = z + "\n" + y + "\n" + x
+        sceneStateText.text = x + "\n" + y + "\n" + z
 
         // Z - north, Y - donw, -X - east
-        stateGooseTransform.rotationX = -state.y
-        stateGooseTransform.rotationY = state.z
-        stateGooseTransform.rotationZ = state.x
+        stateGooseTransform.rotationX = y
+        stateGooseTransform.rotationY = z
+        stateGooseTransform.rotationZ = x
     }
 
     function setCommand(command) {
+        state.y +=180
+        while(state.y>180) state.y -=360
+        while(state.y<-180) state.y +=360
+
+        state.z +=180
+        while(state.z>180) state.z -=360
+        while(state.z<-180) state.z +=360
+
         sceneCmdTimeout.restart()
-        command.y *= -1
-        var x = add_spaces_and_sign_with_fixing(command.x, 0)
-        var y = add_spaces_and_sign_with_fixing(command.y, 0)
+        var x = add_spaces_and_sign_with_fixing(command.y, 0)
+        var y = add_spaces_and_sign_with_fixing(-command.x, 0)
         var z = add_spaces_and_sign_with_fixing(command.z, 0)
-        sceneCmdText.text = z + "\n" + y + "\n" + x
+        sceneCmdText.text = x + "\n" + y + "\n" + z
 
         // Z - north, Y - donw, -X - east
-        cmdGooseTransform.rotationX = -command.y
-        cmdGooseTransform.rotationY = command.z
-        cmdGooseTransform.rotationZ = command.x
+        cmdGooseTransform.rotationX = y
+        cmdGooseTransform.rotationY = z
+        cmdGooseTransform.rotationZ = x
     }
 }

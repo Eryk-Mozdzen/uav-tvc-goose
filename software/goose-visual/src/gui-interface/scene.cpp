@@ -20,14 +20,12 @@ Scene::Scene(const QQmlApplicationEngine &engine, QObject *parent) : QObject{par
 void Scene::receive(const Transfer::FrameRX &frame) {
     switch(frame.id) {
         case Transfer::ID::TELEMETRY_ESTIMATION_ATTITUDE: {
-            QVector3D attitude;
             QQuaternion orientation;
             frame.getPayload(orientation);
             auto rpy = orientation.toEulerAngles();
             setState(rpy);
         } break;
         case Transfer::ID::CONTROL_ATTITUDE_SETPOINT: {
-            QVector3D attitude;
             QQuaternion orientation;
             frame.getPayload(orientation);
             auto rpy = orientation.toEulerAngles();
