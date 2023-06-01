@@ -90,11 +90,8 @@ add_executable(${TARGET}
 	"src/utils/message.cpp"
 	"src/transport/transport.cpp"
 	"src/control/control.cpp"
-	"src/control/state_abort.cpp"
-	"src/control/state_ready.cpp"
-	"src/control/state_active.cpp"
-	"src/control/state_takeoff.cpp"
-	"src/control/state_landing.cpp"
+	"src/control/states.cpp"
+	"src/control/events.cpp"
 )
 
 target_compile_definitions(${TARGET} PRIVATE

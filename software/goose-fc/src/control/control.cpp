@@ -4,18 +4,20 @@
 #include "transfer.h"
 
 #include "state_machine.h"
-#include "state_abort.h"
-#include "state_ready.h"
-#include "state_active.h"
-#include "state_takeoff.h"
-#include "state_landing.h"
+#include "events.h"
+#include "states.h"
 
 class Control : public TaskClassS<2048> {
-	StateAbort abort;
-	StateReady ready;
-	StateActive active;
-	StateTakeOff takeoff;
-	StateLanding landing;
+	events::Command cmd_start;
+	events::Command cmd_land;
+	events::Watchdog disconnect;
+	events::StateLimit limits;
+
+	states::Abort abort;
+	states::Ready ready;
+	states::Active active;
+	states::TakeOff takeoff;
+	states::Landing landing;
 
 	sm::StateMachine<5, 4> sm;
 
@@ -28,29 +30,28 @@ public:
 Control control;
 
 Control::Control() : TaskClassS{"control loop", TaskPrio_Mid},
-		abort{this},
-		ready{this},
-		active{this},
-		takeoff{this},
-		landing{this},
+		cmd_start{Transfer::ID::CONTROL_START},
+		cmd_land{Transfer::ID::CONTROL_LAND},
+		disconnect{2000},
+		limits{30.f, 2.f},
 		sm{&abort} {
 
 	sm.transit(&abort, &ready, nullptr);
+	sm.transit(&ready, &abort, &limits);
 	sm.transit(&ready, &abort, nullptr);
-	sm.transit(&ready, &abort, nullptr);
-	sm.transit(&ready, &abort, nullptr);
-	sm.transit(&ready, &takeoff, nullptr);
+	sm.transit(&ready, &abort, &disconnect);
+	sm.transit(&ready, &takeoff, &cmd_start);
 
-	sm.transit(&takeoff, &abort, nullptr);
+	sm.transit(&takeoff, &abort, &limits);
 	sm.transit(&takeoff, &active, nullptr);
 	sm.transit(&takeoff, &landing, nullptr);
-	sm.transit(&takeoff, &landing, nullptr);
+	sm.transit(&takeoff, &landing, &disconnect);
 
-	sm.transit(&active, &abort, nullptr);
-	sm.transit(&active, &landing, nullptr);
-	sm.transit(&active, &landing, nullptr);
+	sm.transit(&active, &abort, &limits);
+	sm.transit(&active, &landing, &cmd_land);
+	sm.transit(&active, &landing, &disconnect);
 
-	sm.transit(&landing, &abort, nullptr);
+	sm.transit(&landing, &abort, &limits);
 	sm.transit(&landing, &ready, nullptr);
 }
 
@@ -58,7 +59,17 @@ void Control::task() {
 
 	Transfer::FrameRX frame;
 
+	TickType_t time = xTaskGetTickCount();
+
 	while(1) {
-		Transport::getInstance().frame_rx_queue.pop(frame, portMAX_DELAY);
+		vTaskDelayUntil(&time, 10);
+
+		while(Transport::getInstance().frame_rx_queue.pop(frame, 2)) {
+			cmd_start.feed(frame);
+			cmd_land.feed(frame);
+			disconnect.reset();
+		}
+
+		sm.update();
 	}
 }
