@@ -52,13 +52,15 @@ void USB::handleReadyRead() {
 }
 
 void USB::handleError(QSerialPort::SerialPortError error) {
-	if(error==QSerialPort::SerialPortError::OpenError || error==QSerialPort::SerialPortError::ResourceError) {
+	if(error==QSerialPort::SerialPortError::OpenError || error==QSerialPort::SerialPortError::ResourceError || error==QSerialPort::SerialPortError::ReadError) {
 		serial.close();
 	}
 
 	if(error!=QSerialPort::SerialPortError::NoError) {
 		timer.start(1000);
 	}
+
+	//qDebug() << error;
 }
 
 void USB::handleTimeout() {

@@ -1,4 +1,6 @@
 #include "window.h"
+#include "escape_codes.h"
+#include <iostream>
 #include <QGroupBox>
 #include <QGridLayout>
 #include <QFormLayout>
@@ -154,4 +156,18 @@ void Window::frameReceived(Transfer::FrameRX frame) {
             case Transfer::SMState::LANDING:    others.set(0, "landing");   break;
         }
     }
+
+    if(frame.id<=Transfer::ID::LOG_ERROR) {
+		switch(frame.id) {
+			case Transfer::ID::LOG_DEBUG:	std::cout << EscapeCode::GRAY;		break;
+			case Transfer::ID::LOG_INFO:	std::cout << EscapeCode::CYAN;		break;
+			case Transfer::ID::LOG_WARNING:	std::cout << EscapeCode::YELLOW;	break;
+			case Transfer::ID::LOG_ERROR:	std::cout << EscapeCode::RED;		break;
+			default: break;
+		}
+
+		std::cout << std::string(reinterpret_cast<const char *>(frame.payload), frame.length) << std::endl;
+
+		return;
+	}
 }

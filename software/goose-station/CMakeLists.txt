@@ -20,6 +20,7 @@ add_executable(${PROJECT_NAME}
 	"src/communication/gamepad.cpp"
 	"src/widgets/form.cpp"
 	"src/window.cpp"
+	"src/escape_codes.cpp"
 )
 
 target_include_directories(${PROJECT_NAME} PRIVATE
