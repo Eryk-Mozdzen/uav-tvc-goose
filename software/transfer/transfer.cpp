@@ -105,9 +105,24 @@ void Transfer::decode_COBS(uint8_t *buffer, const size_t size, const uint8_t cob
 
 	while(index<size) {
 		const int next = buffer[index];
-		
+
 		buffer[index] = start_byte;
-		
+
 		index +=next;
 	}
+}
+
+Transfer::FrameTX Transfer::encode(const void *payload, const size_t length, const ID id) {
+	FrameTX frame;
+
+	memcpy(&frame.buffer[5], payload, length);
+	frame.buffer[4] = id;
+	frame.buffer[3] = length;
+	frame.buffer[2] = calculate_CRC(&frame.buffer[4], 1 + length);
+	frame.buffer[1] = encode_COBS(&frame.buffer[2], 3 + length);
+	frame.buffer[0] = start_byte;
+
+	frame.length = length + 5;
+
+	return frame;
 }

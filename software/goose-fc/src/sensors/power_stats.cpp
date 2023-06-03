@@ -49,8 +49,8 @@ DMA_HandleTypeDef hdma_adc1;
 PowerStats power_stats;
 
 PowerStats::PowerStats() : TaskClassS{"Power Stats reader", TaskPrio_Low},
-		telemetry_voltage{"Power Stats telemetry voltage", Transfer::ID::TELEMETRY_SENSOR_VOLTAGE},
-		telemetry_current{"Power Stats telemetry current", Transfer::ID::TELEMETRY_SENSOR_CURRENT} {
+		telemetry_voltage{"Power Stats telemetry voltage", Transfer::ID::SENSOR_VOLTAGE},
+		telemetry_current{"Power Stats telemetry current", Transfer::ID::SENSOR_CURRENT} {
 
 }
 

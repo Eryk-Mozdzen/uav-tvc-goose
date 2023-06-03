@@ -41,8 +41,8 @@ Matrix<7, 1> AttitudeEstimator::f(const Matrix<7, 1> state, const Matrix<3, 1> g
 
     const Matrix<7, 3> B = {
         -q.i, -q.j, -q.k,
-        q.w, -q.k,  q.j,
-        q.k,  q.w, -q.i,
+         q.w, -q.k,  q.j,
+         q.k,  q.w, -q.i,
         -q.j,  q.i,  q.w,
         0,    0,    0,
         0,    0,    0,
@@ -56,13 +56,13 @@ Matrix<6, 1> AttitudeEstimator::h(const Matrix<7, 1> state) {
     const Quaternion q(state(0, 0), state(1, 0), state(2, 0), state(3, 0));
 
     const Matrix<6, 7> C = {
-            2.f*q.j, -2.f*q.k,  2.f*q.w, -2.f*q.i, 0, 0, 0,
+         2.f*q.j, -2.f*q.k,  2.f*q.w, -2.f*q.i, 0, 0, 0,
         -2.f*q.i, -2.f*q.w, -2.f*q.k, -2.f*q.j, 0, 0, 0,
         -2.f*q.w,  2.f*q.i,  2.f*q.j, -2.f*q.k, 0, 0, 0,
 
         -2.f*q.k, -2.f*q.j, -2.f*q.i, -2.f*q.w, 0, 0, 0,
         -2.f*q.w,  2.f*q.i, -2.f*q.j,  2.f*q.k, 0, 0, 0,
-            2.f*q.i,  2.f*q.w, -2.f*q.k, -2.f*q.j, 0, 0, 0
+         2.f*q.i,  2.f*q.w, -2.f*q.k, -2.f*q.j, 0, 0, 0
     };
 
     return C*state;
@@ -164,6 +164,8 @@ void AttitudeEstimator::feedAcceleration(const Vector &acc) {
 
 void AttitudeEstimator::feedGyration(const Vector &gyr) {
     ekf.predict(gyr);
+
+    gyration = gyr;
 }
 
 void AttitudeEstimator::feedMagneticField(const Vector &mag) {
@@ -180,5 +182,9 @@ Quaternion AttitudeEstimator::getAttitude() const {
     const Quaternion result = body_to_world^q;
 
     return result;
+}
+
+Vector AttitudeEstimator::getRotationRates() const {
+    return Vector(-gyration.y, gyration.x, -gyration.z);
 }
 

@@ -8,10 +8,10 @@
 namespace events {
 
 class Command : public sm::Event {
-    const Transfer::ID id;
+    const Transfer::Command cmd;
 
 public:
-    Command(const Transfer::ID id);
+    Command(const Transfer::Command cmd);
     void feed(const Transfer::FrameRX &frame);
 };
 

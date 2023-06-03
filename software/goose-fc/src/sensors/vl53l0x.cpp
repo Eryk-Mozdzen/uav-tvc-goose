@@ -33,7 +33,7 @@ TaskHandle_t vlx_task;
 VL53L0X laser;
 
 VL53L0X::VL53L0X() : TaskClassS{"VL53L0X reader", TaskPrio_Low},
-		telemetry{"VL53L0X telemetry", Transfer::ID::TELEMETRY_SENSOR_DISTANCE} {
+		telemetry{"VL53L0X telemetry", Transfer::ID::SENSOR_DISTANCE} {
 	vlx_sensor.I2cHandle = &hi2c3;
 	vlx_sensor.I2cDevAddr = 0x52;
 }

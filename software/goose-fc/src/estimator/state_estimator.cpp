@@ -14,10 +14,7 @@ class StateEstimator : TaskClassS<2048> {
 	AltitudeEstimator altitude_estimator;
 	BatteryEstimator battery_estimator;
 
-	IntervalLogger<Quaternion> telemetry_attitude;
-	IntervalLogger<float> telemetry_altitude;
-	IntervalLogger<float> telemetry_battery;
-	IntervalLogger<Vector> telemetry_linear_acceleration;
+	IntervalLogger<Transfer::State> telemetry_state;
 
 public:
 	StateEstimator();
@@ -28,10 +25,7 @@ public:
 StateEstimator estimator;
 
 StateEstimator::StateEstimator() : TaskClassS{"State Estimator", TaskPrio_Mid},
-		telemetry_attitude{"attitude telemetry", Transfer::ID::TELEMETRY_ESTIMATION_ATTITUDE},
-		telemetry_altitude{"altitude telemetry", Transfer::ID::TELEMETRY_ESTIMATION_ALTITUDE},
-		telemetry_battery{"SOC telemetry", Transfer::ID::TELEMETRY_ESTIMATION_BATTERY_LEVEL},
-		telemetry_linear_acceleration{"linear acceleration telemetry", Transfer::ID::TELEMETRY_ESTIMATION_LINEAR_ACCELERATION} {
+		telemetry_state{"state telemetry", Transfer::ID::STATE} {
 
 }
 
@@ -90,13 +84,29 @@ void StateEstimator::task() {
 
 		altitude_estimator.feedAttitude(attitude);
 
+		const Matrix<3, 1> rpy = attitude.getRollPitchYaw();
+		const Vector omega = attitude_estimator.getRotationRates();
 		const Vector lin_acc = altitude_estimator.getLinearAcceleration();
-		const float altitude = altitude_estimator.getAltitude();
-		const float battery = battery_estimator.getStateOfCharge()*100;
 
-		telemetry_attitude.feed(attitude);
-		telemetry_altitude.feed(altitude);
-		telemetry_battery.feed(battery);
-		telemetry_linear_acceleration.feed(lin_acc);
+		Transfer::State state;
+		state.rpy[0] = rpy(0, 0);
+		state.rpy[1] = rpy(0, 1);
+		state.rpy[2] = rpy(0, 2);
+		state.quat[0] = attitude.i;
+		state.quat[1] = attitude.j;
+		state.quat[2] = attitude.k;
+		state.quat[3] = attitude.w;
+		state.omega[0] = omega.x;
+		state.omega[1] = omega.y;
+		state.omega[2] = omega.z;
+		state.linear[0]	= lin_acc.x;
+		state.linear[1]	= lin_acc.y;
+		state.linear[2]	= lin_acc.z;
+		state.z = altitude_estimator.getAltitude();
+		state.vz = altitude_estimator.getVerticalVelocity();
+		state.alt_src = altitude_estimator.getSource();
+		state.battery = battery_estimator.getStateOfCharge();
+
+		telemetry_state.feed(state);
 	}
 }

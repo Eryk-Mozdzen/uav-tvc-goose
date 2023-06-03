@@ -12,6 +12,7 @@ class AttitudeEstimator {
     ExtendedKalmanFilter<7, 3, 6> ekf;
 
     Vector acceleration;
+    Vector gyration;
 	Vector magnetic_field;
 	bool acc_ready;
 	bool mag_ready;
@@ -37,4 +38,5 @@ public:
     void feedMagneticField(const Vector &mag);
 
     Quaternion getAttitude() const;
+    Vector getRotationRates() const;
 };

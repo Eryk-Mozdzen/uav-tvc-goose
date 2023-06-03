@@ -3,14 +3,20 @@
 
 namespace events {
 
-Command::Command(const Transfer::ID id) : id{id} {
+Command::Command(const Transfer::Command cmd) : cmd{cmd} {
 
 }
 
 void Command::feed(const Transfer::FrameRX &frame) {
-    if(frame.id==id) {
-        Logger::getInstance().log(Logger::INFO, "sm: command %d received", id);
-        sm::Event::trigger();
+    if(frame.id==Transfer::ID::CONTROL_COMMAND) {
+        Transfer::Command command;
+
+        if(frame.getPayload(command)) {
+            if(command==cmd) {
+                Logger::getInstance().log(Logger::INFO, "sm: command %d received", cmd);
+                sm::Event::trigger();
+            }
+        }
     }
 }
 

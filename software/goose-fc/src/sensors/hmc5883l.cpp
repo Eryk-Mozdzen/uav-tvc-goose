@@ -73,7 +73,7 @@ TaskHandle_t mag_task;
 HMC5883L magnetometer;
 
 HMC5883L::HMC5883L() : TaskClassS{"HMC5883L reader", TaskPrio_Low},
-		telemetry{"HMC5883L telemetry", Transfer::ID::TELEMETRY_SENSOR_MAGNETIC_FIELD} {
+		telemetry{"HMC5883L telemetry", Transfer::ID::SENSOR_MAGNETIC_FIELD} {
 
 }
 

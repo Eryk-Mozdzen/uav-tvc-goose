@@ -16,9 +16,9 @@ Quaternion::Quaternion(const Matrix<3, 1> &vec) : w{0.f}, i{vec(0, 0)}, j{vec(1,
 
 }
 
-Quaternion::Quaternion(const float angle, const Matrix<3, 1> &axis) : w{std::cos(0.5f*angle)} {
-	const float len = std::sqrt(axis(0, 0)*axis(0, 0) + axis(1, 0)*axis(1, 0) + axis(2, 0)*axis(2, 0));
-	const float s = std::sin(0.5f*angle);
+Quaternion::Quaternion(const float angle, const Matrix<3, 1> &axis) : w{cosf(0.5f*angle)} {
+	const float len = sqrtf(axis(0, 0)*axis(0, 0) + axis(1, 0)*axis(1, 0) + axis(2, 0)*axis(2, 0));
+	const float s = sinf(0.5f*angle);
 
 	i = s*axis(0, 0)/len;
 	j = s*axis(1, 0)/len;
@@ -71,7 +71,7 @@ float Quaternion::operator*(const Quaternion &rhs) const {
 }
 
 float Quaternion::abs() const {
-	return std::sqrt(w*w + i*i + j*j + k*k);
+	return sqrtf(w*w + i*i + j*j + k*k);
 }
 
 Quaternion Quaternion::conjugation() const {
@@ -98,23 +98,31 @@ Matrix<3, 3> Quaternion::getRotation() const {
 }
 
 Matrix<3, 1> Quaternion::getRollPitchYaw() const {
-    const float sinr_cosp = 2.f*(w*i + j*k);
-    const float cosr_cosp = 1.f - 2.f*(i*i + j*j);
-    const float roll = atan2f(sinr_cosp, cosr_cosp);
+	const float qx = i;
+	const float qy = j;
+	const float qz = k;
+	const float qw = w;
 
-    const float sinp = 2.f*(w*j - k*i);
-	float pitch;
-    if(std::abs(sinp)>1.f) {
-        pitch = copysignf(3.1415f/2.f, sinp);
-    } else {
-        pitch = asinf(sinp);
-	}
+	const float ysqr = qy * qy;
+	const float t0 = 2.f * (qw * qx + qy * qz);
+	const float t1 = 1.f - 2.f * (qx * qx + ysqr);
+	const float roll = atan2f(t0, t1);
 
-    const float  siny_cosp = 2.f*(w*k + i*j);
-    const float  cosy_cosp = 1.f - 2.f*(j*j + k*k);
-    const float yaw = atan2f(siny_cosp, cosy_cosp);
+	float t2 = 2.f * (qw * qy - qz * qx);
+	t2 = t2 > 1.f ? 1.f : t2;
+	t2 = t2 < -1.f ? -1.f : t2;
+	const float pitch = asinf(t2);
 
-    return {roll, pitch, yaw};
+	const float t3 = 2.f * (qw * qz + qx * qy);
+	const float t4 = 1.f - 2.f * (ysqr + qz * qz);
+	const float yaw = atan2f(t3, t4);
+
+	float roll_fixed = pitch;
+	float pitch_fixed = roll + 3.1415f;
+	while(pitch_fixed>+3.1415f) pitch_fixed -=2*3.1415f;
+	while(pitch_fixed<-3.1415f) pitch_fixed +=2*3.1415f;
+
+    return {roll_fixed, pitch_fixed, yaw};
 }
 
 void Quaternion::normalize() {

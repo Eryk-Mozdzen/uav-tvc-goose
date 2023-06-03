@@ -6,6 +6,7 @@
 #include "state_machine.h"
 #include "events.h"
 #include "states.h"
+#include "interval_logger.h"
 
 class Control : public TaskClassS<2048> {
 	events::Command cmd_start;
@@ -21,6 +22,8 @@ class Control : public TaskClassS<2048> {
 
 	sm::StateMachine<5, 4> sm;
 
+	IntervalLogger<Transfer::Controller> telemetry_controller;
+
 public:
 	Control();
 
@@ -30,11 +33,12 @@ public:
 Control control;
 
 Control::Control() : TaskClassS{"control loop", TaskPrio_Mid},
-		cmd_start{Transfer::ID::CONTROL_START},
-		cmd_land{Transfer::ID::CONTROL_LAND},
+		cmd_start{Transfer::Command::START},
+		cmd_land{Transfer::Command::LAND},
 		disconnect{2000},
 		limits{30.f, 2.f},
-		sm{&abort} {
+		sm{&abort},
+		telemetry_controller{"controller telememetry", Transfer::ID::CONTROLLER} {
 
 	sm.transit(&abort, &ready, nullptr);
 	sm.transit(&ready, &abort, &limits);
@@ -69,6 +73,16 @@ void Control::task() {
 			cmd_land.feed(frame);
 			disconnect.reset();
 		}
+
+		Transfer::Controller controller;
+		controller.angles[0] = 0.16f*sinf(2.f*3.1415f*time*0.001f*0.3f);
+		controller.angles[1] = 0.16f*sinf(2.f*3.1415f*time*0.001f*0.3f + 0.5f*3.1415f);
+		controller.angles[2] = 0.16f*sinf(2.f*3.1415f*time*0.001f*0.3f + 3.1415f);
+		controller.angles[3] = 0.16f*sinf(2.f*3.1415f*time*0.001f*0.3f + 1.5f*3.1415f);
+		controller.throttle = 0.5f*(sinf(2.f*3.1415f*time*0.001f*0.1f) + 1.f);
+		//controller.sm_state = 
+
+		telemetry_controller.feed(controller);
 
 		sm.update();
 	}
