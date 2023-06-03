@@ -9,7 +9,7 @@
 #include <cmath>
 
 Window::Window(QWidget *parent) : QWidget(parent),
-        source{"source", {"IP address", "COM port", "controller"}, false},
+        source{"source", {"IP address", "COM port"}, false},
         setpoint{"setpoint", {"roll", "pitch", "yaw", "z"}},
         process{"current", {"roll", "pitch", "yaw", "Wx", "Wy", "Wz", "z", "Vz"}},
         actuators{"actuators", {"fin 1", "fin 2", "fin 3", "fin 4", "throttle"}},
@@ -47,7 +47,6 @@ Window::Window(QWidget *parent) : QWidget(parent),
 
     source.set(0, "192.168.0.13");
     source.set(1, "/dev/ttyACM0");
-    source.set(2, "/dev/ttyACM1");
 
 	timer.setInterval(20);
 	timer.start();
@@ -99,10 +98,15 @@ void Window::sourceChanged(int index, QString value) {
 void Window::sendSetpoint() {
     Transfer::Setpoint setpoint;
 
-    setpoint.rpy[0] = 0;
-    setpoint.rpy[1] = 0;
-    setpoint.rpy[2] = 0;
-    setpoint.z = 0;
+    setpoint.rpy[0] = -30.f*deg2rad*gamepad.get(Gamepad::Analog::LX);
+    setpoint.rpy[1] = +30.f*deg2rad*gamepad.get(Gamepad::Analog::LY);
+    setpoint.rpy[2] = +90.f*deg2rad*gamepad.get(Gamepad::Analog::RX);
+    setpoint.z = 1.f - gamepad.get(Gamepad::Analog::RY);
+
+    this->setpoint.set(0, "%+3.0f", rad2deg*setpoint.rpy[0]);
+    this->setpoint.set(1, "%+3.0f", rad2deg*setpoint.rpy[1]);
+    this->setpoint.set(2, "%+3.0f", rad2deg*setpoint.rpy[2]);
+    this->setpoint.set(3, "%+2.2f", setpoint.z);
 
     transmit(Transfer::encode(setpoint, Transfer::ID::CONTROL_SETPOINT));
 }
@@ -112,7 +116,6 @@ void Window::sendCommand(Transfer::Command cmd) {
 }
 
 void Window::frameReceived(Transfer::FrameRX frame) {
-    constexpr float rad2deg = 180.f/3.1415f;
 
     if(frame.id==Transfer::ID::STATE) {
         Transfer::State state;
