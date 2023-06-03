@@ -13,9 +13,10 @@
 Window::Window(QWidget *parent) : QWidget(parent),
         source{"source", {"IP address", "COM port"}, false},
         setpoint{"setpoint", {"roll", "pitch", "yaw", "z"}},
-        process{"current", {"roll", "pitch", "yaw", "Wx", "Wy", "Wz", "z", "Vz"}},
+        process{"state vector", {"roll", "pitch", "yaw", "Wx", "Wy", "Wz", "z", "Vz"}},
         actuators{"actuators", {"fin 1", "fin 2", "fin 3", "fin 4", "throttle"}},
-        others{"others", {"state", "altitude src"}} {
+        others{"others", {"state", "altitude src"}},
+        power{"power", {"voltage", "current", "battery"}} {
 
     QGridLayout *layout = new QGridLayout(this);
 
@@ -38,14 +39,16 @@ Window::Window(QWidget *parent) : QWidget(parent),
         grid->addWidget(cmd_start, 1, 0);
         grid->addWidget(cmd_land, 1, 1);
 
-        layout->addWidget(group, 1, 0);
+        layout->addWidget(group, 2, 1);
     }
 
     layout->addWidget(&source, 0, 0);
-    layout->addWidget(&setpoint, 0, 1);
-    layout->addWidget(&process, 0, 2);
-    layout->addWidget(&others, 1, 1);
-    layout->addWidget(&actuators, 1, 2);
+    layout->addWidget(&power, 1, 0);
+    layout->addWidget(&others, 2, 0);
+
+    layout->addWidget(&setpoint, 0, 1, 2, 1);
+    layout->addWidget(&process, 0, 2, 2, 1);
+    layout->addWidget(&actuators, 2, 2);
 
     source.set(0, "192.168.0.13");
     source.set(1, "/dev/ttyACM0");
@@ -131,6 +134,7 @@ void Window::frameReceived(Transfer::FrameRX frame) {
         process.set(5, "%+3.0f", rad2deg*state.omega[2]);
         process.set(6, "%+2.2f", state.z);
         process.set(7, "%+2.2f", state.vz);
+        power.set(2, "%1.2f", state.battery);
 
         switch(state.alt_src) {
             case Transfer::AltitudeSource::DISTANCE: others.set(1, "distance"); break;
@@ -170,4 +174,16 @@ void Window::frameReceived(Transfer::FrameRX frame) {
 
 		return;
 	}
+
+    if(frame.id==Transfer::ID::SENSOR_VOLTAGE) {
+        float voltage;
+        frame.getPayload(voltage);
+        power.set(0, "%2.2f", voltage);
+    }
+
+    if(frame.id==Transfer::ID::SENSOR_CURRENT) {
+        float current;
+        frame.getPayload(current);
+        power.set(1, "%2.2f", current);
+    }
 }

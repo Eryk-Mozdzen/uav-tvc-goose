@@ -6,13 +6,10 @@ Gamepad::Gamepad(QObject *parent) : QObject{parent}, analogs{QVector<float>(6)},
     QList<int> list = QGamepadManager::instance()->connectedGamepads();
     if (list.isEmpty()) {
         qDebug() << "Did not find any connected gamepads";
+        return;
     }
 
 	gamepad = new QGamepad(*list.begin(), this);
-
-    if(!gamepad->isConnected()) {
-        qDebug() << "No gamepad connected.";
-    }
 
     connect(gamepad, &QGamepad::axisLeftXChanged,   this, std::bind(&Gamepad::updateAnalogs, this, Analog::LX, std::placeholders::_1));
     connect(gamepad, &QGamepad::axisLeftYChanged,   this, std::bind(&Gamepad::updateAnalogs, this, Analog::LY, std::placeholders::_1));
