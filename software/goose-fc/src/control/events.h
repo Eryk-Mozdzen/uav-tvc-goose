@@ -4,6 +4,7 @@
 #include "transfer.h"
 #include "TimerCPP.h"
 #include "quaternion.h"
+#include "comm.h"
 
 namespace events {
 
@@ -25,13 +26,26 @@ public:
     void reset();
 };
 
-class StateLimit : public sm::Event {
+class Negator : public sm::Event {
+    const sm::Event *target;
+    TimerMember<Negator> timer;
+    bool repeat;
+
+    void callback();
+
+public:
+    Negator(const sm::Event *target, const TickType_t period);
+    void check();
+};
+
+class StateLimits : public sm::Event {
+    static constexpr float deg2rad = 3.1415f/180.f;
     const float max_angle;
     const float max_altitude;
 
 public:
-    StateLimit(const float angle_deg, const float alt);
-    void check(const Quaternion attitude, const float altitude);
+    StateLimits(const float angle_deg, const float alt);
+    void check(const comm::Controller::State &state);
 };
 
 }

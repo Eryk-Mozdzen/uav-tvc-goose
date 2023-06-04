@@ -35,20 +35,46 @@ void Watchdog::timeout() {
     sm::Event::trigger();
 }
 
-StateLimit::StateLimit(const float angle_deg, const float alt) : max_angle{angle_deg*3.1415f/180.f}, max_altitude{alt} {
+Negator::Negator(const sm::Event *target, const TickType_t period) :
+        target{target},
+        timer{"negator timer", this, &Negator::callback, period, pdFALSE},
+        repeat{false} {
+
+    timer.start();
+}
+
+void Negator::check() {
+    if(target->isTriggered()) {
+        timer.reset();
+        repeat = false;
+        return;
+    }
+
+    if(repeat) {
+        sm::Event::trigger();
+        return;
+    }
+}
+
+void Negator::callback() {
+    sm::Event::trigger();
+    repeat = true;
+}
+
+StateLimits::StateLimits(const float angle_deg, const float alt) : max_angle{angle_deg*deg2rad}, max_altitude{alt} {
 
 }
 
-void StateLimit::check(const Quaternion attitude, const float altitude) {
-    const Matrix<3, 1> rpy = attitude.getRollPitchYaw();
-    const float roll = rpy(0, 0);
-    const float pitch = rpy(1, 0);
+void StateLimits::check(const comm::Controller::State &state) {
+    const float roll = state.rpy[0];
+    const float pitch = state.rpy[1];
+    const float altitude = state.z;
 
     const float curr_cos = fabs(cosf(roll)*cosf(pitch));
     const float max_cos = fabs(cosf(max_angle));
 
-    if(curr_cos>max_cos || altitude>max_altitude) {
-        Logger::getInstance().log(Logger::INFO, "sm: state limits exceeded");
+    if(curr_cos<max_cos || altitude>max_altitude) {
+        //Logger::getInstance().log(Logger::WARNING, "sm: state limits exceeded");
         sm::Event::trigger();
     }
 }

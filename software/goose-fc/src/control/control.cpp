@@ -12,7 +12,8 @@ class Control : public TaskClassS<2048> {
 	events::Command cmd_start;
 	events::Command cmd_land;
 	events::Watchdog disconnect;
-	events::StateLimit limits;
+	events::StateLimits limits;
+	events::Negator correct;
 
 	states::Abort abort;
 	states::Ready ready;
@@ -35,12 +36,13 @@ Control control;
 Control::Control() : TaskClassS{"control loop", TaskPrio_Mid},
 		cmd_start{comm::Command::START},
 		cmd_land{comm::Command::LAND},
-		disconnect{2000},
+		disconnect{1000},
 		limits{30.f, 2.f},
+		correct{&limits, 3000},
 		sm{&abort},
 		telemetry_controller{"controller telememetry", Transfer::ID::TELEMETRY_CONTROLLER} {
 
-	sm.transit(&abort, &ready, nullptr);
+	sm.transit(&abort, &ready, &correct);
 	sm.transit(&ready, &abort, &limits);
 	sm.transit(&ready, &abort, nullptr);
 	sm.transit(&ready, &abort, &disconnect);
@@ -60,6 +62,8 @@ Control::Control() : TaskClassS{"control loop", TaskPrio_Mid},
 }
 
 void Control::task() {
+
+	sm.start();
 
 	comm::Controller::State setpoint;
 	comm::Controller::State process_value;
@@ -92,10 +96,12 @@ void Control::task() {
 		controller_data.angles[2] = 0.16f*sinf(2.f*3.1415f*time*0.001f*0.3f + 3.1415f);
 		controller_data.angles[3] = 0.16f*sinf(2.f*3.1415f*time*0.001f*0.3f + 1.5f*3.1415f);
 		controller_data.throttle = 0.5f*(sinf(2.f*3.1415f*time*0.001f*0.1f) + 1.f);
-		controller_data.state = comm::Controller::SMState::ABORT;
+		controller_data.state = states::getCurrent();
 
 		telemetry_controller.feed(controller_data);
 
+		limits.check(process_value);
+		correct.check();
 		sm.update();
 	}
 }

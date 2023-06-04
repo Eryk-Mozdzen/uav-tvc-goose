@@ -1,5 +1,7 @@
 #pragma once
 
+#include <cstdint>
+
 namespace comm {
 
     enum Command : uint8_t {

@@ -1,8 +1,11 @@
 #pragma once
 
 #include "state.h"
+#include "comm.h"
 
 namespace states {
+
+comm::Controller::SMState getCurrent();
 
 class Abort : public sm::State {
     void enter() override;
