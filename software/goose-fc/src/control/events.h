@@ -26,16 +26,43 @@ public:
     void reset();
 };
 
-class Negator : public sm::Event {
+class Negation : public sm::Event {
     const sm::Event *target;
-    TimerMember<Negator> timer;
+    TimerMember<Negation> timer;
     bool repeat;
 
     void callback();
 
 public:
-    Negator(const sm::Event *target, const TickType_t period);
+    Negation(const sm::Event *target, const TickType_t period);
     void check();
+};
+
+template<int N>
+class Combination : public sm::Event {
+    sm::Event *targets[N];
+
+    void on_clear() override {
+        for(int i=0; i<N; i++) {
+            targets[i]->clear();
+        }
+    }
+
+public:
+    template<typename... U>
+    Combination(U... list) : targets{static_cast<sm::Event *>(list)...} {
+        static_assert(sizeof...(list)==N, "wrong num of targets");
+    }
+
+    void check() {
+        for(int i=0; i<N; i++) {
+            if(!targets[i]->isTriggered()) {
+                return;
+            }
+        }
+
+        sm::Event::trigger();
+    }
 };
 
 class StateLimits : public sm::Event {

@@ -35,15 +35,15 @@ void Watchdog::timeout() {
     sm::Event::trigger();
 }
 
-Negator::Negator(const sm::Event *target, const TickType_t period) :
+Negation::Negation(const sm::Event *target, const TickType_t period) :
         target{target},
-        timer{"negator timer", this, &Negator::callback, period, pdFALSE},
+        timer{"negation timer", this, &Negation::callback, period, pdFALSE},
         repeat{false} {
 
     timer.start();
 }
 
-void Negator::check() {
+void Negation::check() {
     if(target->isTriggered()) {
         timer.reset();
         repeat = false;
@@ -56,7 +56,7 @@ void Negator::check() {
     }
 }
 
-void Negator::callback() {
+void Negation::callback() {
     sm::Event::trigger();
     repeat = true;
 }
