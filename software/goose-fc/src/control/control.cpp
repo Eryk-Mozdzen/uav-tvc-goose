@@ -22,7 +22,7 @@ class Control : public TaskClassS<2048> {
 
 	sm::StateMachine<5, 4> sm;
 
-	IntervalLogger<Transfer::Controller> telemetry_controller;
+	IntervalLogger<comm::Controller> telemetry_controller;
 
 public:
 	Control();
@@ -33,12 +33,12 @@ public:
 Control control;
 
 Control::Control() : TaskClassS{"control loop", TaskPrio_Mid},
-		cmd_start{Transfer::Command::START},
-		cmd_land{Transfer::Command::LAND},
+		cmd_start{comm::Command::START},
+		cmd_land{comm::Command::LAND},
 		disconnect{2000},
 		limits{30.f, 2.f},
 		sm{&abort},
-		telemetry_controller{"controller telememetry", Transfer::ID::CONTROLLER} {
+		telemetry_controller{"controller telememetry", Transfer::ID::TELEMETRY_CONTROLLER} {
 
 	sm.transit(&abort, &ready, nullptr);
 	sm.transit(&ready, &abort, &limits);
@@ -61,28 +61,40 @@ Control::Control() : TaskClassS{"control loop", TaskPrio_Mid},
 
 void Control::task() {
 
-	Transfer::FrameRX frame;
+	comm::Controller::State setpoint;
+	comm::Controller::State process_value;
 
 	TickType_t time = xTaskGetTickCount();
 
 	while(1) {
 		vTaskDelayUntil(&time, 10);
 
-		while(Transport::getInstance().frame_rx_queue.pop(frame, 2)) {
-			cmd_start.feed(frame);
-			cmd_land.feed(frame);
-			disconnect.reset();
+		Transfer::FrameRX frame;
+		while(Transport::getInstance().frame_rx_queue.pop(frame, 0)) {
+			if(frame.id==Transfer::ID::CONTROL_COMMAND) {
+				cmd_start.feed(frame);
+				cmd_land.feed(frame);
+			}
+
+			if(frame.id==Transfer::ID::CONTROL_SETPOINT) {
+				frame.getPayload(setpoint);
+				disconnect.reset();
+			}
 		}
 
-		Transfer::Controller controller;
-		controller.angles[0] = 0.16f*sinf(2.f*3.1415f*time*0.001f*0.3f);
-		controller.angles[1] = 0.16f*sinf(2.f*3.1415f*time*0.001f*0.3f + 0.5f*3.1415f);
-		controller.angles[2] = 0.16f*sinf(2.f*3.1415f*time*0.001f*0.3f + 3.1415f);
-		controller.angles[3] = 0.16f*sinf(2.f*3.1415f*time*0.001f*0.3f + 1.5f*3.1415f);
-		controller.throttle = 0.5f*(sinf(2.f*3.1415f*time*0.001f*0.1f) + 1.f);
-		//controller.sm_state = 
+		while(Transport::getInstance().state_queue.pop(process_value, 0));
 
-		telemetry_controller.feed(controller);
+		comm::Controller controller_data;
+		controller_data.setpoint = setpoint;
+		controller_data.process_value = process_value;
+		controller_data.angles[0] = 0.16f*sinf(2.f*3.1415f*time*0.001f*0.3f);
+		controller_data.angles[1] = 0.16f*sinf(2.f*3.1415f*time*0.001f*0.3f + 0.5f*3.1415f);
+		controller_data.angles[2] = 0.16f*sinf(2.f*3.1415f*time*0.001f*0.3f + 3.1415f);
+		controller_data.angles[3] = 0.16f*sinf(2.f*3.1415f*time*0.001f*0.3f + 1.5f*3.1415f);
+		controller_data.throttle = 0.5f*(sinf(2.f*3.1415f*time*0.001f*0.1f) + 1.f);
+		controller_data.state = comm::Controller::SMState::ABORT;
+
+		telemetry_controller.feed(controller_data);
 
 		sm.update();
 	}

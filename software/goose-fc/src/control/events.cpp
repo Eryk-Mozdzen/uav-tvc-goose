@@ -3,13 +3,13 @@
 
 namespace events {
 
-Command::Command(const Transfer::Command cmd) : cmd{cmd} {
+Command::Command(const comm::Command cmd) : cmd{cmd} {
 
 }
 
 void Command::feed(const Transfer::FrameRX &frame) {
     if(frame.id==Transfer::ID::CONTROL_COMMAND) {
-        Transfer::Command command;
+        comm::Command command;
 
         if(frame.getPayload(command)) {
             if(command==cmd) {

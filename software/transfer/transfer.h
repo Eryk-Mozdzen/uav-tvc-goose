@@ -11,6 +11,7 @@
 #pragma once
 
 #include "frames.h"
+#include "comm.h"
 #include <cstdint>
 #include <cstring>
 
@@ -62,45 +63,6 @@ private:
 
 public:
 
-	enum Command {
-		START,
-		LAND
-	};
-
-	enum SMState {
-		ABORT,
-		READY,
-		TAKE_OFF,
-		ACTIVE,
-		LANDING
-	};
-
-	enum AltitudeSource {
-		DISTANCE,
-		PRESSURE
-	};
-
-	struct State {
-		float rpy[3];
-		float quat[4];
-		float omega[3];
-		float z, vz;
-		float linear[3];
-		float battery;
-		uint32_t alt_src;
-	};
-
-	struct Controller {
-		float angles[4];
-		float throttle;
-		uint32_t sm_state;
-	};
-
-	struct Setpoint {
-		float rpy[3];
-		float z;
-	};
-
 	/**
 	 * @brief Identification number of data frame.
 	 *
@@ -119,8 +81,8 @@ public:
 		SENSOR_CURRENT,
 		SENSOR_DISTANCE,
 
-		STATE,
-		CONTROLLER,
+		TELEMETRY_ESTIMATOR,
+		TELEMETRY_CONTROLLER,
 
 		CONTROL_SETPOINT,
 		CONTROL_COMMAND

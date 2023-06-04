@@ -38,7 +38,7 @@ signals:
 
 private slots:
     void sendSetpoint();
-    void sendCommand(Transfer::Command cmd);
+    void sendCommand(comm::Command cmd);
     void freqChanged(QString value);
     void sourceChanged(int index, QString value);
     void frameReceived(Transfer::FrameRX frame);

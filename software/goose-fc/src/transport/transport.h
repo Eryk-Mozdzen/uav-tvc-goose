@@ -23,9 +23,10 @@ public:
 	MultiQueue<Sensors, 16, Vector, float> sensor_queue;
 	Queue<uint8_t, 512> wire_rx_queue;
 
-	Queue<Transfer::FrameTX, 100> wire_tx_queue;
-	Queue<Transfer::FrameTX, 32> wireless_tx_queue;
+	Queue<Transfer::FrameTX, 16> wire_tx_queue;
+	Queue<Transfer::FrameTX, 16> wireless_tx_queue;
 	Queue<Transfer::FrameRX, 16> frame_rx_queue;
+	Queue<comm::Controller::State, 16> state_queue;
 
 	Transport(Transport &) = delete;
 	void operator=(const Transport &) = delete;

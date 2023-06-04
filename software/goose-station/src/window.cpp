@@ -12,8 +12,8 @@
 
 Window::Window(QWidget *parent) : QWidget(parent),
         source{"source", {"IP address", "COM port"}, false},
-        setpoint{"setpoint", {"roll", "pitch", "yaw", "z"}},
-        process{"state vector", {"roll", "pitch", "yaw", "Wx", "Wy", "Wz", "z", "Vz"}},
+        setpoint{"setpoint", {"roll", "pitch", "yaw", "Wx", "Wy", "Wz", "z", "Vz"}},
+        process{"process value", {"roll", "pitch", "yaw", "Wx", "Wy", "Wz", "z", "Vz"}},
         actuators{"actuators", {"fin 1", "fin 2", "fin 3", "fin 4", "throttle"}},
         others{"others", {"state", "altitude src"}},
         power{"power", {"voltage", "current", "battery"}} {
@@ -58,10 +58,11 @@ Window::Window(QWidget *parent) : QWidget(parent),
 
     connect(&timer, &QTimer::timeout, this, &Window::sendSetpoint);
     connect(freq, &QComboBox::textActivated, this, &Window::freqChanged);
-    connect(cmd_start, &QPushButton::clicked, this, std::bind(&Window::sendCommand, this, Transfer::Command::START));
-    connect(cmd_land, &QPushButton::clicked, this, std::bind(&Window::sendCommand, this, Transfer::Command::LAND));
+    connect(cmd_start, &QPushButton::clicked, this, std::bind(&Window::sendCommand, this, comm::Command::START));
+    connect(cmd_land, &QPushButton::clicked, this, std::bind(&Window::sendCommand, this, comm::Command::LAND));
     connect(&source, &widgets::Form::change, this, &Window::sourceChanged);
     connect(&usb, &USB::receive, this, &Window::frameReceived);
+    connect(this, &Window::transmit, &usb, &USB::transmit);
 }
 
 void Window::freqChanged(QString value) {
@@ -101,63 +102,81 @@ void Window::sourceChanged(int index, QString value) {
 }
 
 void Window::sendSetpoint() {
-    Transfer::Setpoint setpoint;
+    comm::Controller::State setpoint;
 
     setpoint.rpy[0] = -30.f*deg2rad*gamepad.get(Gamepad::Analog::LX);
     setpoint.rpy[1] = +30.f*deg2rad*gamepad.get(Gamepad::Analog::LY);
     setpoint.rpy[2] = +90.f*deg2rad*gamepad.get(Gamepad::Analog::RX);
+    setpoint.w[0] = 0.f;
+    setpoint.w[1] = 0.f;
+    setpoint.w[2] = 0.f;
     setpoint.z = 1.f - gamepad.get(Gamepad::Analog::RY);
+    setpoint.vz = 0.f;
 
-    this->setpoint.set(0, "%+3.0f", rad2deg*setpoint.rpy[0]);
-    this->setpoint.set(1, "%+3.0f", rad2deg*setpoint.rpy[1]);
-    this->setpoint.set(2, "%+3.0f", rad2deg*setpoint.rpy[2]);
-    this->setpoint.set(3, "%+2.2f", setpoint.z);
+    //this->setpoint.set(0, "%+3.0f", rad2deg*setpoint.rpy[0]);
+    //this->setpoint.set(1, "%+3.0f", rad2deg*setpoint.rpy[1]);
+    //this->setpoint.set(2, "%+3.0f", rad2deg*setpoint.rpy[2]);
+    //this->setpoint.set(3, "%+3.0f", rad2deg*setpoint.w[0]);
+    //this->setpoint.set(4, "%+3.0f", rad2deg*setpoint.w[1]);
+    //this->setpoint.set(5, "%+3.0f", rad2deg*setpoint.w[2]);
+    //this->setpoint.set(6, "%+2.2f", setpoint.z);
+    //this->setpoint.set(7, "%+2.2f", setpoint.vz);
 
     transmit(Transfer::encode(setpoint, Transfer::ID::CONTROL_SETPOINT));
 }
 
-void Window::sendCommand(Transfer::Command cmd) {
+void Window::sendCommand(comm::Command cmd) {
     transmit(Transfer::encode(cmd, Transfer::ID::CONTROL_COMMAND));
 }
 
 void Window::frameReceived(Transfer::FrameRX frame) {
 
-    if(frame.id==Transfer::ID::STATE) {
-        Transfer::State state;
-        frame.getPayload(state);
+    if(frame.id==Transfer::ID::TELEMETRY_ESTIMATOR) {
+        comm::Estimator estimator_data;
+        frame.getPayload(estimator_data);
 
-        process.set(0, "%+3.0f", rad2deg*state.rpy[0]);
-        process.set(1, "%+3.0f", rad2deg*state.rpy[1]);
-        process.set(2, "%+3.0f", rad2deg*state.rpy[2]);
-        process.set(3, "%+3.0f", rad2deg*state.omega[0]);
-        process.set(4, "%+3.0f", rad2deg*state.omega[1]);
-        process.set(5, "%+3.0f", rad2deg*state.omega[2]);
-        process.set(6, "%+2.2f", state.z);
-        process.set(7, "%+2.2f", state.vz);
-        power.set(2, "%1.2f", state.battery);
+        power.set(2, "%1.2f", estimator_data.battery_soc);
 
-        switch(state.alt_src) {
-            case Transfer::AltitudeSource::DISTANCE: others.set(1, "distance"); break;
-            case Transfer::AltitudeSource::PRESSURE: others.set(1, "pressure"); break;
+        switch(estimator_data.altitude_src) {
+            case comm::Estimator::AltitudeSource::DISTANCE: others.set(1, "distance"); break;
+            case comm::Estimator::AltitudeSource::PRESSURE: others.set(1, "pressure"); break;
         }
     }
 
-    if(frame.id==Transfer::ID::CONTROLLER) {
-        Transfer::Controller controller;
-        frame.getPayload(controller);
+    if(frame.id==Transfer::ID::TELEMETRY_CONTROLLER) {
+        comm::Controller controller_data;
+        frame.getPayload(controller_data);
 
-        actuators.set(0, "%+3.0f", rad2deg*controller.angles[0]);
-        actuators.set(1, "%+3.0f", rad2deg*controller.angles[1]);
-        actuators.set(2, "%+3.0f", rad2deg*controller.angles[2]);
-        actuators.set(3, "%+3.0f", rad2deg*controller.angles[3]);
-        actuators.set(4, "%1.2f", controller.throttle);
+        setpoint.set(0, "%+3.0f", rad2deg*controller_data.setpoint.rpy[0]);
+        setpoint.set(1, "%+3.0f", rad2deg*controller_data.setpoint.rpy[1]);
+        setpoint.set(2, "%+3.0f", rad2deg*controller_data.setpoint.rpy[2]);
+        setpoint.set(3, "%+3.0f", rad2deg*controller_data.setpoint.w[0]);
+        setpoint.set(4, "%+3.0f", rad2deg*controller_data.setpoint.w[1]);
+        setpoint.set(5, "%+3.0f", rad2deg*controller_data.setpoint.w[2]);
+        setpoint.set(6, "%+2.2f", controller_data.setpoint.z);
+        setpoint.set(7, "%+2.2f", controller_data.setpoint.vz);
 
-        switch(controller.sm_state) {
-            case Transfer::SMState::ABORT:      others.set(0, "abort");     break;
-            case Transfer::SMState::READY:      others.set(0, "ready");     break;
-            case Transfer::SMState::TAKE_OFF:   others.set(0, "take off");  break;
-            case Transfer::SMState::ACTIVE:     others.set(0, "active");    break;
-            case Transfer::SMState::LANDING:    others.set(0, "landing");   break;
+        process.set(0, "%+3.0f", rad2deg*controller_data.process_value.rpy[0]);
+        process.set(1, "%+3.0f", rad2deg*controller_data.process_value.rpy[1]);
+        process.set(2, "%+3.0f", rad2deg*controller_data.process_value.rpy[2]);
+        process.set(3, "%+3.0f", rad2deg*controller_data.process_value.w[0]);
+        process.set(4, "%+3.0f", rad2deg*controller_data.process_value.w[1]);
+        process.set(5, "%+3.0f", rad2deg*controller_data.process_value.w[2]);
+        process.set(6, "%+2.2f", controller_data.process_value.z);
+        process.set(7, "%+2.2f", controller_data.process_value.vz);
+
+        actuators.set(0, "%+3.0f", rad2deg*controller_data.angles[0]);
+        actuators.set(1, "%+3.0f", rad2deg*controller_data.angles[1]);
+        actuators.set(2, "%+3.0f", rad2deg*controller_data.angles[2]);
+        actuators.set(3, "%+3.0f", rad2deg*controller_data.angles[3]);
+        actuators.set(4, "%1.2f", controller_data.throttle);
+
+        switch(controller_data.state) {
+            case comm::Controller::SMState::ABORT:      others.set(0, "abort");     break;
+            case comm::Controller::SMState::READY:      others.set(0, "ready");     break;
+            case comm::Controller::SMState::TAKE_OFF:   others.set(0, "take off");  break;
+            case comm::Controller::SMState::ACTIVE:     others.set(0, "active");    break;
+            case comm::Controller::SMState::LANDING:    others.set(0, "landing");   break;
         }
     }
 

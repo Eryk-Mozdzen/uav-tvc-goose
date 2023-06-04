@@ -14,7 +14,7 @@ class StateEstimator : TaskClassS<2048> {
 	AltitudeEstimator altitude_estimator;
 	BatteryEstimator battery_estimator;
 
-	IntervalLogger<Transfer::State> telemetry_state;
+	IntervalLogger<comm::Estimator> telemetry_estimator;
 
 public:
 	StateEstimator();
@@ -25,7 +25,7 @@ public:
 StateEstimator estimator;
 
 StateEstimator::StateEstimator() : TaskClassS{"State Estimator", TaskPrio_Mid},
-		telemetry_state{"state telemetry", Transfer::ID::STATE} {
+		telemetry_estimator{"estimator telemetry", Transfer::ID::TELEMETRY_ESTIMATOR} {
 
 }
 
@@ -88,25 +88,31 @@ void StateEstimator::task() {
 		const Vector omega = attitude_estimator.getRotationRates();
 		const Vector lin_acc = altitude_estimator.getLinearAcceleration();
 
-		Transfer::State state;
-		state.rpy[0] = rpy(0, 0);
-		state.rpy[1] = rpy(0, 1);
-		state.rpy[2] = rpy(0, 2);
-		state.quat[0] = attitude.i;
-		state.quat[1] = attitude.j;
-		state.quat[2] = attitude.k;
-		state.quat[3] = attitude.w;
-		state.omega[0] = omega.x;
-		state.omega[1] = omega.y;
-		state.omega[2] = omega.z;
-		state.linear[0]	= lin_acc.x;
-		state.linear[1]	= lin_acc.y;
-		state.linear[2]	= lin_acc.z;
-		state.z = altitude_estimator.getAltitude();
-		state.vz = altitude_estimator.getVerticalVelocity();
-		state.alt_src = altitude_estimator.getSource();
-		state.battery = battery_estimator.getStateOfCharge();
+		comm::Controller::State process_value;
+		process_value.rpy[0] = rpy(0, 0);
+		process_value.rpy[1] = rpy(0, 1);
+		process_value.rpy[2] = rpy(0, 2);
+		process_value.w[0] = omega.x;
+		process_value.w[1] = omega.y;
+		process_value.w[2] = omega.z;
+		process_value.z = altitude_estimator.getAltitude();
+		process_value.vz = altitude_estimator.getVerticalVelocity();
 
-		telemetry_state.feed(state);
+		Transport::getInstance().state_queue.push(process_value, 2);
+
+		comm::Estimator estimator_data;
+		estimator_data.quat[0] = attitude.i;
+		estimator_data.quat[1] = attitude.j;
+		estimator_data.quat[2] = attitude.k;
+		estimator_data.quat[3] = attitude.w;
+		estimator_data.linear[0] = lin_acc.x;
+		estimator_data.linear[1] = lin_acc.y;
+		estimator_data.linear[2] = lin_acc.z;
+		estimator_data.z = altitude_estimator.getAltitude();
+		estimator_data.vz = altitude_estimator.getVerticalVelocity();
+		estimator_data.altitude_src = altitude_estimator.getSource();
+		estimator_data.battery_soc = battery_estimator.getStateOfCharge();
+
+		telemetry_estimator.feed(estimator_data);
 	}
 }

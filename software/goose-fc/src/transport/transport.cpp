@@ -5,7 +5,8 @@ Transport::Transport() :
 	wire_rx_queue("wire rx queue"),
 	wire_tx_queue("wire tx queue"),
 	wireless_tx_queue("wireless tx queue"),
-	frame_rx_queue("main rx queue") {
+	frame_rx_queue("main rx queue"),
+	state_queue("estimated state queue") {
 
 }
 
