@@ -2,6 +2,7 @@
 
 #include "state.h"
 #include "comm.h"
+#include "events.h"
 
 namespace states {
 
@@ -21,13 +22,23 @@ class Active : public sm::State {
 };
 
 class TakeOff : public sm::State {
+    events::Negation &event;
+
     void enter() override;
     void execute() override;
+
+public:
+    TakeOff(events::Negation &event);
 };
 
 class Landing : public sm::State {
+    events::Negation &event;
+
     void enter() override;
     void execute() override;
+
+public:
+    Landing(events::Negation &event);
 };
 
 }

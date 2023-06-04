@@ -28,18 +28,30 @@ void Active::execute() {
 
 }
 
+TakeOff::TakeOff(events::Negation &event) : event{event} {
+
+}
+
 void TakeOff::enter() {
     current = comm::Controller::SMState::TAKE_OFF;
     Logger::getInstance().log(Logger::INFO, "sm: starting...");
+
+    event.reset();
 }
 
 void TakeOff::execute() {
 
 }
 
+Landing::Landing(events::Negation &event) : event{event} {
+
+}
+
 void Landing::enter() {
     current = comm::Controller::SMState::LANDING;
     Logger::getInstance().log(Logger::INFO, "sm: landing...");
+
+    event.reset();
 }
 
 void Landing::execute() {

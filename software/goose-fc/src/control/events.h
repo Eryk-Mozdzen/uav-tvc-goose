@@ -36,6 +36,7 @@ class Negation : public sm::Event {
 public:
     Negation(const sm::Event *target, const TickType_t period);
     void check();
+    void reset();
 };
 
 template<int N>
@@ -78,9 +79,10 @@ public:
 class Movement : public sm::Event {
     static constexpr float deg2rad = 3.1415f/180.f;
     const float angular_velocity_threshold;
+    const float linear_velocity_threshold;
 
 public:
-    Movement(const float w_thres);
+    Movement(const float w_thres, const float v_thres);
     void check(const comm::Controller::State &state);
 };
 

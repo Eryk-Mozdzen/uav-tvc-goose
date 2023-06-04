@@ -62,6 +62,11 @@ void Negation::callback() {
     repeat = true;
 }
 
+void Negation::reset() {
+    timer.reset();
+    repeat = false;
+}
+
 StateLimits::StateLimits(const float angle_deg, const float alt) : max_angle{angle_deg*deg2rad}, max_altitude{alt} {
 
 }
@@ -79,7 +84,9 @@ void StateLimits::check(const comm::Controller::State &state) {
     }
 }
 
-Movement::Movement(const float w_thres) : angular_velocity_threshold{w_thres*deg2rad} {
+Movement::Movement(const float w_thres, const float v_thres) :
+        angular_velocity_threshold{w_thres*deg2rad},
+        linear_velocity_threshold{v_thres} {
 
 }
 
@@ -87,8 +94,9 @@ void Movement::check(const comm::Controller::State &state) {
     const float Wx = fabs(state.w[0]);
     const float Wy = fabs(state.w[1]);
     const float Wz = fabs(state.w[2]);
+    const float Vz = fabs(state.vz);
 
-    if(Wx>angular_velocity_threshold || Wy>angular_velocity_threshold || Wz>angular_velocity_threshold) {
+    if(Wx>angular_velocity_threshold || Wy>angular_velocity_threshold || Wz>angular_velocity_threshold || Vz>linear_velocity_threshold) {
         sm::Event::trigger();
     }
 }
@@ -106,10 +114,6 @@ void AltitudeReached::check(const comm::Controller::State &state) {
 
     if(std::abs(altitude - desired)>margin) {
         timer.reset();
-    }
-
-    if(states::getCurrent()!=comm::Controller::SMState::TAKE_OFF) {
-        sm::Event::trigger();
     }
 }
 
