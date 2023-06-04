@@ -13,9 +13,11 @@ class Control : public TaskClassS<2048> {
 	events::Command cmd_land;
 	events::Watchdog disconnect;
 	events::StateLimits limits;
+	events::Movement movement;
 	events::Negation correct;
 	events::Negation connect;
-	events::Combination<2> readiness;
+	events::Negation stil;
+	events::Combination<3> readiness;
 
 	states::Abort abort;
 	states::Ready ready;
@@ -40,16 +42,18 @@ Control::Control() : TaskClassS{"control loop", TaskPrio_Mid},
 		cmd_land{comm::Command::LAND},
 		disconnect{1000},
 		limits{30.f, 2.f},
+		movement{10.f},
 		correct{&limits, 3000},
 		connect{&disconnect, 3000},
-		readiness{&correct, &connect},
+		stil{&movement, 3000},
+		readiness{&correct, &connect, &stil},
 		sm{&abort},
 		telemetry_controller{"controller telememetry", Transfer::ID::TELEMETRY_CONTROLLER} {
 
 	sm.transit(&abort, &ready, &readiness);
 	sm.transit(&ready, &abort, &limits);
 	sm.transit(&ready, &abort, &disconnect);
-	//sm.transit(&ready, &abort, nullptr);
+	sm.transit(&ready, &abort, &movement);
 	sm.transit(&ready, &takeoff, &cmd_start);
 
 	sm.transit(&takeoff, &abort, &limits);
@@ -62,7 +66,7 @@ Control::Control() : TaskClassS{"control loop", TaskPrio_Mid},
 	sm.transit(&active, &landing, &disconnect);
 
 	sm.transit(&landing, &abort, &limits);
-	//sm.transit(&landing, &ready, nullptr);
+	sm.transit(&landing, &ready, &stil);
 }
 
 void Control::task() {
@@ -105,8 +109,10 @@ void Control::task() {
 		telemetry_controller.feed(controller_data);
 
 		limits.check(process_value);
+		movement.check(process_value);
 		correct.check();
 		connect.check();
+		stil.check();
 		readiness.check();
 		sm.update();
 	}

@@ -75,4 +75,13 @@ public:
     void check(const comm::Controller::State &state);
 };
 
+class Movement : public sm::Event {
+    static constexpr float deg2rad = 3.1415f/180.f;
+    const float angular_velocity_threshold;
+
+public:
+    Movement(const float w_thres);
+    void check(const comm::Controller::State &state);
+};
+
 }

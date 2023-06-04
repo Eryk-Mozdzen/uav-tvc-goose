@@ -74,7 +74,20 @@ void StateLimits::check(const comm::Controller::State &state) {
     const float max_cos = fabs(cosf(max_angle));
 
     if(curr_cos<max_cos || altitude>max_altitude) {
-        //Logger::getInstance().log(Logger::WARNING, "sm: state limits exceeded");
+        sm::Event::trigger();
+    }
+}
+
+Movement::Movement(const float w_thres) : angular_velocity_threshold{w_thres*deg2rad} {
+
+}
+
+void Movement::check(const comm::Controller::State &state) {
+    const float Wx = fabs(state.w[0]);
+    const float Wy = fabs(state.w[1]);
+    const float Wz = fabs(state.w[2]);
+
+    if(Wx>angular_velocity_threshold || Wy>angular_velocity_threshold || Wz>angular_velocity_threshold) {
         sm::Event::trigger();
     }
 }
