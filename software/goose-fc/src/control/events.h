@@ -84,4 +84,16 @@ public:
     void check(const comm::Controller::State &state);
 };
 
+class AltitudeReached : public sm::Event {
+    const float desired;
+    const float margin;
+    TimerMember<AltitudeReached> timer;
+
+    void callback();
+
+public:
+    AltitudeReached(const float des, const float marg, const TickType_t period);
+    void check(const comm::Controller::State &state);
+};
+
 }

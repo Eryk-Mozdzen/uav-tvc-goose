@@ -1,5 +1,6 @@
 #include "events.h"
 #include "logger.h"
+#include "states.h"
 
 namespace events {
 
@@ -90,6 +91,30 @@ void Movement::check(const comm::Controller::State &state) {
     if(Wx>angular_velocity_threshold || Wy>angular_velocity_threshold || Wz>angular_velocity_threshold) {
         sm::Event::trigger();
     }
+}
+
+AltitudeReached::AltitudeReached(const float des, const float marg, const TickType_t period) :
+        desired{des},
+        margin{marg},
+        timer{"altitude reached timer", this, &AltitudeReached::callback, period, pdTRUE} {
+
+    timer.start();
+}
+
+void AltitudeReached::check(const comm::Controller::State &state) {
+    const float altitude = state.z;
+
+    if(std::abs(altitude - desired)>margin) {
+        timer.reset();
+    }
+
+    if(states::getCurrent()!=comm::Controller::SMState::TAKE_OFF) {
+        sm::Event::trigger();
+    }
+}
+
+void AltitudeReached::callback() {
+    sm::Event::trigger();
 }
 
 }

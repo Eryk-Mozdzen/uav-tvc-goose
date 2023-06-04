@@ -18,6 +18,8 @@ class Control : public TaskClassS<2048> {
 	events::Negation connect;
 	events::Negation stil;
 	events::Combination<3> readiness;
+	events::AltitudeReached alt_reached;
+	events::Negation alt_timeout;
 
 	states::Abort abort;
 	states::Ready ready;
@@ -47,6 +49,8 @@ Control::Control() : TaskClassS{"control loop", TaskPrio_Mid},
 		connect{&disconnect, 3000},
 		stil{&movement, 3000},
 		readiness{&correct, &connect, &stil},
+		alt_reached{1.f, 0.2f, 1000},
+		alt_timeout(&alt_reached, 3000),
 		sm{&abort},
 		telemetry_controller{"controller telememetry", Transfer::ID::TELEMETRY_CONTROLLER} {
 
@@ -57,8 +61,8 @@ Control::Control() : TaskClassS{"control loop", TaskPrio_Mid},
 	sm.transit(&ready, &takeoff, &cmd_start);
 
 	sm.transit(&takeoff, &abort, &limits);
-	//sm.transit(&takeoff, &active, nullptr);
-	//sm.transit(&takeoff, &landing, nullptr);
+	sm.transit(&takeoff, &active, &alt_reached);
+	sm.transit(&takeoff, &landing, &alt_timeout);
 	sm.transit(&takeoff, &landing, &disconnect);
 
 	sm.transit(&active, &abort, &limits);
@@ -114,6 +118,8 @@ void Control::task() {
 		connect.check();
 		stil.check();
 		readiness.check();
+		alt_reached.check(process_value);
+		alt_timeout.check();
 		sm.update();
 	}
 }
