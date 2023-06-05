@@ -172,7 +172,7 @@ BMP280::BMP280_U32_t BMP280::bmp280_compensate_P_int64(BMP280_S32_t adc_P) {
 }
 
 BMP280::BMP280() : TaskClassS{"BMP280 reader", TaskPrio_Low}, pressure{0}, temperature{0},
-		telemetry{"BMP280 telemetry", Transfer::ID::TELEMETRY_SENSOR_PRESSURE} {
+		telemetry{"BMP280 telemetry", Transfer::ID::SENSOR_PRESSURE} {
 
 	memset(&calib, 0, sizeof(Calibration));
 }

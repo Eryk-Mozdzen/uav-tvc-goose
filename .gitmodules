@@ -16,3 +16,6 @@
 [submodule "software/third-party/FreeRTOScpp"]
 	path = software/third-party/FreeRTOScpp
 	url = git@github.com:richard-damon/FreeRTOScpp.git
+[submodule "software/third-party/state-machine-cpp"]
+	path = software/third-party/state-machine-cpp
+	url = git@github.com:Eryk-Mozdzen/state-machine-cpp.git

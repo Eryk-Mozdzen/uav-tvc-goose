@@ -90,6 +90,8 @@ add_executable(${TARGET}
 	"src/utils/message.cpp"
 	"src/transport/transport.cpp"
 	"src/control/control.cpp"
+	"src/control/states.cpp"
+	"src/control/events.cpp"
 )
 
 target_compile_definitions(${TARGET} PRIVATE
@@ -111,6 +113,8 @@ target_include_directories(${TARGET} PRIVATE
 	"../third-party/VL53L0X/platform/inc"
 
 	"../third-party/FreeRTOScpp"
+
+	"../third-party/state-machine-cpp/sm"
 
 	"../transfer"
 

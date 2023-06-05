@@ -11,6 +11,7 @@
 #pragma once
 
 #include "frames.h"
+#include "comm.h"
 #include <cstdint>
 #include <cstring>
 
@@ -67,29 +68,24 @@ public:
 	 *
 	 */
 	enum ID {
-		LOG_DEBUG = 0,
-		LOG_INFO = 1,
-		LOG_WARNING = 2,
-		LOG_ERROR = 3,
+		LOG_DEBUG,
+		LOG_INFO,
+		LOG_WARNING,
+		LOG_ERROR,
 
-		TELEMETRY_SENSOR_ACCELERATION = 10,
-		TELEMETRY_SENSOR_GYRATION = 11,
-		TELEMETRY_SENSOR_MAGNETIC_FIELD = 12,
-		TELEMETRY_SENSOR_PRESSURE = 13,
-		TELEMETRY_SENSOR_VOLTAGE = 14,
-		TELEMETRY_SENSOR_CURRENT = 15,
-		TELEMETRY_SENSOR_DISTANCE = 16,
+		SENSOR_ACCELERATION,
+		SENSOR_GYRATION,
+		SENSOR_MAGNETIC_FIELD,
+		SENSOR_PRESSURE,
+		SENSOR_VOLTAGE,
+		SENSOR_CURRENT,
+		SENSOR_DISTANCE,
 
-		TELEMETRY_ESTIMATION_ATTITUDE = 20,
-		TELEMETRY_ESTIMATION_LINEAR_ACCELERATION = 21,
-		TELEMETRY_ESTIMATION_ALTITUDE = 22,
-		TELEMETRY_ESTIMATION_BATTERY_LEVEL = 23,
+		TELEMETRY_ESTIMATOR,
+		TELEMETRY_CONTROLLER,
 
-		TELEMETRY_INPUTS_SERVOS = 30,
-		TELEMETRY_INPUTS_MOTOR = 31,
-
-		CONTROL_ATTITUDE_SETPOINT = 40,
-		CONTROL_MOTOR_THROTTLE = 41
+		CONTROL_SETPOINT,
+		CONTROL_COMMAND
 	};
 
 	using FrameTX = _transfer::FrameTX<max_length>;
@@ -125,20 +121,7 @@ public:
 	 * @param id ID of message frame.
 	 * @return FrameTX
 	 */
-	static FrameTX encode(const void *payload, const size_t length, const ID id) {
-		FrameTX frame;
-
-		memcpy(&frame.buffer[5], payload, length);
-		frame.buffer[4] = id;
-		frame.buffer[3] = length;
-		frame.buffer[2] = calculate_CRC(&frame.buffer[4], 1 + length);
-		frame.buffer[1] = encode_COBS(&frame.buffer[2], 3 + length);
-		frame.buffer[0] = start_byte;
-
-		frame.length = length + 5;
-
-		return frame;
-	}
+	static FrameTX encode(const void *payload, const size_t length, const ID id);
 
 	/**
 	 * @brief Encode function for custom class objects.

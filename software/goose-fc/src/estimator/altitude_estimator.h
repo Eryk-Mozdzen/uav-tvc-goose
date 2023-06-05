@@ -4,13 +4,11 @@
 #include "kalman_filter.h"
 #include "vector.h"
 #include "quaternion.h"
+#include "comm.h"
 
 class AltitudeEstimator {
 public:
-    enum Source {
-        DISTANCE,
-        BAROMETER
-    };
+    using Source = comm::Estimator::AltitudeSource;
 
     AltitudeEstimator();
 

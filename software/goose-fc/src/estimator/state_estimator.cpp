@@ -14,10 +14,7 @@ class StateEstimator : TaskClassS<2048> {
 	AltitudeEstimator altitude_estimator;
 	BatteryEstimator battery_estimator;
 
-	IntervalLogger<Quaternion> telemetry_attitude;
-	IntervalLogger<float> telemetry_altitude;
-	IntervalLogger<float> telemetry_battery;
-	IntervalLogger<Vector> telemetry_linear_acceleration;
+	IntervalLogger<comm::Estimator> telemetry_estimator;
 
 public:
 	StateEstimator();
@@ -28,10 +25,7 @@ public:
 StateEstimator estimator;
 
 StateEstimator::StateEstimator() : TaskClassS{"State Estimator", TaskPrio_Mid},
-		telemetry_attitude{"attitude telemetry", Transfer::ID::TELEMETRY_ESTIMATION_ATTITUDE},
-		telemetry_altitude{"altitude telemetry", Transfer::ID::TELEMETRY_ESTIMATION_ALTITUDE},
-		telemetry_battery{"SOC telemetry", Transfer::ID::TELEMETRY_ESTIMATION_BATTERY_LEVEL},
-		telemetry_linear_acceleration{"linear acceleration telemetry", Transfer::ID::TELEMETRY_ESTIMATION_LINEAR_ACCELERATION} {
+		telemetry_estimator{"estimator telemetry", Transfer::ID::TELEMETRY_ESTIMATOR} {
 
 }
 
@@ -90,13 +84,35 @@ void StateEstimator::task() {
 
 		altitude_estimator.feedAttitude(attitude);
 
+		const Matrix<3, 1> rpy = attitude.getRollPitchYaw();
+		const Vector omega = attitude_estimator.getRotationRates();
 		const Vector lin_acc = altitude_estimator.getLinearAcceleration();
-		const float altitude = altitude_estimator.getAltitude();
-		const float battery = battery_estimator.getStateOfCharge()*100;
 
-		telemetry_attitude.feed(attitude);
-		telemetry_altitude.feed(altitude);
-		telemetry_battery.feed(battery);
-		telemetry_linear_acceleration.feed(lin_acc);
+		comm::Controller::State process_value;
+		process_value.rpy[0] = rpy(0, 0);
+		process_value.rpy[1] = rpy(0, 1);
+		process_value.rpy[2] = rpy(0, 2);
+		process_value.w[0] = omega.x;
+		process_value.w[1] = omega.y;
+		process_value.w[2] = omega.z;
+		process_value.z = altitude_estimator.getAltitude();
+		process_value.vz = altitude_estimator.getVerticalVelocity();
+
+		Transport::getInstance().state_queue.push(process_value, 2);
+
+		comm::Estimator estimator_data;
+		estimator_data.quat[0] = attitude.i;
+		estimator_data.quat[1] = attitude.j;
+		estimator_data.quat[2] = attitude.k;
+		estimator_data.quat[3] = attitude.w;
+		estimator_data.linear[0] = lin_acc.x;
+		estimator_data.linear[1] = lin_acc.y;
+		estimator_data.linear[2] = lin_acc.z;
+		estimator_data.z = altitude_estimator.getAltitude();
+		estimator_data.vz = altitude_estimator.getVerticalVelocity();
+		estimator_data.altitude_src = altitude_estimator.getSource();
+		estimator_data.battery_soc = battery_estimator.getStateOfCharge();
+
+		telemetry_estimator.feed(estimator_data);
 	}
 }

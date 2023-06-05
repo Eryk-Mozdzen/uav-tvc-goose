@@ -225,8 +225,8 @@ TaskHandle_t imu_task;
 MPU6050 imu;
 
 MPU6050::MPU6050() : TaskClassS{"MPU6050 reader", TaskPrio_Low},
-		telemetry_acc{"MPU6050 telemetry acc", Transfer::ID::TELEMETRY_SENSOR_ACCELERATION},
-		telemetry_gyr{"MPU6050 telemetry gyr", Transfer::ID::TELEMETRY_SENSOR_GYRATION} {
+		telemetry_acc{"MPU6050 telemetry acc", Transfer::ID::SENSOR_ACCELERATION},
+		telemetry_gyr{"MPU6050 telemetry gyr", Transfer::ID::SENSOR_GYRATION} {
 
 }
 
