@@ -67,7 +67,7 @@ void Active::execute() {
 	Actuators::getInstace().setMotorThrottle(u(4, 0));
 }
 
-TakeOff::TakeOff(events::Negation &event) : event{event} {
+TakeOff::TakeOff(events::Negation &event, const comm::Controller::State &pv) : event{event}, process_value{pv}, sp_altitude{0.f} {
 
 }
 
@@ -76,9 +76,26 @@ void TakeOff::enter() {
     Logger::getInstance().log(Logger::INFO, "sm: starting...");
 
     event.reset();
+
+    sp_altitude = process_value.z;
 }
 
 void TakeOff::execute() {
+    if(sp_altitude<limit) {
+        sp_altitude +=increment;
+    }
+
+    Controller::getInstance().setSetpoint({
+        0.f,
+        0.f,
+        0.f,
+        0.f,
+        0.f,
+        0.f,
+        sp_altitude,
+        0.f
+    });
+
     const Matrix<5, 1> u = Controller::getInstance().calculate();
 
     Actuators::getInstace().setFinAngle(Actuators::Fin::FIN1, u(0, 0));
