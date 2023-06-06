@@ -18,6 +18,14 @@ Matrix<Controller::U_NUM, 1> Controller::calculate() const {
     return operating_point - K*error;
 }
 
+Matrix<Controller::X_NUM, 1> Controller::getSetpoint() const {
+    return setpoint;
+}
+
+Matrix<Controller::X_NUM, 1> Controller::getProcessValue() const {
+    return process_value;
+}
+
 Controller & Controller::getInstance() {
     static Controller controller;
 

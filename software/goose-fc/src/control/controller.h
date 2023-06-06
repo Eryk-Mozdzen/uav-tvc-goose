@@ -35,5 +35,8 @@ public:
     void setProcessValue(const Matrix<X_NUM, 1> pv);
     Matrix<U_NUM, 1> calculate() const;
 
+    Matrix<X_NUM, 1> getSetpoint() const;
+    Matrix<X_NUM, 1> getProcessValue() const;
+
     static Controller& getInstance();
 };

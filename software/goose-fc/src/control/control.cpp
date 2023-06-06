@@ -31,6 +31,9 @@ class Control : public TaskClassS<2048> {
 
 	sm::StateMachine<5, 4> sm;
 
+	comm::Controller::State setpoint;
+	comm::Controller::State process_value;
+
 	IntervalLogger<comm::Controller> telemetry_controller;
 
 public:
@@ -53,8 +56,9 @@ Control::Control() : TaskClassS{"control loop", TaskPrio_Mid},
 		readiness{&correct, &connect, &stil},
 		alt_reached{1.f, 0.2f, 1000},
 		alt_timeout(&alt_reached, 3000),
+		active{setpoint},
 		takeoff{alt_timeout},
-		landing{stil},
+		landing{stil, process_value},
 		sm{&abort},
 		telemetry_controller{"controller telememetry", Transfer::ID::TELEMETRY_CONTROLLER} {
 
@@ -83,9 +87,6 @@ void Control::task() {
 
 	sm.start();
 
-	comm::Controller::State setpoint;
-	comm::Controller::State process_value;
-
 	TickType_t time = xTaskGetTickCount();
 
 	while(1) {
@@ -101,17 +102,6 @@ void Control::task() {
 			if(frame.id==Transfer::ID::CONTROL_SETPOINT) {
 				if(frame.getPayload(setpoint)) {
 					disconnect.reset();
-
-					Controller::getInstance().setSetpoint({
-						setpoint.rpy[0],
-						setpoint.rpy[1],
-						setpoint.rpy[2],
-						setpoint.w[0],
-						setpoint.w[1],
-						setpoint.w[2],
-						setpoint.z,
-						setpoint.vz
-					});
 				}
 			}
 		}
@@ -129,8 +119,19 @@ void Control::task() {
 			});
 		}
 
+		const Matrix<8, 1> controller_sp_raw = Controller::getInstance().getSetpoint();
+		comm::Controller::State controller_sp;
+		controller_sp.rpy[0] = controller_sp_raw(0, 0);
+		controller_sp.rpy[1] = controller_sp_raw(1, 0);
+		controller_sp.rpy[2] = controller_sp_raw(2, 0);
+		controller_sp.w[0] = controller_sp_raw(3, 0);
+		controller_sp.w[1] = controller_sp_raw(4, 0);
+		controller_sp.w[2] = controller_sp_raw(5, 0);
+		controller_sp.z = controller_sp_raw(6, 0);
+		controller_sp.vz = controller_sp_raw(7, 0);
+
 		comm::Controller controller_data;
-		controller_data.setpoint = setpoint;
+		controller_data.setpoint = controller_sp;
 		controller_data.process_value = process_value;
 		controller_data.angles[0] = Actuators::getInstace().getFinAngle(Actuators::Fin::FIN1);
 		controller_data.angles[1] = Actuators::getInstace().getFinAngle(Actuators::Fin::FIN2);
