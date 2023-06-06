@@ -8,6 +8,7 @@
 #include "states.h"
 #include "interval_logger.h"
 #include "actuators.h"
+#include "controller.h"
 
 class Control : public TaskClassS<2048> {
 	events::Command cmd_start;
@@ -98,18 +99,35 @@ void Control::task() {
 			}
 
 			if(frame.id==Transfer::ID::CONTROL_SETPOINT) {
-				frame.getPayload(setpoint);
-				disconnect.reset();
+				if(frame.getPayload(setpoint)) {
+					disconnect.reset();
+
+					Controller::getInstance().setSetpoint({
+						setpoint.rpy[0],
+						setpoint.rpy[1],
+						setpoint.rpy[2],
+						setpoint.w[0],
+						setpoint.w[1],
+						setpoint.w[2],
+						setpoint.z,
+						setpoint.vz
+					});
+				}
 			}
 		}
 
-		while(Transport::getInstance().state_queue.pop(process_value, 0));
-
-		Actuators::getInstace().setFinAngle(Actuators::Fin::FIN1, 0.25f*3.1415f*sinf(2.f*3.1415f*time*0.001f*0.3f));
-		Actuators::getInstace().setFinAngle(Actuators::Fin::FIN2, 0.25f*3.1415f*sinf(2.f*3.1415f*time*0.001f*0.3f + 0.5f*3.1415f));
-		Actuators::getInstace().setFinAngle(Actuators::Fin::FIN3, 0.25f*3.1415f*sinf(2.f*3.1415f*time*0.001f*0.3f + 3.1415f));
-		Actuators::getInstace().setFinAngle(Actuators::Fin::FIN4, 0.25f*3.1415f*sinf(2.f*3.1415f*time*0.001f*0.3f + 1.5f*3.1415f));
-		Actuators::getInstace().setMotorThrottle(0.5f*(sinf(2.f*3.1415f*time*0.001f*0.1f) + 1.f));
+		while(Transport::getInstance().state_queue.pop(process_value, 0)) {
+			Controller::getInstance().setProcessValue({
+				process_value.rpy[0],
+				process_value.rpy[1],
+				process_value.rpy[2],
+				process_value.w[0],
+				process_value.w[1],
+				process_value.w[2],
+				process_value.z,
+				process_value.vz
+			});
+		}
 
 		comm::Controller controller_data;
 		controller_data.setpoint = setpoint;

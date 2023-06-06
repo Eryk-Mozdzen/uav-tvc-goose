@@ -106,21 +106,12 @@ void Window::sendSetpoint() {
 
     setpoint.rpy[0] = -30.f*deg2rad*gamepad.get(Gamepad::Analog::LX);
     setpoint.rpy[1] = +30.f*deg2rad*gamepad.get(Gamepad::Analog::LY);
-    setpoint.rpy[2] = +90.f*deg2rad*gamepad.get(Gamepad::Analog::RX);
+    setpoint.rpy[2] = 0.f;
     setpoint.w[0] = 0.f;
     setpoint.w[1] = 0.f;
-    setpoint.w[2] = 0.f;
+    setpoint.w[2] = 90.f*deg2rad*gamepad.get(Gamepad::Analog::RX);
     setpoint.z = 1.f - gamepad.get(Gamepad::Analog::RY);
     setpoint.vz = 0.f;
-
-    //this->setpoint.set(0, "%+3.0f", rad2deg*setpoint.rpy[0]);
-    //this->setpoint.set(1, "%+3.0f", rad2deg*setpoint.rpy[1]);
-    //this->setpoint.set(2, "%+3.0f", rad2deg*setpoint.rpy[2]);
-    //this->setpoint.set(3, "%+3.0f", rad2deg*setpoint.w[0]);
-    //this->setpoint.set(4, "%+3.0f", rad2deg*setpoint.w[1]);
-    //this->setpoint.set(5, "%+3.0f", rad2deg*setpoint.w[2]);
-    //this->setpoint.set(6, "%+2.2f", setpoint.z);
-    //this->setpoint.set(7, "%+2.2f", setpoint.vz);
 
     transmit(Transfer::encode(setpoint, Transfer::ID::CONTROL_SETPOINT));
 }
