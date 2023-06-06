@@ -7,6 +7,7 @@
 #include "events.h"
 #include "states.h"
 #include "interval_logger.h"
+#include "actuators.h"
 
 class Control : public TaskClassS<2048> {
 	events::Command cmd_start;
@@ -77,6 +78,8 @@ Control::Control() : TaskClassS{"control loop", TaskPrio_Mid},
 
 void Control::task() {
 
+	Actuators::getInstace().init();
+
 	sm.start();
 
 	comm::Controller::State setpoint;
@@ -102,14 +105,20 @@ void Control::task() {
 
 		while(Transport::getInstance().state_queue.pop(process_value, 0));
 
+		Actuators::getInstace().setFinAngle(Actuators::Fin::FIN1, 0.25f*3.1415f*sinf(2.f*3.1415f*time*0.001f*0.3f));
+		Actuators::getInstace().setFinAngle(Actuators::Fin::FIN2, 0.25f*3.1415f*sinf(2.f*3.1415f*time*0.001f*0.3f + 0.5f*3.1415f));
+		Actuators::getInstace().setFinAngle(Actuators::Fin::FIN3, 0.25f*3.1415f*sinf(2.f*3.1415f*time*0.001f*0.3f + 3.1415f));
+		Actuators::getInstace().setFinAngle(Actuators::Fin::FIN4, 0.25f*3.1415f*sinf(2.f*3.1415f*time*0.001f*0.3f + 1.5f*3.1415f));
+		Actuators::getInstace().setMotorThrottle(0.5f*(sinf(2.f*3.1415f*time*0.001f*0.1f) + 1.f));
+
 		comm::Controller controller_data;
 		controller_data.setpoint = setpoint;
 		controller_data.process_value = process_value;
-		controller_data.angles[0] = 0.16f*sinf(2.f*3.1415f*time*0.001f*0.3f);
-		controller_data.angles[1] = 0.16f*sinf(2.f*3.1415f*time*0.001f*0.3f + 0.5f*3.1415f);
-		controller_data.angles[2] = 0.16f*sinf(2.f*3.1415f*time*0.001f*0.3f + 3.1415f);
-		controller_data.angles[3] = 0.16f*sinf(2.f*3.1415f*time*0.001f*0.3f + 1.5f*3.1415f);
-		controller_data.throttle = 0.5f*(sinf(2.f*3.1415f*time*0.001f*0.1f) + 1.f);
+		controller_data.angles[0] = Actuators::getInstace().getFinAngle(Actuators::Fin::FIN1);
+		controller_data.angles[1] = Actuators::getInstace().getFinAngle(Actuators::Fin::FIN2);
+		controller_data.angles[2] = Actuators::getInstace().getFinAngle(Actuators::Fin::FIN3);
+		controller_data.angles[3] = Actuators::getInstace().getFinAngle(Actuators::Fin::FIN4);
+		controller_data.throttle = Actuators::getInstace().getMotorThrottle();
 		controller_data.state = states::getCurrent();
 
 		telemetry_controller.feed(controller_data);
