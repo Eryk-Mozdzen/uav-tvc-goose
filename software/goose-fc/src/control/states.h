@@ -32,7 +32,7 @@ class TakeOff : public sm::State {
     float sp_altitude;
 
     static constexpr float freq = 100.f;
-    static constexpr float vel = 0.1f;
+    static constexpr float vel = 0.3f;
     static constexpr float increment = vel/freq;
     static constexpr float limit = 1.5f;
 
