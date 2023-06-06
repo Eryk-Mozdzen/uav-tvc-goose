@@ -7,8 +7,8 @@ class BatteryEstimator {
     static constexpr float dt = 1/freq;
 
     struct Battery {
-        static constexpr float capacity = 1.f;
-        static constexpr uint8_t cell_num = 5;
+        static constexpr float capacity = 0.85f;
+        static constexpr uint8_t cell_num = 3;
     };
 
     EKF<1, 1, 1, BatteryEstimator> ekf;
