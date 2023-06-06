@@ -8,6 +8,7 @@
 #include "states.h"
 #include "interval_logger.h"
 #include "actuators.h"
+#include "controller.h"
 
 class Control : public TaskClassS<2048> {
 	events::Command cmd_start;
@@ -30,6 +31,9 @@ class Control : public TaskClassS<2048> {
 
 	sm::StateMachine<5, 4> sm;
 
+	comm::Controller::State setpoint;
+	comm::Controller::State process_value;
+
 	IntervalLogger<comm::Controller> telemetry_controller;
 
 public:
@@ -51,9 +55,10 @@ Control::Control() : TaskClassS{"control loop", TaskPrio_Mid},
 		stil{&movement, 3000},
 		readiness{&correct, &connect, &stil},
 		alt_reached{1.f, 0.2f, 1000},
-		alt_timeout(&alt_reached, 3000),
-		takeoff{alt_timeout},
-		landing{stil},
+		alt_timeout(&alt_reached, 6000),
+		active{setpoint},
+		takeoff{alt_timeout, process_value},
+		landing{stil, process_value},
 		sm{&abort},
 		telemetry_controller{"controller telememetry", Transfer::ID::TELEMETRY_CONTROLLER} {
 
@@ -82,9 +87,6 @@ void Control::task() {
 
 	sm.start();
 
-	comm::Controller::State setpoint;
-	comm::Controller::State process_value;
-
 	TickType_t time = xTaskGetTickCount();
 
 	while(1) {
@@ -98,21 +100,38 @@ void Control::task() {
 			}
 
 			if(frame.id==Transfer::ID::CONTROL_SETPOINT) {
-				frame.getPayload(setpoint);
-				disconnect.reset();
+				if(frame.getPayload(setpoint)) {
+					disconnect.reset();
+				}
 			}
 		}
 
-		while(Transport::getInstance().state_queue.pop(process_value, 0));
+		while(Transport::getInstance().state_queue.pop(process_value, 0)) {
+			Controller::getInstance().setProcessValue({
+				process_value.rpy[0],
+				process_value.rpy[1],
+				process_value.rpy[2],
+				process_value.w[0],
+				process_value.w[1],
+				process_value.w[2],
+				process_value.z,
+				process_value.vz
+			});
+		}
 
-		Actuators::getInstace().setFinAngle(Actuators::Fin::FIN1, 0.25f*3.1415f*sinf(2.f*3.1415f*time*0.001f*0.3f));
-		Actuators::getInstace().setFinAngle(Actuators::Fin::FIN2, 0.25f*3.1415f*sinf(2.f*3.1415f*time*0.001f*0.3f + 0.5f*3.1415f));
-		Actuators::getInstace().setFinAngle(Actuators::Fin::FIN3, 0.25f*3.1415f*sinf(2.f*3.1415f*time*0.001f*0.3f + 3.1415f));
-		Actuators::getInstace().setFinAngle(Actuators::Fin::FIN4, 0.25f*3.1415f*sinf(2.f*3.1415f*time*0.001f*0.3f + 1.5f*3.1415f));
-		Actuators::getInstace().setMotorThrottle(0.5f*(sinf(2.f*3.1415f*time*0.001f*0.1f) + 1.f));
+		const Matrix<8, 1> controller_sp_raw = Controller::getInstance().getSetpoint();
+		comm::Controller::State controller_sp;
+		controller_sp.rpy[0] = controller_sp_raw(0, 0);
+		controller_sp.rpy[1] = controller_sp_raw(1, 0);
+		controller_sp.rpy[2] = controller_sp_raw(2, 0);
+		controller_sp.w[0] = controller_sp_raw(3, 0);
+		controller_sp.w[1] = controller_sp_raw(4, 0);
+		controller_sp.w[2] = controller_sp_raw(5, 0);
+		controller_sp.z = controller_sp_raw(6, 0);
+		controller_sp.vz = controller_sp_raw(7, 0);
 
 		comm::Controller controller_data;
-		controller_data.setpoint = setpoint;
+		controller_data.setpoint = controller_sp;
 		controller_data.process_value = process_value;
 		controller_data.angles[0] = Actuators::getInstace().getFinAngle(Actuators::Fin::FIN1);
 		controller_data.angles[1] = Actuators::getInstace().getFinAngle(Actuators::Fin::FIN2);
