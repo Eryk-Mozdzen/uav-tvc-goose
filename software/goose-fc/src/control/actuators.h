@@ -5,10 +5,18 @@
 class Actuators {
     static constexpr uint16_t psc = 96;
     static constexpr uint16_t arr = 20000;
-    static constexpr uint16_t min_compare = 500;
-    static constexpr uint16_t max_compare = 2400;
-    static constexpr uint16_t center_compare = min_compare + max_compare/2;
-    static constexpr uint16_t radius_compare = (max_compare - min_compare)/2;
+
+    struct Servo {
+        static constexpr uint16_t min_compare = 500;
+        static constexpr uint16_t max_compare = 2400;
+        static constexpr uint16_t center_compare = min_compare + max_compare/2;
+        static constexpr uint16_t radius_compare = (max_compare - min_compare)/2;
+    };
+
+    struct ESC {
+        static constexpr uint16_t min_compare = 1000;
+        static constexpr uint16_t max_compare = 2000;
+    };
 
     static constexpr float pi = 3.1415f;
     static constexpr float max_servo = 0.25f*pi;

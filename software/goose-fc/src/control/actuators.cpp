@@ -82,25 +82,25 @@ void Actuators::init() {
 void Actuators::setFinAngle(const Fin fin, float alpha) {
     alpha = alpha>max_servo ? max_servo : alpha<-max_servo ? -max_servo : alpha;
 
-    __HAL_TIM_SET_COMPARE(&htim3_servo, fin, center_compare + radius_compare*alpha/(0.5f*pi));
+    __HAL_TIM_SET_COMPARE(&htim3_servo, fin, Servo::center_compare + Servo::radius_compare*alpha/(0.5f*pi));
 }
 
 void Actuators::setMotorThrottle(float thorttle) {
     thorttle = thorttle>1.f ? 1.f : thorttle<0.f ? 0.f : thorttle;
 
-    __HAL_TIM_SET_COMPARE(&htim1_esc, TIM_CHANNEL_2, min_compare + (max_compare - min_compare)*thorttle);
+    __HAL_TIM_SET_COMPARE(&htim1_esc, TIM_CHANNEL_2, ESC::min_compare + (ESC::max_compare - ESC::min_compare)*thorttle);
 }
 
 float Actuators::getFinAngle(const Fin fin) const {
     const uint16_t compare = __HAL_TIM_GET_COMPARE(&htim3_servo, fin);
 
-    return (((float)compare) - ((float)center_compare))/(((float)max_compare) - ((float)center_compare))*0.5f*pi;
+    return (((float)compare) - ((float)Servo::center_compare))/(((float)Servo::max_compare) - ((float)Servo::center_compare))*0.5f*pi;
 }
 
 float Actuators::getMotorThrottle() const {
     const uint16_t compare = __HAL_TIM_GET_COMPARE(&htim1_esc, TIM_CHANNEL_2);
 
-    return (((float)compare) - ((float)min_compare))/(((float)max_compare) - ((float)min_compare));
+    return (((float)compare) - ((float)ESC::min_compare))/(((float)ESC::max_compare) - ((float)ESC::min_compare));
 }
 
 Actuators & Actuators::getInstace() {
