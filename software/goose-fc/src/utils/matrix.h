@@ -78,6 +78,13 @@ public:
 		return result;
 	}
 
+	constexpr Matrix<N, M> operator/(const float &number) const {
+		Matrix<N, M> result = *this;
+		for(int i=0; i<N*M; i++)
+			result.elements[i] = elements[i]/number;
+		return result;
+	}
+
 	constexpr Vector operator*(const Vector &vec) const {
 		static_assert(N==3 && M==3);
 		return Vector(
@@ -127,6 +134,16 @@ public:
 	}
 
 	constexpr Matrix<N, N> inverse() const {
+		if(N==1 && M==1) {
+			if(elements[0]<0.002f) {
+				Logger::getInstance().log(Logger::WARNING, "mat: can't inverse 1x1 matrix");
+				return Matrix<N, N>();
+			}
+
+			Matrix<N, N> inv;
+			inv(0, 0) = 1.f/elements[0];
+			return inv;
+		}
 
 		Matrix<N, 2*N> combined;
 

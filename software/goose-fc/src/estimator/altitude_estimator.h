@@ -1,7 +1,7 @@
 #pragma once
 
 #include "TimerCPP.h"
-#include "kalman_filter.h"
+#include "kf.h"
 #include "vector.h"
 #include "quaternion.h"
 #include "comm.h"
@@ -39,7 +39,7 @@ private:
         0.f
     };
 
-    KalmanFilter<2, 1, 1> kf;
+    KF<2, 1, 1> kf;
 
     float ground_pressure;
     float distance_compensated;

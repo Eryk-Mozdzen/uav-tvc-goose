@@ -22,8 +22,8 @@ class PowerStats : TaskClassS<512> {
 
 	struct SupplyCurrent {
 		static constexpr float R33 = 4700.f;
-		static constexpr float R34 = 210000.f;
-		static constexpr float Rshunt = 0.001f;
+		static constexpr float R34 = 39000.f;
+		static constexpr float Rshunt = 0.0067f;
 		static constexpr float gain = (R34/R33)*Rshunt;
 	};
 
