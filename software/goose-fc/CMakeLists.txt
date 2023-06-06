@@ -92,6 +92,7 @@ add_executable(${TARGET}
 	"src/control/control.cpp"
 	"src/control/states.cpp"
 	"src/control/events.cpp"
+	"src/control/actuators.cpp"
 )
 
 target_compile_definitions(${TARGET} PRIVATE
