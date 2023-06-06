@@ -70,5 +70,5 @@ void USB::handleTimeout() {
 		return;
 	}
 
-	qDebug() << "waiting for" << serial.portName() << "...";
+	//qDebug() << "waiting for" << serial.portName() << "...";
 }

@@ -50,7 +50,7 @@ Window::Window(QWidget *parent) : QWidget(parent),
     layout->addWidget(&process, 0, 2, 2, 1);
     layout->addWidget(&actuators, 2, 2);
 
-    source.set(0, "192.168.0.13");
+    source.set(0, "192.168.101.29");
     source.set(1, "/dev/ttyACM0");
 
 	timer.setInterval(20);
@@ -62,7 +62,9 @@ Window::Window(QWidget *parent) : QWidget(parent),
     connect(cmd_land, &QPushButton::clicked, this, std::bind(&Window::sendCommand, this, comm::Command::LAND));
     connect(&source, &widgets::Form::change, this, &Window::sourceChanged);
     connect(&usb, &USB::receive, this, &Window::frameReceived);
+    connect(&telnet, &Telnet::receive, this, &Window::frameReceived);
     connect(this, &Window::transmit, &usb, &USB::transmit);
+    connect(this, &Window::transmit, &telnet, &Telnet::transmit);
 }
 
 void Window::freqChanged(QString value) {
