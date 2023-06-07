@@ -3,99 +3,98 @@
 #include "event.h"
 #include "transfer.h"
 #include "TimerCPP.h"
-#include "quaternion.h"
 #include "comm.h"
+#include "context.h"
 
 namespace events {
 
-class Command : public sm::Event {
+class Command : public sm::Event<Context> {
     const comm::Command cmd;
+    bool flag;
 
 public:
     Command(const comm::Command cmd);
-    void feed(const Transfer::FrameRX &frame);
+    void check(const Transfer::FrameRX &frame);
+    bool triggered();
+    void clear() override;
 };
 
-class Watchdog : public sm::Event {
+class Watchdog : public sm::Event<Context> {
     TimerMember<Watchdog> timer;
+    bool flag;
 
     void timeout();
 
 public:
     Watchdog(const TickType_t period);
-    void reset();
+    bool triggered();
+    void reset() override;
 };
 
-class Negation : public sm::Event {
-    const sm::Event *target;
+class Negation : public sm::Event<Context> {
+    sm::Event<Context> *target;
     TimerMember<Negation> timer;
     bool repeat;
 
     void callback();
 
 public:
-    Negation(const sm::Event *target, const TickType_t period);
-    void check();
-    void reset();
+    Negation(sm::Event<Context> *target, const TickType_t period);
+    bool triggered();
+    void reset() override;
 };
 
 template<int N>
-class Combination : public sm::Event {
-    sm::Event *targets[N];
-
-    void on_clear() override {
-        for(int i=0; i<N; i++) {
-            targets[i]->clear();
-        }
-    }
+class Combination : public sm::Event<Context> {
+    sm::Event<Context> *targets[N];
 
 public:
     template<typename... U>
-    Combination(U... list) : targets{static_cast<sm::Event *>(list)...} {
+    Combination(U... list) : targets{static_cast<sm::Event<Context> *>(list)...} {
         static_assert(sizeof...(list)==N, "wrong num of targets");
     }
 
-    void check() {
+    bool triggered() {
         for(int i=0; i<N; i++) {
-            if(!targets[i]->isTriggered()) {
-                return;
+            if(!targets[i]->triggered()) {
+                return false;
             }
         }
 
-        sm::Event::trigger();
+        return true;
     }
 };
 
-class StateLimits : public sm::Event {
+class Limits : public sm::Event<Context> {
     static constexpr float deg2rad = 3.1415f/180.f;
-    const float max_angle;
-    const float max_altitude;
+    static constexpr float max_angle = 30.f*deg2rad;
+    static constexpr float max_altitude = 2.f;
 
 public:
-    StateLimits(const float angle_deg, const float alt);
-    void check(const comm::Controller::State &state);
+    bool triggered();
 };
 
-class Movement : public sm::Event {
+class Movement : public sm::Event<Context> {
     static constexpr float deg2rad = 3.1415f/180.f;
-    const float angular_velocity_threshold;
-    const float linear_velocity_threshold;
+    static constexpr float angular_velocity_threshold = 10.f*deg2rad;
+    static constexpr float linear_velocity_threshold = 0.1f;
 
 public:
-    Movement(const float w_thres, const float v_thres);
-    void check(const comm::Controller::State &state);
+    bool triggered();
 };
 
-class AltitudeReached : public sm::Event {
-    const float desired;
-    const float margin;
-    TimerMember<AltitudeReached> timer;
+class Altitude : public sm::Event<Context> {
+    static constexpr float desired = 1.f;
+    static constexpr float margin = 0.2f;
+    static constexpr TickType_t period = 1000;
+    TimerMember<Altitude> timer;
+    bool flag;
 
     void callback();
 
 public:
-    AltitudeReached(const float des, const float marg, const TickType_t period);
-    void check(const comm::Controller::State &state);
+    Altitude();
+    bool triggered();
 };
 
 }

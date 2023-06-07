@@ -9,18 +9,19 @@
 #include "interval_logger.h"
 #include "actuators.h"
 #include "controller.h"
+#include "context.h"
 
-class Control : public TaskClassS<2048> {
+class Control : public TaskClassS<2048>, public Context {
 	events::Command cmd_start;
 	events::Command cmd_land;
 	events::Watchdog disconnect;
-	events::StateLimits limits;
+	events::Limits limits;
 	events::Movement movement;
 	events::Negation correct;
 	events::Negation connect;
 	events::Negation stil;
 	events::Combination<3> readiness;
-	events::AltitudeReached alt_reached;
+	events::Altitude alt_reached;
 	events::Negation alt_timeout;
 
 	states::Abort abort;
@@ -29,15 +30,14 @@ class Control : public TaskClassS<2048> {
 	states::TakeOff takeoff;
 	states::Landing landing;
 
-	sm::StateMachine<5, 4> sm;
-
-	comm::Controller::State setpoint;
-	comm::Controller::State process_value;
+	sm::StateMachine<5, 4, Context> sm;
 
 	IntervalLogger<comm::Controller> telemetry_controller;
 
 public:
 	Control();
+
+	comm::Controller getTelemetry();
 
 	void task();
 };
@@ -48,21 +48,16 @@ Control::Control() : TaskClassS{"control loop", TaskPrio_Mid},
 		cmd_start{comm::Command::START},
 		cmd_land{comm::Command::LAND},
 		disconnect{1000},
-		limits{30.f, 2.f},
-		movement{10.f, 0.1f},
 		correct{&limits, 3000},
 		connect{&disconnect, 3000},
 		stil{&movement, 3000},
 		readiness{&correct, &connect, &stil},
-		alt_reached{1.f, 0.2f, 1000},
 		alt_timeout(&alt_reached, 6000),
-		active{setpoint},
-		takeoff{alt_timeout, process_value},
-		landing{stil, process_value},
-		sm{&abort},
+		sm{&abort, this},
 		telemetry_controller{"controller telememetry", Transfer::ID::TELEMETRY_CONTROLLER} {
 
 	sm.transit(&abort, &ready, &readiness);
+
 	sm.transit(&ready, &abort, &limits);
 	sm.transit(&ready, &abort, &disconnect);
 	sm.transit(&ready, &abort, &movement);
@@ -95,8 +90,8 @@ void Control::task() {
 		Transfer::FrameRX frame;
 		while(Transport::getInstance().frame_rx_queue.pop(frame, 0)) {
 			if(frame.id==Transfer::ID::CONTROL_COMMAND) {
-				cmd_start.feed(frame);
-				cmd_land.feed(frame);
+				cmd_start.check(frame);
+				cmd_land.check(frame);
 			}
 
 			if(frame.id==Transfer::ID::CONTROL_SETPOINT) {
@@ -119,37 +114,33 @@ void Control::task() {
 			});
 		}
 
-		const Matrix<8, 1> controller_sp_raw = Controller::getInstance().getSetpoint();
-		comm::Controller::State controller_sp;
-		controller_sp.rpy[0] = controller_sp_raw(0, 0);
-		controller_sp.rpy[1] = controller_sp_raw(1, 0);
-		controller_sp.rpy[2] = controller_sp_raw(2, 0);
-		controller_sp.w[0] = controller_sp_raw(3, 0);
-		controller_sp.w[1] = controller_sp_raw(4, 0);
-		controller_sp.w[2] = controller_sp_raw(5, 0);
-		controller_sp.z = controller_sp_raw(6, 0);
-		controller_sp.vz = controller_sp_raw(7, 0);
+		telemetry_controller.feed(getTelemetry());
 
-		comm::Controller controller_data;
-		controller_data.setpoint = controller_sp;
-		controller_data.process_value = process_value;
-		controller_data.angles[0] = Actuators::getInstace().getFinAngle(Actuators::Fin::FIN1);
-		controller_data.angles[1] = Actuators::getInstace().getFinAngle(Actuators::Fin::FIN2);
-		controller_data.angles[2] = Actuators::getInstace().getFinAngle(Actuators::Fin::FIN3);
-		controller_data.angles[3] = Actuators::getInstace().getFinAngle(Actuators::Fin::FIN4);
-		controller_data.throttle = Actuators::getInstace().getMotorThrottle();
-		controller_data.state = states::getCurrent();
-
-		telemetry_controller.feed(controller_data);
-
-		limits.check(process_value);
-		movement.check(process_value);
-		correct.check();
-		connect.check();
-		stil.check();
-		readiness.check();
-		alt_reached.check(process_value);
-		alt_timeout.check();
 		sm.update();
 	}
+}
+
+comm::Controller Control::getTelemetry() {
+	const Matrix<8, 1> controller_sp_raw = Controller::getInstance().getSetpoint();
+	comm::Controller::State controller_sp;
+	controller_sp.rpy[0] = controller_sp_raw(0, 0);
+	controller_sp.rpy[1] = controller_sp_raw(1, 0);
+	controller_sp.rpy[2] = controller_sp_raw(2, 0);
+	controller_sp.w[0] = controller_sp_raw(3, 0);
+	controller_sp.w[1] = controller_sp_raw(4, 0);
+	controller_sp.w[2] = controller_sp_raw(5, 0);
+	controller_sp.z = controller_sp_raw(6, 0);
+	controller_sp.vz = controller_sp_raw(7, 0);
+
+	comm::Controller controller_data;
+	controller_data.setpoint = controller_sp;
+	controller_data.process_value = process_value;
+	controller_data.angles[0] = Actuators::getInstace().getFinAngle(Actuators::Fin::FIN1);
+	controller_data.angles[1] = Actuators::getInstace().getFinAngle(Actuators::Fin::FIN2);
+	controller_data.angles[2] = Actuators::getInstace().getFinAngle(Actuators::Fin::FIN3);
+	controller_data.angles[3] = Actuators::getInstace().getFinAngle(Actuators::Fin::FIN4);
+	controller_data.throttle = Actuators::getInstace().getMotorThrottle();
+	controller_data.state = current;
+
+	return controller_data;
 }

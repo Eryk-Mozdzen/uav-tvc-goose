@@ -1,24 +1,36 @@
 #include "events.h"
 #include "logger.h"
-#include "states.h"
 
 namespace events {
 
-Command::Command(const comm::Command cmd) : cmd{cmd} {
+Command::Command(const comm::Command cmd) : cmd{cmd}, flag{false} {
 
 }
 
-void Command::feed(const Transfer::FrameRX &frame) {
-    if(frame.id==Transfer::ID::CONTROL_COMMAND) {
-        comm::Command command;
-
-        if(frame.getPayload(command)) {
-            if(command==cmd) {
-                Logger::getInstance().log(Logger::INFO, "sm: command %d received", cmd);
-                sm::Event::trigger();
-            }
-        }
+void Command::check(const Transfer::FrameRX &frame) {
+    if(frame.id!=Transfer::ID::CONTROL_COMMAND) {
+        return;
     }
+
+    comm::Command command;
+    if(!frame.getPayload(command)) {
+        return;
+    }
+
+    if(command!=cmd) {
+        return;
+    }
+
+    Logger::getInstance().log(Logger::INFO, "sm: command %d received", cmd);
+    flag = true;
+}
+
+bool Command::triggered() {
+    return flag;
+}
+
+void Command::clear() {
+    flag = false;
 }
 
 Watchdog::Watchdog(const TickType_t period) :
@@ -29,14 +41,19 @@ Watchdog::Watchdog(const TickType_t period) :
 
 void Watchdog::reset() {
     timer.reset();
+    flag = false;
 }
 
 void Watchdog::timeout() {
     Logger::getInstance().log(Logger::INFO, "sm: watchdog timeout");
-    sm::Event::trigger();
+    flag = true;
 }
 
-Negation::Negation(const sm::Event *target, const TickType_t period) :
+bool Watchdog::triggered() {
+    return flag;
+}
+
+Negation::Negation(sm::Event<Context> *target, const TickType_t period) :
         target{target},
         timer{"negation timer", this, &Negation::callback, period, pdFALSE},
         repeat{false} {
@@ -44,21 +61,16 @@ Negation::Negation(const sm::Event *target, const TickType_t period) :
     timer.start();
 }
 
-void Negation::check() {
-    if(target->isTriggered()) {
+bool Negation::triggered() {
+    if(target->triggered()) {
         timer.reset();
         repeat = false;
-        return;
     }
 
-    if(repeat) {
-        sm::Event::trigger();
-        return;
-    }
+    return repeat;
 }
 
 void Negation::callback() {
-    sm::Event::trigger();
     repeat = true;
 }
 
@@ -67,58 +79,46 @@ void Negation::reset() {
     repeat = false;
 }
 
-StateLimits::StateLimits(const float angle_deg, const float alt) : max_angle{angle_deg*deg2rad}, max_altitude{alt} {
-
-}
-
-void StateLimits::check(const comm::Controller::State &state) {
-    const float roll = state.rpy[0];
-    const float pitch = state.rpy[1];
-    const float altitude = state.z;
+bool Limits::triggered() {
+    const float roll = context->process_value.rpy[0];
+    const float pitch = context->process_value.rpy[1];
+    const float altitude = context->process_value.z;
 
     const float curr_cos = fabs(cosf(roll)*cosf(pitch));
     const float max_cos = fabs(cosf(max_angle));
 
-    if(curr_cos<max_cos || altitude>max_altitude) {
-        sm::Event::trigger();
-    }
+    return (curr_cos<max_cos || altitude>max_altitude);
 }
 
-Movement::Movement(const float w_thres, const float v_thres) :
-        angular_velocity_threshold{w_thres*deg2rad},
-        linear_velocity_threshold{v_thres} {
+bool Movement::triggered() {
+    const float Wx = fabs(context->process_value.w[0]);
+    const float Wy = fabs(context->process_value.w[1]);
+    const float Wz = fabs(context->process_value.w[2]);
+    const float Vz = fabs(context->process_value.vz);
 
+    return (Wx>angular_velocity_threshold || Wy>angular_velocity_threshold || Wz>angular_velocity_threshold || Vz>linear_velocity_threshold);
 }
 
-void Movement::check(const comm::Controller::State &state) {
-    const float Wx = fabs(state.w[0]);
-    const float Wy = fabs(state.w[1]);
-    const float Wz = fabs(state.w[2]);
-    const float Vz = fabs(state.vz);
-
-    if(Wx>angular_velocity_threshold || Wy>angular_velocity_threshold || Wz>angular_velocity_threshold || Vz>linear_velocity_threshold) {
-        sm::Event::trigger();
-    }
-}
-
-AltitudeReached::AltitudeReached(const float des, const float marg, const TickType_t period) :
-        desired{des},
-        margin{marg},
-        timer{"altitude reached timer", this, &AltitudeReached::callback, period, pdTRUE} {
+Altitude::Altitude() :
+        timer{"altitude timer", this, &Altitude::callback, period, pdTRUE},
+        flag{false} {
 
     timer.start();
 }
 
-void AltitudeReached::check(const comm::Controller::State &state) {
-    const float altitude = state.z;
+bool Altitude::triggered() {
+    const float altitude = context->process_value.z;
 
     if(std::abs(altitude - desired)>margin) {
+        flag = false;
         timer.reset();
     }
+
+    return flag;
 }
 
-void AltitudeReached::callback() {
-    sm::Event::trigger();
+void Altitude::callback() {
+    flag = true;
 }
 
 }

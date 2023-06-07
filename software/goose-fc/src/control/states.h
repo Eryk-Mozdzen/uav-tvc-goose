@@ -3,60 +3,47 @@
 #include "state.h"
 #include "comm.h"
 #include "events.h"
+#include "context.h"
 
 namespace states {
 
-comm::Controller::SMState getCurrent();
-
-class Abort : public sm::State {
+class Abort : public sm::State<Context> {
+public:
     void enter() override;
 };
 
-class Ready : public sm::State {
+class Ready : public sm::State<Context> {
+public:
     void enter() override;
 };
 
-class Active : public sm::State {
-    const comm::Controller::State &setpoint;
-
+class Active : public sm::State<Context> {
+public:
     void enter() override;
     void execute() override;
-
-public:
-    Active(const comm::Controller::State &sp);
 };
 
-class TakeOff : public sm::State {
-    events::Negation &event;
-    const comm::Controller::State &process_value;
-    float sp_altitude;
-
+class TakeOff : public sm::State<Context> {
     static constexpr float freq = 100.f;
     static constexpr float vel = 0.3f;
     static constexpr float increment = vel/freq;
     static constexpr float limit = 1.5f;
-
-    void enter() override;
-    void execute() override;
-
-public:
-    TakeOff(events::Negation &event, const comm::Controller::State &pv);
-};
-
-class Landing : public sm::State {
-    events::Negation &event;
-    const comm::Controller::State &process_value;
     float sp_altitude;
 
+public:
+    void enter() override;
+    void execute() override;
+};
+
+class Landing : public sm::State<Context> {
     static constexpr float freq = 100.f;
     static constexpr float vel = 0.1f;
     static constexpr float decrement = vel/freq;
-
-    void enter() override;
-    void execute() override;
+    float sp_altitude;
 
 public:
-    Landing(events::Negation &event, const comm::Controller::State &pv);
+    void enter() override;
+    void execute() override;
 };
 
 }
