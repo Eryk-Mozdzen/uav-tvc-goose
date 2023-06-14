@@ -136,7 +136,6 @@ target_include_directories(${TARGET} PRIVATE
 
 target_compile_options(${TARGET} PRIVATE
 	$<$<COMPILE_LANGUAGE:ASM>:
-		#-O0 -g3
 		-Os -g
 
 		-mthumb
@@ -149,7 +148,6 @@ target_compile_options(${TARGET} PRIVATE
 	>
 
 	$<$<COMPILE_LANGUAGE:C>:
-		#-O0 -g3
 		-Os -g
 		-std=c17
 
@@ -168,7 +166,6 @@ target_compile_options(${TARGET} PRIVATE
 	>
 
 	$<$<COMPILE_LANGUAGE:CXX>:
-		#-O0 -g3
 		-Os -g
 		-std=c++17
 

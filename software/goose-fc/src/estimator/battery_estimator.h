@@ -11,12 +11,23 @@ class BatteryEstimator {
         static constexpr uint8_t cell_num = 3;
     };
 
-    EKF<1, 1, 1, BatteryEstimator> ekf;
+    class DischargeModel : public EKF<1>::SystemModel<1> {
+        using EKF<1>::SystemModel<1>::SystemModel;
 
-    Matrix<1, 1> f(const Matrix<1, 1> x, const Matrix<1, 1> u);
-    Matrix<1, 1> h(const Matrix<1, 1> x);
-    Matrix<1, 1> f_tangent(const Matrix<1, 1> x, const Matrix<1, 1> u);
-    Matrix<1, 1> h_tangent(const Matrix<1, 1> x);
+        Matrix<1, 1> f(Matrix<1, 1> x, Matrix<1, 1> u) const;
+        Matrix<1, 1> f_tangent(Matrix<1, 1> x, Matrix<1, 1> u) const;
+    };
+
+    class VoltageModel : public EKF<1>::MeasurementModel<1> {
+        using EKF<1>::MeasurementModel<1>::MeasurementModel;
+
+        Matrix<1, 1> h(Matrix<1, 1> x) const;
+        Matrix<1, 1> h_tangent(Matrix<1, 1> x) const;
+    };
+
+    EKF<1> ekf;
+    const DischargeModel discharge_model;
+    const VoltageModel voltage_model;
 
     static float poly_value(const float *poly, const uint8_t coeff_num, const float arg);
 
