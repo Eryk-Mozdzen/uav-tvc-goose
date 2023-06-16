@@ -11,14 +11,14 @@ class BatteryEstimator {
         static constexpr uint8_t cell_num = 3;
     };
 
-    class DischargeModel : public EKF<1>::SystemModel<1> {
+    struct DischargeModel : EKF<1>::SystemModel<1> {
         using EKF<1>::SystemModel<1>::SystemModel;
 
         Matrix<1, 1> f(Matrix<1, 1> x, Matrix<1, 1> u) const;
         Matrix<1, 1> f_tangent(Matrix<1, 1> x, Matrix<1, 1> u) const;
     };
 
-    class VoltageModel : public EKF<1>::MeasurementModel<1> {
+    struct VoltageModel : EKF<1>::MeasurementModel<1> {
         using EKF<1>::MeasurementModel<1>::MeasurementModel;
 
         Matrix<1, 1> h(Matrix<1, 1> x) const;
