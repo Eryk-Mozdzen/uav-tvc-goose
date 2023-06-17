@@ -93,7 +93,7 @@ Matrix<1, 7> PositionEstimator::BarometerModel::h_tangent(Matrix<7, 1> x) const 
     return C;
 }
 
-void PositionEstimator::feedAttitude(const Quaternion &att) {
+void PositionEstimator::setAttitude(const Quaternion &att) {
     attitude = att;
 }
 
@@ -115,9 +115,9 @@ void PositionEstimator::feedAcceleration(const Vector &acc) {
     constexpr Vector gravity = -Vector::Z()*9.81f;
     const Matrix<3, 3> rot = attitude.getRotation();
 
-	const Vector lin = rot*acc - gravity;
+	linear = rot*acc - gravity;
 
-    ekf.predict(movement_model, {lin.x, lin.y, lin.z});
+    ekf.predict(movement_model, {linear.x, linear.y, linear.z});
 }
 
 Vector PositionEstimator::getPosition() const {
@@ -130,4 +130,8 @@ Vector PositionEstimator::getVelocity() const {
     const Matrix<7, 1> x = ekf.getState();
 
     return Vector(x(3, 0), x(4, 0), x(5, 0));
+}
+
+Vector PositionEstimator::getLinearAcceleration() const {
+    return linear;
 }

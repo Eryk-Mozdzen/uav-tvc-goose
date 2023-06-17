@@ -33,11 +33,10 @@ void StateEstimator::task() {
 
 	TickType_t time = xTaskGetTickCount();
 
-	Transport::Sensors type;
-
 	while(1) {
 		xTaskDelayUntil(&time, 10);
 
+		Transport::Sensors type;
 		while(Transport::getInstance().sensor_queue.pop(type, 0)) {
 
 			switch(type) {
@@ -82,36 +81,28 @@ void StateEstimator::task() {
 
 		const Quaternion attitude = attitude_estimator.getAttitude();
 
-		position_estimator.feedAttitude(attitude);
+		position_estimator.setAttitude(attitude);
 
 		const Matrix<3, 1> rpy = attitude.getRollPitchYaw();
 		const Vector omega = attitude_estimator.getRotationRates();
-		//const Vector lin_acc = altitude_estimator.getLinearAcceleration();
+		const Vector position = position_estimator.getPosition();
+		const Vector velocity = position_estimator.getVelocity();
+		const Vector acceleration = position_estimator.getLinearAcceleration();
 
 		comm::Controller::State process_value;
-		process_value.rpy[0] = rpy(0, 0);
-		process_value.rpy[1] = rpy(0, 1);
-		process_value.rpy[2] = rpy(0, 2);
-		process_value.w[0] = omega.x;
-		process_value.w[1] = omega.y;
-		process_value.w[2] = omega.z;
-		process_value.z = position_estimator.getPosition().z;
-		process_value.vz = position_estimator.getVelocity().z;
+		memcpy(process_value.rpy, &rpy, 3*sizeof(float));
+		memcpy(process_value.w, &omega, 3*sizeof(float));
+		process_value.z = position.z;
+		process_value.vz = velocity.z;
 
 		Transport::getInstance().state_queue.push(process_value, 2);
 
 		comm::Estimator estimator_data;
-		estimator_data.quat[0] = attitude.i;
-		estimator_data.quat[1] = attitude.j;
-		estimator_data.quat[2] = attitude.k;
-		estimator_data.quat[3] = attitude.w;
-		//estimator_data.linear[0] = lin_acc.x;
-		//estimator_data.linear[1] = lin_acc.y;
-		//estimator_data.linear[2] = lin_acc.z;
-		estimator_data.z = position_estimator.getPosition().z;
-		estimator_data.vz = position_estimator.getVelocity().z;
-		//stimator_data.altitude_src = comm::Estimator::AltitudeSource::DISTANCE;
-		estimator_data.battery_soc = battery_estimator.getStateOfCharge();
+		memcpy(estimator_data.attitude, &attitude, 4*sizeof(float));
+		memcpy(estimator_data.position, &position, 3*sizeof(float));
+		memcpy(estimator_data.velocity, &velocity, 3*sizeof(float));
+		memcpy(estimator_data.acceleration, &acceleration, 3*sizeof(float));
+		estimator_data.soc = battery_estimator.getStateOfCharge();
 
 		telemetry_estimator.feed(estimator_data);
 	}

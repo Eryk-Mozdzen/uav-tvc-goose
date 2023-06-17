@@ -15,8 +15,11 @@ Window::Window(QWidget *parent) : QWidget(parent),
         setpoint{"setpoint", {"roll", "pitch", "yaw", "Wx", "Wy", "Wz", "z", "Vz"}},
         process{"process value", {"roll", "pitch", "yaw", "Wx", "Wy", "Wz", "z", "Vz"}},
         actuators{"actuators", {"fin 1", "fin 2", "fin 3", "fin 4", "throttle"}},
-        others{"others", {"state", "altitude src"}},
-        power{"power", {"voltage", "current", "battery"}} {
+        others{"others", {"state"}},
+        power{"power", {"voltage", "current", "battery"}},
+        position{"position", {"x", "y", "z"}},
+        velocity{"velocity", {"x", "y", "z"}},
+        acceleration{"acceleration", {"x", "y", "z"}} {
 
     QGridLayout *layout = new QGridLayout(this);
 
@@ -49,6 +52,10 @@ Window::Window(QWidget *parent) : QWidget(parent),
     layout->addWidget(&setpoint, 0, 1, 2, 1);
     layout->addWidget(&process, 0, 2, 2, 1);
     layout->addWidget(&actuators, 2, 2);
+
+    layout->addWidget(&position, 3, 0);
+    layout->addWidget(&velocity, 3, 1);
+    layout->addWidget(&acceleration, 3, 2);
 
     source.set(0, "192.168.101.29");
     source.set(1, "/dev/ttyACM0");
@@ -111,7 +118,7 @@ void Window::sendSetpoint() {
     setpoint.rpy[2] = 0.f;
     setpoint.w[0] = 0.f;
     setpoint.w[1] = 0.f;
-    setpoint.w[2] = 90.f*deg2rad*gamepad.get(Gamepad::Analog::RX);
+    setpoint.w[2] = 0.f;
     setpoint.z = 1.f - gamepad.get(Gamepad::Analog::RY);
     setpoint.vz = 0.f;
 
@@ -128,12 +135,19 @@ void Window::frameReceived(Transfer::FrameRX frame) {
         comm::Estimator estimator_data;
         frame.getPayload(estimator_data);
 
-        power.set(2, "%1.2f", estimator_data.battery_soc);
+        power.set(2, "%1.2f", estimator_data.soc);
 
-        switch(estimator_data.altitude_src) {
-            case comm::Estimator::AltitudeSource::DISTANCE: others.set(1, "distance"); break;
-            case comm::Estimator::AltitudeSource::PRESSURE: others.set(1, "pressure"); break;
-        }
+        position.set(0, "%+3.2f", estimator_data.position[0]);
+        position.set(1, "%+3.2f", estimator_data.position[1]);
+        position.set(2, "%+3.2f", estimator_data.position[2]);
+
+        velocity.set(0, "%+3.2f", estimator_data.velocity[0]);
+        velocity.set(1, "%+3.2f", estimator_data.velocity[1]);
+        velocity.set(2, "%+3.2f", estimator_data.velocity[2]);
+
+        acceleration.set(0, "%+3.2f", estimator_data.acceleration[0]);
+        acceleration.set(1, "%+3.2f", estimator_data.acceleration[1]);
+        acceleration.set(2, "%+3.2f", estimator_data.acceleration[2]);
     }
 
     if(frame.id==Transfer::ID::TELEMETRY_CONTROLLER) {

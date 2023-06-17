@@ -34,16 +34,19 @@ class PositionEstimator {
     const LaserModel laser_model;
     const BarometerModel barometer_model;
 
+    Vector linear;
     Quaternion attitude;
 
 public:
     PositionEstimator();
 
-    void feedAttitude(const Quaternion &att);
+    void setAttitude(const Quaternion &att);
+
     void feedDistance(const float dist);
     void feedPressure(const float press);
     void feedAcceleration(const Vector &acc);
 
     Vector getPosition() const;
     Vector getVelocity() const;
+    Vector getLinearAcceleration() const;
 };
