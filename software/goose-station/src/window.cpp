@@ -214,13 +214,4 @@ void Window::frameReceived(Transfer::FrameRX frame) {
         frame.getPayload(current);
         power.set(1, "%2.2f", current);
     }
-
-    if(frame.id==Transfer::ID::SENSOR_ACCELERATION) {
-        struct Vector { float x, y, z; } acceleration;
-        frame.getPayload(acceleration);
-
-        const float len = std::sqrt(acceleration.x*acceleration.x + acceleration.y*acceleration.y + acceleration.z*acceleration.z);
-
-        std::cout << EscapeCode::MAGENTA << acceleration.x << "\t" << acceleration.y << "\t" << acceleration.z << "\t" << len << std::endl;
-    }
 }
