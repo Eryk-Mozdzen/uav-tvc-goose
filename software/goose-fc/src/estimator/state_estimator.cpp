@@ -103,6 +103,7 @@ void StateEstimator::task() {
 		memcpy(estimator_data.velocity, &velocity, 3*sizeof(float));
 		memcpy(estimator_data.acceleration, &acceleration, 3*sizeof(float));
 		estimator_data.soc = battery_estimator.getStateOfCharge();
+		estimator_data.ground_pressure = position_estimator.getGroundPressure();
 
 		telemetry_estimator.feed(estimator_data);
 	}

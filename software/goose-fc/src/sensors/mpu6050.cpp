@@ -310,11 +310,11 @@ bool MPU6050::readData() {
 
 	const Vector acc_pre_calibrated = Vector(acc_raw_x, acc_raw_y, acc_raw_z)*g_to_ms2/acc_gain;
 
-	constexpr Vector acc_offset = {0.1200f, -0.0200f, -0.3350f};
+	constexpr Vector acc_offset = {0.1150f, -0.0250f, -0.3150f};
 	constexpr Matrix<3, 3> acc_scale = {
-		0.9919f,	0,			0,
-		0,			0.9959f,	0,
-		0,			0,			0.9904f
+		0.9914f,	0,			0,
+		0,			0.9954f,	0,
+		0,			0,			0.9874f
 	};
 
 	acceleration = acc_scale*(acc_pre_calibrated - acc_offset);

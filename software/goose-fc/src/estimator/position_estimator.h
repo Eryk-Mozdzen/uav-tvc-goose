@@ -49,4 +49,5 @@ public:
     Vector getPosition() const;
     Vector getVelocity() const;
     Vector getLinearAcceleration() const;
+    float getGroundPressure() const;
 };

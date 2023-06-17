@@ -15,6 +15,7 @@ namespace comm {
 		float velocity[3];
 		float acceleration[3];
 		float soc;
+		float ground_pressure;
 	};
 
 	struct Controller {

@@ -3,7 +3,7 @@
 
 PositionEstimator::PositionEstimator() :
         ekf{{0.f, 0.f, 0.f, 0.f, 0.f, 0.f, 101325.f}},
-        movement_model{Matrix<7, 7>::identity()*0.001f},
+        movement_model{Matrix<7, 7>::identity()*0.01f},
         laser_model{{0.1f}},
         barometer_model{{100.f}} {
 
@@ -134,4 +134,10 @@ Vector PositionEstimator::getVelocity() const {
 
 Vector PositionEstimator::getLinearAcceleration() const {
     return linear;
+}
+
+float PositionEstimator::getGroundPressure() const {
+    const Matrix<7, 1> x = ekf.getState();
+
+    return x(6, 0);
 }

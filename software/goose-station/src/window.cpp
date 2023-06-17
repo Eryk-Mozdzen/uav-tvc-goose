@@ -15,7 +15,7 @@ Window::Window(QWidget *parent) : QWidget(parent),
         setpoint{"setpoint", {"roll", "pitch", "yaw", "Wx", "Wy", "Wz", "z", "Vz"}},
         process{"process value", {"roll", "pitch", "yaw", "Wx", "Wy", "Wz", "z", "Vz"}},
         actuators{"actuators", {"fin 1", "fin 2", "fin 3", "fin 4", "throttle"}},
-        others{"others", {"state"}},
+        others{"others", {"state", "pressure 0"}},
         power{"power", {"voltage", "current", "battery"}},
         position{"position", {"x", "y", "z"}},
         velocity{"velocity", {"x", "y", "z"}},
@@ -148,6 +148,8 @@ void Window::frameReceived(Transfer::FrameRX frame) {
         acceleration.set(0, "%+3.2f", estimator_data.acceleration[0]);
         acceleration.set(1, "%+3.2f", estimator_data.acceleration[1]);
         acceleration.set(2, "%+3.2f", estimator_data.acceleration[2]);
+
+        others.set(1, "%6.0f", estimator_data.ground_pressure);
     }
 
     if(frame.id==Transfer::ID::TELEMETRY_CONTROLLER) {
@@ -211,5 +213,14 @@ void Window::frameReceived(Transfer::FrameRX frame) {
         float current;
         frame.getPayload(current);
         power.set(1, "%2.2f", current);
+    }
+
+    if(frame.id==Transfer::ID::SENSOR_ACCELERATION) {
+        struct Vector { float x, y, z; } acceleration;
+        frame.getPayload(acceleration);
+
+        const float len = std::sqrt(acceleration.x*acceleration.x + acceleration.y*acceleration.y + acceleration.z*acceleration.z);
+
+        std::cout << EscapeCode::MAGENTA << acceleration.x << "\t" << acceleration.y << "\t" << acceleration.z << "\t" << len << std::endl;
     }
 }
