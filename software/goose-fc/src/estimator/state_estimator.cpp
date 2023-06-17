@@ -5,13 +5,13 @@
 #include "logger.h"
 #include "transport.h"
 #include "attitude_estimator.h"
-#include "altitude_estimator.h"
+#include "position_estimator.h"
 #include "battery_estimator.h"
 #include "interval_logger.h"
 
 class StateEstimator : TaskClassS<2048> {
 	AttitudeEstimator attitude_estimator;
-	AltitudeEstimator altitude_estimator;
+	PositionEstimator position_estimator;
 	BatteryEstimator battery_estimator;
 
 	IntervalLogger<comm::Estimator> telemetry_estimator;
@@ -33,11 +33,10 @@ void StateEstimator::task() {
 
 	TickType_t time = xTaskGetTickCount();
 
-	Transport::Sensors type;
-
 	while(1) {
 		xTaskDelayUntil(&time, 10);
 
+		Transport::Sensors type;
 		while(Transport::getInstance().sensor_queue.pop(type, 0)) {
 
 			switch(type) {
@@ -45,7 +44,7 @@ void StateEstimator::task() {
 					Vector acc;
 					Transport::getInstance().sensor_queue.getValue(acc);
 					attitude_estimator.feedAcceleration(acc);
-					altitude_estimator.feedAcceleration(acc);
+					position_estimator.feedAcceleration(acc);
 				} break;
 				case Transport::Sensors::GYROSCOPE: {
 					Vector gyr;
@@ -60,12 +59,12 @@ void StateEstimator::task() {
 				case Transport::Sensors::BAROMETER: {
 					float press;
 					Transport::getInstance().sensor_queue.getValue(press);
-					altitude_estimator.feedPressure(press);
+					position_estimator.feedPressure(press);
 				} break;
 				case Transport::Sensors::LASER: {
 					float dist;
 					Transport::getInstance().sensor_queue.getValue(dist);
-					altitude_estimator.feedDistance(dist);
+					position_estimator.feedDistance(dist);
 				} break;
 				case Transport::Sensors::VOLTAGE: {
 					float voltage;
@@ -82,36 +81,29 @@ void StateEstimator::task() {
 
 		const Quaternion attitude = attitude_estimator.getAttitude();
 
-		altitude_estimator.feedAttitude(attitude);
+		position_estimator.setAttitude(attitude);
 
 		const Matrix<3, 1> rpy = attitude.getRollPitchYaw();
 		const Vector omega = attitude_estimator.getRotationRates();
-		const Vector lin_acc = altitude_estimator.getLinearAcceleration();
+		const Vector position = position_estimator.getPosition();
+		const Vector velocity = position_estimator.getVelocity();
+		const Vector acceleration = position_estimator.getLinearAcceleration();
 
 		comm::Controller::State process_value;
-		process_value.rpy[0] = rpy(0, 0);
-		process_value.rpy[1] = rpy(0, 1);
-		process_value.rpy[2] = rpy(0, 2);
-		process_value.w[0] = omega.x;
-		process_value.w[1] = omega.y;
-		process_value.w[2] = omega.z;
-		process_value.z = altitude_estimator.getAltitude();
-		process_value.vz = altitude_estimator.getVerticalVelocity();
+		memcpy(process_value.rpy, &rpy, 3*sizeof(float));
+		memcpy(process_value.w, &omega, 3*sizeof(float));
+		process_value.z = position.z;
+		process_value.vz = velocity.z;
 
 		Transport::getInstance().state_queue.push(process_value, 2);
 
 		comm::Estimator estimator_data;
-		estimator_data.quat[0] = attitude.i;
-		estimator_data.quat[1] = attitude.j;
-		estimator_data.quat[2] = attitude.k;
-		estimator_data.quat[3] = attitude.w;
-		estimator_data.linear[0] = lin_acc.x;
-		estimator_data.linear[1] = lin_acc.y;
-		estimator_data.linear[2] = lin_acc.z;
-		estimator_data.z = altitude_estimator.getAltitude();
-		estimator_data.vz = altitude_estimator.getVerticalVelocity();
-		estimator_data.altitude_src = altitude_estimator.getSource();
-		estimator_data.battery_soc = battery_estimator.getStateOfCharge();
+		memcpy(estimator_data.attitude, &attitude, 4*sizeof(float));
+		memcpy(estimator_data.position, &position, 3*sizeof(float));
+		memcpy(estimator_data.velocity, &velocity, 3*sizeof(float));
+		memcpy(estimator_data.acceleration, &acceleration, 3*sizeof(float));
+		estimator_data.soc = battery_estimator.getStateOfCharge();
+		estimator_data.ground_pressure = position_estimator.getGroundPressure();
 
 		telemetry_estimator.feed(estimator_data);
 	}

@@ -83,7 +83,7 @@ add_executable(${TARGET}
 	"src/communication/wireless_transmitter.cpp"
 	"src/communication/wireless_receiver.cpp"
 	"src/estimator/attitude_estimator.cpp"
-	"src/estimator/altitude_estimator.cpp"
+	"src/estimator/position_estimator.cpp"
 	"src/estimator/battery_estimator.cpp"
 	"src/estimator/state_estimator.cpp"
 	"src/utils/quaternion.cpp"
@@ -136,7 +136,6 @@ target_include_directories(${TARGET} PRIVATE
 
 target_compile_options(${TARGET} PRIVATE
 	$<$<COMPILE_LANGUAGE:ASM>:
-		#-O0 -g3
 		-Os -g
 
 		-mthumb
@@ -149,7 +148,6 @@ target_compile_options(${TARGET} PRIVATE
 	>
 
 	$<$<COMPILE_LANGUAGE:C>:
-		#-O0 -g3
 		-Os -g
 		-std=c17
 
@@ -168,7 +166,6 @@ target_compile_options(${TARGET} PRIVATE
 	>
 
 	$<$<COMPILE_LANGUAGE:CXX>:
-		#-O0 -g3
 		-Os -g
 		-std=c++17
 

@@ -26,6 +26,9 @@ class Window : public QWidget {
     widgets::Form actuators;
     widgets::Form others;
     widgets::Form power;
+    widgets::Form position;
+    widgets::Form velocity;
+    widgets::Form acceleration;
 
     QTimer timer;
 

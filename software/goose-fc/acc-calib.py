@@ -15,9 +15,9 @@ class Axis:
         return scale
 
 axes = [
-    Axis(min=- 9.77, max =10.01),
-    Axis(min=- 9.87, max = 9.83),
-    Axis(min=-10.24, max = 9.57)
+    Axis(min=- 9.78, max =10.01),
+    Axis(min=- 9.88, max = 9.83),
+    Axis(min=-10.25, max = 9.62)
 ]
 
 offset = [a.get_offset() for a in axes]

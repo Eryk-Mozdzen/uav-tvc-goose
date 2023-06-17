@@ -10,16 +10,12 @@ namespace comm {
 	};
 
 	struct Estimator {
-		enum AltitudeSource {
-			DISTANCE,
-			PRESSURE
-		};
-
-		float quat[4];
-		float linear[3];
-		float z, vz;
-		float battery_soc;
-		AltitudeSource altitude_src;
+		float attitude[4];
+		float position[3];
+		float velocity[3];
+		float acceleration[3];
+		float soc;
+		float ground_pressure;
 	};
 
 	struct Controller {

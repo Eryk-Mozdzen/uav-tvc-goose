@@ -1,18 +1,10 @@
 #include "attitude_estimator.h"
 
 AttitudeEstimator::AttitudeEstimator() :
-        ekf{
-            this,
-            &AttitudeEstimator::f,
-            &AttitudeEstimator::h,
-            &AttitudeEstimator::f_tangent,
-            &AttitudeEstimator::h_tangent,
-            Matrix<7, 7>::identity()*0.0001f,
-            Matrix<6, 6>::identity()*1.f,
-            {0, -1, 0, 0, 0, 0, 0}
-        },
-        acc_ready{false},
-        mag_ready{false},
+        ekf{{0, -1, 0, 0, 0, 0, 0}},
+        rotation_model{Matrix<7, 7>::identity()*0.0001f},
+        accelerometer_model{Matrix<3, 3>::identity()*1.f},
+        magnetometer_model{Matrix<3, 3>::identity()*1.f},
         azimuth_setter{
             "attitude azimuth setter",
             this,
@@ -24,10 +16,8 @@ AttitudeEstimator::AttitudeEstimator() :
     azimuth_setter.start();
 }
 
-Matrix<7, 1> AttitudeEstimator::f(const Matrix<7, 1> state, const Matrix<3, 1> gyr) {
-    (void)gyr;
-
-    const Quaternion q(state(0, 0), state(1, 0), state(2, 0), state(3, 0));
+Matrix<7, 1> AttitudeEstimator::RotationModel::f(Matrix<7, 1> x, Matrix<3, 1> u) const {
+    const Quaternion q(x(0, 0), x(1, 0), x(2, 0), x(3, 0));
 
     const Matrix<7, 7> A = {
         1, 0, 0, 0,  0.5f*dt*q.i,  0.5f*dt*q.j,  0.5f*dt*q.k,
@@ -50,29 +40,13 @@ Matrix<7, 1> AttitudeEstimator::f(const Matrix<7, 1> state, const Matrix<3, 1> g
         0,    0,    0
     };
 
-    return A*state + 0.5f*dt*B*gyr;
+    return A*x + 0.5f*dt*B*u;
 }
 
-Matrix<6, 1> AttitudeEstimator::h(const Matrix<7, 1> state) {
-    const Quaternion q(state(0, 0), state(1, 0), state(2, 0), state(3, 0));
+Matrix<7, 7> AttitudeEstimator::RotationModel::f_tangent(const Matrix<7, 1> x, const Matrix<3, 1> u) const {
+    (void)u;
 
-    const Matrix<6, 7> C = {
-         2.f*q.j, -2.f*q.k,  2.f*q.w, -2.f*q.i, 0, 0, 0,
-        -2.f*q.i, -2.f*q.w, -2.f*q.k, -2.f*q.j, 0, 0, 0,
-        -2.f*q.w,  2.f*q.i,  2.f*q.j, -2.f*q.k, 0, 0, 0,
-
-        -2.f*q.k, -2.f*q.j, -2.f*q.i, -2.f*q.w, 0, 0, 0,
-        -2.f*q.w,  2.f*q.i, -2.f*q.j,  2.f*q.k, 0, 0, 0,
-         2.f*q.i,  2.f*q.w, -2.f*q.k, -2.f*q.j, 0, 0, 0
-    };
-
-    return C*state;
-}
-
-Matrix<7, 7> AttitudeEstimator::f_tangent(const Matrix<7, 1> state, const Matrix<3, 1> gyr) {
-    (void)gyr;
-
-    const Quaternion q(state(0, 0), state(1, 0), state(2, 0), state(3, 0));
+    const Quaternion q(x(0, 0), x(1, 0), x(2, 0), x(3, 0));
 
     const Matrix<7, 7> A = {
         1, 0, 0, 0,  0.5f*dt*q.i,  0.5f*dt*q.j,  0.5f*dt*q.k,
@@ -88,14 +62,46 @@ Matrix<7, 7> AttitudeEstimator::f_tangent(const Matrix<7, 1> state, const Matrix
     return A;
 }
 
-Matrix<6, 7> AttitudeEstimator::h_tangent(const Matrix<7, 1> state) {
-    const Quaternion q(state(0, 0), state(1, 0), state(2, 0), state(3, 0));
+Matrix<3, 1> AttitudeEstimator::AccelerometerModel::h(Matrix<7, 1> x) const {
+    const Quaternion q(x(0, 0), x(1, 0), x(2, 0), x(3, 0));
 
-    const Matrix<6, 7> C = {
+    const Matrix<3, 7> C = {
          2.f*q.j, -2.f*q.k,  2.f*q.w, -2.f*q.i, 0, 0, 0,
         -2.f*q.i, -2.f*q.w, -2.f*q.k, -2.f*q.j, 0, 0, 0,
-        -2.f*q.w,  2.f*q.i,  2.f*q.j, -2.f*q.k, 0, 0, 0,
+        -2.f*q.w,  2.f*q.i,  2.f*q.j, -2.f*q.k, 0, 0, 0
+    };
 
+    return C*x;
+}
+
+Matrix<3, 7> AttitudeEstimator::AccelerometerModel::h_tangent(Matrix<7, 1> x) const {
+    const Quaternion q(x(0, 0), x(1, 0), x(2, 0), x(3, 0));
+
+    const Matrix<3, 7> C = {
+         2.f*q.j, -2.f*q.k,  2.f*q.w, -2.f*q.i, 0, 0, 0,
+        -2.f*q.i, -2.f*q.w, -2.f*q.k, -2.f*q.j, 0, 0, 0,
+        -2.f*q.w,  2.f*q.i,  2.f*q.j, -2.f*q.k, 0, 0, 0
+    };
+
+    return C;
+}
+
+Matrix<3, 1> AttitudeEstimator::MagnetometerModel::h(const Matrix<7, 1> x) const {
+    const Quaternion q(x(0, 0), x(1, 0), x(2, 0), x(3, 0));
+
+    const Matrix<3, 7> C = {
+        -2.f*q.k, -2.f*q.j, -2.f*q.i, -2.f*q.w, 0, 0, 0,
+        -2.f*q.w,  2.f*q.i, -2.f*q.j,  2.f*q.k, 0, 0, 0,
+         2.f*q.i,  2.f*q.w, -2.f*q.k, -2.f*q.j, 0, 0, 0
+    };
+
+    return C*x;
+}
+
+Matrix<3, 7> AttitudeEstimator::MagnetometerModel::h_tangent(const Matrix<7, 1> x) const {
+    const Quaternion q(x(0, 0), x(1, 0), x(2, 0), x(3, 0));
+
+    const Matrix<3, 7> C = {
         -2.f*q.k, -2.f*q.j, -2.f*q.i, -2.f*q.w, 0, 0, 0,
         -2.f*q.w,  2.f*q.i, -2.f*q.j,  2.f*q.k, 0, 0, 0,
          2.f*q.i,  2.f*q.w, -2.f*q.k, -2.f*q.j, 0, 0, 0
@@ -104,18 +110,15 @@ Matrix<6, 7> AttitudeEstimator::h_tangent(const Matrix<7, 1> state) {
     return C;
 }
 
-Vector AttitudeEstimator::removeMagneticDeclination(Vector b_mag) const {
+Vector AttitudeEstimator::removeMagneticDeclination(const Vector b_mag) const {
 	const Quaternion q = getAttitudeNED();
 	const Matrix<3, 3> rot = q.getRotation();
 
 	Vector w_mag = rot*b_mag;
 
 	w_mag.z = 0.f;
-	w_mag.normalize();
 
-	b_mag = rot.transposition()*w_mag;
-
-	return b_mag;
+	return rot.transposition()*w_mag;
 }
 
 void AttitudeEstimator::zeroAzimuth() {
@@ -137,43 +140,25 @@ Quaternion AttitudeEstimator::getAttitudeNED() const {
 	return q;
 }
 
-void AttitudeEstimator::updateEKF() {
-    if(acc_ready && mag_ready) {
-        acc_ready = false;
-        mag_ready = false;
-
-        acceleration.normalize();
-        magnetic_field.normalize();
-
-        const Vector mag = removeMagneticDeclination(magnetic_field);
-
-        ekf.update({acceleration.x, acceleration.y, acceleration.z, mag.x, mag.y, mag.z});
-    }
-}
-
-void AttitudeEstimator::feedAcceleration(const Vector &acc) {
-    acceleration = acc;
-
-    const float len = acceleration.getLength()/9.81f;
+void AttitudeEstimator::feedAcceleration(Vector acc) {
+    const float len = acc.getLength()/9.81f;
 
     if(len<1.03f && len>0.97f) {
-        acc_ready = true;
+        acc.normalize();
+        ekf.correct(accelerometer_model, {acc.x, acc.y, acc.z});
     }
-
-    updateEKF();
 }
 
-void AttitudeEstimator::feedGyration(const Vector &gyr) {
-    ekf.predict(gyr);
-
+void AttitudeEstimator::feedGyration(Vector gyr) {
     gyration = gyr;
+
+    ekf.predict(rotation_model, {gyr.x, gyr.y, gyr.z});
 }
 
-void AttitudeEstimator::feedMagneticField(const Vector &mag) {
-    magnetic_field = mag;
-    mag_ready = true;
-
-    updateEKF();
+void AttitudeEstimator::feedMagneticField(Vector mag) {
+    mag = removeMagneticDeclination(mag);
+    mag.normalize();
+    ekf.correct(magnetometer_model, {mag.x, mag.y, mag.z});
 }
 
 Quaternion AttitudeEstimator::getAttitude() const {

@@ -1,21 +1,13 @@
 #include "battery_estimator.h"
 
 BatteryEstimator::BatteryEstimator() :
-        ekf{
-            this,
-            &BatteryEstimator::f,
-            &BatteryEstimator::h,
-            &BatteryEstimator::f_tangent,
-            &BatteryEstimator::h_tangent,
-            Matrix<1, 1>::identity()*10000.f,
-            Matrix<1, 1>::identity(),
-            {0.f}
-        } {
+        ekf{{0.f}},
+        discharge_model{{0.0001f}},
+        voltage_model{{1.f}} {
 
 }
 
-Matrix<1, 1> BatteryEstimator::f(const Matrix<1, 1> x, const Matrix<1, 1> u) {
-
+Matrix<1, 1> BatteryEstimator::DischargeModel::f(Matrix<1, 1> x, Matrix<1, 1> u) const {
     const Matrix<1, 1> A = {
         1.f
     };
@@ -27,7 +19,14 @@ Matrix<1, 1> BatteryEstimator::f(const Matrix<1, 1> x, const Matrix<1, 1> u) {
     return A*x + B*u;
 }
 
-Matrix<1, 1> BatteryEstimator::h(const Matrix<1, 1> x) {
+Matrix<1, 1> BatteryEstimator::DischargeModel::f_tangent(Matrix<1, 1> x, Matrix<1, 1> u) const {
+    (void)x;
+    (void)u;
+
+    return {-1.f};
+}
+
+Matrix<1, 1> BatteryEstimator::VoltageModel::h(Matrix<1, 1> x) const {
     const float SOC = x(0, 0);
 
     constexpr float poly[] = {
@@ -48,14 +47,7 @@ Matrix<1, 1> BatteryEstimator::h(const Matrix<1, 1> x) {
     return {poly_value(poly, sizeof(poly)/sizeof(float), SOC)*Battery::cell_num};
 }
 
-Matrix<1, 1> BatteryEstimator::f_tangent(const Matrix<1, 1> x, const Matrix<1, 1> u) {
-    (void)x;
-    (void)u;
-
-    return {-1.f};
-}
-
-Matrix<1, 1> BatteryEstimator::h_tangent(const Matrix<1, 1> x) {
+Matrix<1, 1> BatteryEstimator::VoltageModel::h_tangent(Matrix<1, 1> x) const {
     const float SOC = x(0, 0);
 
     constexpr float poly[] = {
@@ -88,11 +80,11 @@ float BatteryEstimator::poly_value(const float *poly, const uint8_t coeff_num, c
 }
 
 void BatteryEstimator::feedVoltage(const float voltage) {
-    ekf.update({voltage});
+    ekf.correct(voltage_model, {voltage});
 }
 
 void BatteryEstimator::feedCurrent(const float current) {
-    ekf.predict({current});
+    ekf.predict(discharge_model, {current});
 }
 
 float BatteryEstimator::getStateOfCharge() const {
