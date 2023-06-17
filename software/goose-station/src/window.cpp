@@ -15,7 +15,7 @@ Window::Window(QWidget *parent) : QWidget(parent),
         setpoint{"setpoint", {"roll", "pitch", "yaw", "Wx", "Wy", "Wz", "z", "Vz"}},
         process{"process value", {"roll", "pitch", "yaw", "Wx", "Wy", "Wz", "z", "Vz"}},
         actuators{"actuators", {"fin 1", "fin 2", "fin 3", "fin 4", "throttle"}},
-        others{"others", {"state", "pressure 0"}},
+        others{"others", {"state", "ground pressure", "pressure", "distance"}},
         power{"power", {"voltage", "current", "battery"}},
         position{"position", {"x", "y", "z"}},
         velocity{"velocity", {"x", "y", "z"}},
@@ -213,5 +213,17 @@ void Window::frameReceived(Transfer::FrameRX frame) {
         float current;
         frame.getPayload(current);
         power.set(1, "%2.2f", current);
+    }
+
+    if(frame.id==Transfer::ID::SENSOR_PRESSURE) {
+        float pressure;
+        frame.getPayload(pressure);
+        others.set(2, "%6.0f", pressure);
+    }
+
+    if(frame.id==Transfer::ID::SENSOR_DISTANCE) {
+        float distance;
+        frame.getPayload(distance);
+        others.set(3, "%6.3f", distance);
     }
 }
