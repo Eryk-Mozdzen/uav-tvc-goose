@@ -83,7 +83,7 @@ Matrix<1, 7> PositionEstimator::BarometerModel::h_tangent(Matrix<7, 1> x) const 
     const float height = x(2, 0);
     const float press_0 = x(6, 0);
 
-    const float height_deriv = -2.00529e-24f*press_0*powf(44330.f - height, 4.255f);
+    const float height_deriv = -(5.255f/44330.f)*press_0*powf(1.f - height/44330.f, 4.255f);
     const float press_0_deriv = powf(1.f - height/44330.f, 5.255f);
 
     const Matrix<1, 7> C = {
