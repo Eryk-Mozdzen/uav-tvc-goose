@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+
+<html>
+<head>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <script>
+        var map
+        var markers = [];
+
+        function initMap() {
+            map = new google.maps.Map(document.getElementById('map'), {
+                center: {
+                    lat: 51.103525733902586,
+                    lng: 17.085345490751223
+                },
+                zoom: 12
+            });
+        }
+
+        function addMarker(latitude, longitude) {
+            var marker = new google.maps.Marker({
+                position: {
+                    lat: latitude,
+                    lng: longitude
+                },
+                map: map
+            });
+
+            markers.push(marker);
+
+            if(markers.length>100) {
+                var oldestMarker = markers.shift();
+                oldestMarker.setMap(null);
+            }
+        }
+
+        function toCenter() {
+            map.setCenter(marker.position)
+        }
+    </script>
+    <script async defer src="https://maps.googleapis.com/maps/api/js?key=AIzaSyDtUQI47aQX4x4MYIWGcH75oSPtoWKkr5w&callback=initMap"></script>
+    <style>
+        html, body {
+            height: 100%;
+            margin: 0;
+            padding: 0;
+        }
+        #map {
+            height: 100%;
+            width: 100%;
+        }
+    </style>
+</head>
+<body>
+    <div id="map"></div>
+</body>
+</html>
