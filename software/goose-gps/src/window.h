@@ -8,12 +8,13 @@ class Window : public QMainWindow {
     Q_OBJECT
 
     QWebEngineView *view;
+    bool loaded;
     QTimer timer;
 
     void addMarker(double latitude, double longitude);
-    void toCenter();
 
 private slots:
+    void pageLoaded();
     void timerCallback();
 
 public:

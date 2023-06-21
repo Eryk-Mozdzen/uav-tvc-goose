@@ -1,44 +1,38 @@
 <!DOCTYPE html>
-
 <html>
 <head>
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
+    <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
     <script>
         var map
-        var markers = [];
+        var markers = []
 
         function initMap() {
-            map = new google.maps.Map(document.getElementById('map'), {
-                center: {
-                    lat: 51.103525733902586,
-                    lng: 17.085345490751223
-                },
-                zoom: 12
-            });
+            map = L.map('map').setView([51.103525733902586, 17.085345490751223], 19)
+
+            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                attribution: 'Map data &copy; <a href="https://www.openstreetmap.org/">OpenStreetMap</a> contributors',
+                maxZoom: 19,
+            }).addTo(map)
         }
 
-        function addMarker(latitude, longitude) {
-            var marker = new google.maps.Marker({
-                position: {
-                    lat: latitude,
-                    lng: longitude
-                },
-                map: map
-            });
+        function addMarker(lat, lng) {
+            var marker = L.marker([lat, lng])
+            markers.push(marker)
 
-            markers.push(marker);
-
-            if(markers.length>100) {
-                var oldestMarker = markers.shift();
-                oldestMarker.setMap(null);
+            if (markers.length > 100) {
+                var oldestMarker = markers.shift()
+                map.removeLayer(oldestMarker)
             }
-        }
 
-        function toCenter() {
-            map.setCenter(marker.position)
+            marker.addTo(map)
         }
     </script>
-    <script async defer src="https://maps.googleapis.com/maps/api/js?key=AIzaSyDtUQI47aQX4x4MYIWGcH75oSPtoWKkr5w&callback=initMap"></script>
+    <script>
+        window.addEventListener('DOMContentLoaded', function() {
+            initMap()
+        })
+    </script>
     <style>
         html, body {
             height: 100%;
