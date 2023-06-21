@@ -1,22 +1,18 @@
 #pragma once
 
-#include <QMainWindow>
-#include <QWebEngineView>
+#include <QWidget>
+#include "interactive_map.h"
 #include <QTimer>
 
-class Window : public QMainWindow {
+class Window : public QWidget {
     Q_OBJECT
 
-    QWebEngineView *view;
-    bool loaded;
+    InteractiveMap *map;
     QTimer timer;
 
-    void addMarker(double latitude, double longitude);
-
 private slots:
-    void pageLoaded();
     void timerCallback();
 
 public:
-    explicit Window(QWidget *parent = nullptr);
+    Window();
 };
