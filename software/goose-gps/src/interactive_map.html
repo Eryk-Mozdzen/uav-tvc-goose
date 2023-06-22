@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+
+<html>
+    <head>
+        <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
+        <style>
+            html, body {
+                height: 100%;
+                margin: 0;
+                padding: 0;
+            }
+
+            #map {
+                height: 100%;
+                width: 100%;
+            }
+        </style>
+        <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+        <script>
+            var map
+            var markers = []
+
+            function addMarker(lat, lng) {
+                let marker = L.marker([lat, lng])
+
+                marker.addTo(map)
+
+                markers.push(marker)
+
+                if(markers.length>100) {
+                    let oldestMarker = markers.shift()
+                    map.removeLayer(oldestMarker)
+                }
+            }
+
+            window.addEventListener('DOMContentLoaded', function() {
+                map = L.map('map').setView([51.103525733902586, 17.085345490751223], 19)
+
+                L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                    attribution: 'Map data &copy; <a href="https://www.openstreetmap.org/">OpenStreetMap</a> contributors',
+                    maxZoom: 19,
+                }).addTo(map)
+            })
+        </script>
+    </head>
+    <body>
+        <div id="map"></div>
+    </body>
+</html>

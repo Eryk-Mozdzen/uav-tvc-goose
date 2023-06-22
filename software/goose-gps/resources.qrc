@@ -2,6 +2,6 @@
 
 <RCC>
     <qresource prefix="/">
-        <file>file.html</file>
+        <file>src/interactive_map.html</file>
     </qresource>
 </RCC>

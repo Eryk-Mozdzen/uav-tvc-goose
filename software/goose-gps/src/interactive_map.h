@@ -6,7 +6,7 @@
 class InteractiveMap : public QWidget {
     Q_OBJECT
 
-    QWebEngineView *view;
+    QWebEngineView view;
     bool loaded;
 
 private slots:
