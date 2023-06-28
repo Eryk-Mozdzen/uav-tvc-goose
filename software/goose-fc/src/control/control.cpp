@@ -78,7 +78,7 @@ Control::Control() : TaskClassS{"control loop", TaskPrio_Mid},
 
 void Control::task() {
 
-	Actuators::getInstace().init();
+	Actuators::getInstance().init();
 
 	sm.start();
 
@@ -97,6 +97,17 @@ void Control::task() {
 			if(frame.id==Transfer::ID::CONTROL_SETPOINT) {
 				if(frame.getPayload(setpoint)) {
 					disconnect.reset();
+				}
+			}
+
+			if(frame.id==Transfer::ID::CONTROL_MANUAL) {
+				comm::Manual manual;
+				if(frame.getPayload(manual)) {
+					Actuators::getInstance().setMotorThrottle(manual.throttle);
+					Actuators::getInstance().setFinAngle(Actuators::FIN1, manual.angles[0]);
+					Actuators::getInstance().setFinAngle(Actuators::FIN2, manual.angles[1]);
+					Actuators::getInstance().setFinAngle(Actuators::FIN3, manual.angles[2]);
+					Actuators::getInstance().setFinAngle(Actuators::FIN4, manual.angles[3]);
 				}
 			}
 		}
@@ -135,11 +146,11 @@ comm::Controller Control::getTelemetry() {
 	comm::Controller controller_data;
 	controller_data.setpoint = controller_sp;
 	controller_data.process_value = process_value;
-	controller_data.angles[0] = Actuators::getInstace().getFinAngle(Actuators::Fin::FIN1);
-	controller_data.angles[1] = Actuators::getInstace().getFinAngle(Actuators::Fin::FIN2);
-	controller_data.angles[2] = Actuators::getInstace().getFinAngle(Actuators::Fin::FIN3);
-	controller_data.angles[3] = Actuators::getInstace().getFinAngle(Actuators::Fin::FIN4);
-	controller_data.throttle = Actuators::getInstace().getMotorThrottle();
+	controller_data.angles[0] = Actuators::getInstance().getFinAngle(Actuators::Fin::FIN1);
+	controller_data.angles[1] = Actuators::getInstance().getFinAngle(Actuators::Fin::FIN2);
+	controller_data.angles[2] = Actuators::getInstance().getFinAngle(Actuators::Fin::FIN3);
+	controller_data.angles[3] = Actuators::getInstance().getFinAngle(Actuators::Fin::FIN4);
+	controller_data.throttle = Actuators::getInstance().getMotorThrottle();
 	controller_data.state = current;
 
 	return controller_data;

@@ -4,6 +4,7 @@
 #include <QTimer>
 #include <QComboBox>
 #include <QPushButton>
+#include <QSlider>
 #include "form.h"
 #include "usb.h"
 #include "telnet.h"
@@ -30,7 +31,10 @@ class Window : public QWidget {
     widgets::Form velocity;
     widgets::Form acceleration;
 
+    QSlider *manual[5];
+
     QTimer timer;
+    QTimer manual_timer;
 
     USB usb;
 	Telnet telnet;
@@ -42,6 +46,8 @@ signals:
 private slots:
     void sendSetpoint();
     void sendCommand(comm::Command cmd);
+    void sendManual();
+    void manualSwitch();
     void freqChanged(QString value);
     void sourceChanged(int index, QString value);
     void frameReceived(Transfer::FrameRX frame);

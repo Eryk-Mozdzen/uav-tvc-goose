@@ -41,4 +41,9 @@ namespace comm {
 		SMState state;
 	};
 
+	struct Manual {
+		float throttle;
+		float angles[4];
+	};
+
 }

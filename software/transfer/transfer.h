@@ -85,7 +85,8 @@ public:
 		TELEMETRY_CONTROLLER,
 
 		CONTROL_SETPOINT,
-		CONTROL_COMMAND
+		CONTROL_COMMAND,
+		CONTROL_MANUAL
 	};
 
 	using FrameTX = _transfer::FrameTX<max_length>;
