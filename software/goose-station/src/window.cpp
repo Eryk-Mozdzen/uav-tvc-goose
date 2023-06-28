@@ -7,6 +7,7 @@
 #include <QLineEdit>
 #include <QLabel>
 #include <QComboBox>
+#include <QCheckBox>
 #include <QDebug>
 #include <cmath>
 
@@ -62,6 +63,37 @@ Window::Window(QWidget *parent) : QWidget(parent),
 
 	timer.setInterval(20);
 	timer.start();
+
+    {
+        QGroupBox *group = new QGroupBox("manual");
+        QGridLayout *grid = new QGridLayout(group);
+
+        QCheckBox *manual_switch = new QCheckBox("Manual Mode");
+
+        manual[0] = new QSlider(Qt::Orientation::Vertical);
+        manual[1] = new QSlider(Qt::Orientation::Vertical);
+        manual[2] = new QSlider(Qt::Orientation::Vertical);
+        manual[3] = new QSlider(Qt::Orientation::Vertical);
+        manual[4] = new QSlider(Qt::Orientation::Vertical);
+
+        manual[0]->setRange(-45, 45);
+        manual[1]->setRange(-45, 45);
+        manual[2]->setRange(-45, 45);
+        manual[3]->setRange(-45, 45);
+        manual[4]->setRange(0, 100);
+
+        manual_timer.setInterval(50);
+        connect(&manual_timer, &QTimer::timeout, this, &Window::sendManual);
+        connect(manual_switch, &QPushButton::clicked, this, &Window::manualSwitch);
+
+        grid->addWidget(manual[0], 0, 0);
+        grid->addWidget(manual[1], 0, 1);
+        grid->addWidget(manual[2], 0, 2);
+        grid->addWidget(manual[3], 0, 3);
+        grid->addWidget(manual[4], 0, 4);
+        grid->addWidget(manual_switch, 1, 0, 4, 0);
+        layout->addWidget(group, 0, 4, 4, 4);
+    }
 
     connect(&timer, &QTimer::timeout, this, &Window::sendSetpoint);
     connect(freq, &QComboBox::textActivated, this, &Window::freqChanged);
@@ -127,6 +159,32 @@ void Window::sendSetpoint() {
 
 void Window::sendCommand(comm::Command cmd) {
     transmit(Transfer::encode(cmd, Transfer::ID::CONTROL_COMMAND));
+}
+
+void Window::sendManual() {
+
+    comm::Manual data;
+    data.angles[0] = deg2rad*manual[0]->value();
+    data.angles[1] = deg2rad*manual[1]->value();
+    data.angles[2] = deg2rad*manual[2]->value();
+    data.angles[3] = deg2rad*manual[3]->value();
+    data.throttle = manual[4]->value()/100.f;
+
+    transmit(Transfer::encode(data, Transfer::ID::CONTROL_MANUAL));
+}
+
+void Window::manualSwitch() {
+    if(manual_timer.isActive()) {
+        manual_timer.stop();
+    } else {
+        manual[0]->setValue(0);
+        manual[1]->setValue(0);
+        manual[2]->setValue(0);
+        manual[3]->setValue(0);
+        manual[4]->setValue(0);
+
+        manual_timer.start();
+    }
 }
 
 void Window::frameReceived(Transfer::FrameRX frame) {

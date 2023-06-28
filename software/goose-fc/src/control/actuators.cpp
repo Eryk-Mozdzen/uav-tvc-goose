@@ -92,9 +92,9 @@ void Actuators::setMotorThrottle(float thorttle) {
 }
 
 float Actuators::getFinAngle(const Fin fin) const {
-    const uint16_t compare = __HAL_TIM_GET_COMPARE(&htim3_servo, fin);
+    const float compare = __HAL_TIM_GET_COMPARE(&htim3_servo, fin);
 
-    return (((float)compare) - ((float)Servo::center_compare))/(((float)Servo::max_compare) - ((float)Servo::center_compare))*0.5f*pi;
+    return (compare - ((float)Servo::center_compare))/((float)Servo::radius_compare)*0.5f*pi;
 }
 
 float Actuators::getMotorThrottle() const {
@@ -103,7 +103,7 @@ float Actuators::getMotorThrottle() const {
     return (((float)compare) - ((float)ESC::min_compare))/(((float)ESC::max_compare) - ((float)ESC::min_compare));
 }
 
-Actuators & Actuators::getInstace() {
+Actuators & Actuators::getInstance() {
     static Actuators instance;
 
     return instance;

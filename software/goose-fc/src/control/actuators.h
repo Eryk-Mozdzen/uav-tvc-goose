@@ -46,5 +46,5 @@ public:
     float getFinAngle(const Fin fin) const;
     float getMotorThrottle() const;
 
-    static  Actuators & getInstace();
+    static  Actuators & getInstance();
 };

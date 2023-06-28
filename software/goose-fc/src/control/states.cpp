@@ -11,11 +11,11 @@ void Abort::enter() {
 
     Controller::getInstance().setSetpoint({0.f, 0.f, 0.f, 0.f, 0.f, 0.f, 0.f, 0.f});
 
-    Actuators::getInstace().setFinAngle(Actuators::Fin::FIN1, 0.f);
-	Actuators::getInstace().setFinAngle(Actuators::Fin::FIN2, 0.f);
-	Actuators::getInstace().setFinAngle(Actuators::Fin::FIN3, 0.f);
-	Actuators::getInstace().setFinAngle(Actuators::Fin::FIN4, 0.f);
-	Actuators::getInstace().setMotorThrottle(0.f);
+    Actuators::getInstance().setFinAngle(Actuators::Fin::FIN1, 0.f);
+	Actuators::getInstance().setFinAngle(Actuators::Fin::FIN2, 0.f);
+	Actuators::getInstance().setFinAngle(Actuators::Fin::FIN3, 0.f);
+	Actuators::getInstance().setFinAngle(Actuators::Fin::FIN4, 0.f);
+	Actuators::getInstance().setMotorThrottle(0.f);
 }
 
 void Ready::enter() {
@@ -24,11 +24,11 @@ void Ready::enter() {
 
     Controller::getInstance().setSetpoint({0.f, 0.f, 0.f, 0.f, 0.f, 0.f, 0.f, 0.f});
 
-    Actuators::getInstace().setFinAngle(Actuators::Fin::FIN1, 0.f);
-	Actuators::getInstace().setFinAngle(Actuators::Fin::FIN2, 0.f);
-	Actuators::getInstace().setFinAngle(Actuators::Fin::FIN3, 0.f);
-	Actuators::getInstace().setFinAngle(Actuators::Fin::FIN4, 0.f);
-	Actuators::getInstace().setMotorThrottle(0.f);
+    Actuators::getInstance().setFinAngle(Actuators::Fin::FIN1, 0.f);
+	Actuators::getInstance().setFinAngle(Actuators::Fin::FIN2, 0.f);
+	Actuators::getInstance().setFinAngle(Actuators::Fin::FIN3, 0.f);
+	Actuators::getInstance().setFinAngle(Actuators::Fin::FIN4, 0.f);
+	Actuators::getInstance().setMotorThrottle(0.f);
 }
 
 void Active::enter() {
@@ -50,11 +50,11 @@ void Active::execute() {
 
     const Matrix<5, 1> u = Controller::getInstance().calculate();
 
-    Actuators::getInstace().setFinAngle(Actuators::Fin::FIN1, u(0, 0));
-	Actuators::getInstace().setFinAngle(Actuators::Fin::FIN2, u(1, 0));
-	Actuators::getInstace().setFinAngle(Actuators::Fin::FIN3, u(2, 0));
-	Actuators::getInstace().setFinAngle(Actuators::Fin::FIN4, u(3, 0));
-	Actuators::getInstace().setMotorThrottle(u(4, 0));
+    Actuators::getInstance().setFinAngle(Actuators::Fin::FIN1, u(0, 0));
+	Actuators::getInstance().setFinAngle(Actuators::Fin::FIN2, u(1, 0));
+	Actuators::getInstance().setFinAngle(Actuators::Fin::FIN3, u(2, 0));
+	Actuators::getInstance().setFinAngle(Actuators::Fin::FIN4, u(3, 0));
+	Actuators::getInstance().setMotorThrottle(u(4, 0));
 }
 
 void TakeOff::enter() {
@@ -82,11 +82,11 @@ void TakeOff::execute() {
 
     const Matrix<5, 1> u = Controller::getInstance().calculate();
 
-    Actuators::getInstace().setFinAngle(Actuators::Fin::FIN1, u(0, 0));
-	Actuators::getInstace().setFinAngle(Actuators::Fin::FIN2, u(1, 0));
-	Actuators::getInstace().setFinAngle(Actuators::Fin::FIN3, u(2, 0));
-	Actuators::getInstace().setFinAngle(Actuators::Fin::FIN4, u(3, 0));
-	Actuators::getInstace().setMotorThrottle(u(4, 0));
+    Actuators::getInstance().setFinAngle(Actuators::Fin::FIN1, u(0, 0));
+	Actuators::getInstance().setFinAngle(Actuators::Fin::FIN2, u(1, 0));
+	Actuators::getInstance().setFinAngle(Actuators::Fin::FIN3, u(2, 0));
+	Actuators::getInstance().setFinAngle(Actuators::Fin::FIN4, u(3, 0));
+	Actuators::getInstance().setMotorThrottle(u(4, 0));
 }
 
 void Landing::enter() {
@@ -112,11 +112,11 @@ void Landing::execute() {
 
     const Matrix<5, 1> u = Controller::getInstance().calculate();
 
-    Actuators::getInstace().setFinAngle(Actuators::Fin::FIN1, u(0, 0));
-	Actuators::getInstace().setFinAngle(Actuators::Fin::FIN2, u(1, 0));
-	Actuators::getInstace().setFinAngle(Actuators::Fin::FIN3, u(2, 0));
-	Actuators::getInstace().setFinAngle(Actuators::Fin::FIN4, u(3, 0));
-	Actuators::getInstace().setMotorThrottle(u(4, 0));
+    Actuators::getInstance().setFinAngle(Actuators::Fin::FIN1, u(0, 0));
+	Actuators::getInstance().setFinAngle(Actuators::Fin::FIN2, u(1, 0));
+	Actuators::getInstance().setFinAngle(Actuators::Fin::FIN3, u(2, 0));
+	Actuators::getInstance().setFinAngle(Actuators::Fin::FIN4, u(3, 0));
+	Actuators::getInstance().setMotorThrottle(u(4, 0));
 }
 
 }
