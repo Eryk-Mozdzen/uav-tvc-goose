@@ -15,7 +15,7 @@ find_package(Qt5 COMPONENTS Widgets WebEngineWidgets REQUIRED)
 add_executable(${PROJECT_NAME}
 	"src/main.cpp"
 	"src/window.cpp"
-	"src/interactive_map.cpp"
+	"src/map.cpp"
 
 	"resources.qrc"
 )

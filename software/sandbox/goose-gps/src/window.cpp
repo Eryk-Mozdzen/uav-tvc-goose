@@ -6,7 +6,7 @@
 Window::Window() {
     resize(640, 480);
 
-    map = new InteractiveMap(this);
+    map = new Map(this);
 
     QHBoxLayout *layout = new QHBoxLayout(this);
     layout->addWidget(map);

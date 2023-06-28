@@ -1,12 +1,12 @@
 #pragma once
 
 #include <QWidget>
-#include "interactive_map.h"
+#include "map.h"
 
 class Window : public QWidget {
     Q_OBJECT
 
-    InteractiveMap *map;
+    Map *map;
 
 public:
     Window();
