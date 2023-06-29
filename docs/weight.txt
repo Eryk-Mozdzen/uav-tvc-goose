@@ -1,0 +1,15 @@
+
+battery             76g
+motor               35g
+rotor               10g
+ESC                 25g
+servos              42g
+VLX                 5g
+
+FC                  9g
+ESP board           6g
+PDB                 20g
+
+GPS                 15g
+NodeMCU ESP8266     9g
+NodeMCU ESP32       9g
