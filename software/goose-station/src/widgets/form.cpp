@@ -1,15 +1,10 @@
 #include "form.h"
-#include <QGroupBox>
-#include <QVBoxLayout>
-#include <QFormLayout>
 #include <QLabel>
 
 namespace widgets {
 
-Form::Form(QString name, QVector<QString> labels, bool read_only, QWidget *parent) : QWidget{parent}, fields{labels.size()} {
-    QVBoxLayout *layout = new QVBoxLayout(this);
-    QGroupBox *group = new QGroupBox(name);
-    QFormLayout *form = new QFormLayout(group);
+Form::Form(QVector<QString> labels, bool read_only, QWidget *parent) : QWidget{parent}, fields{labels.size()} {
+    form = new QFormLayout(parent);
 
     form->setLabelAlignment(Qt::AlignmentFlag::AlignRight);
 
@@ -24,8 +19,10 @@ Form::Form(QString name, QVector<QString> labels, bool read_only, QWidget *paren
 
         form->addRow(new QLabel(labels[i] + ":"), fields[i]);
     }
+}
 
-    layout->addWidget(group);
+QFormLayout * Form::getLayout() {
+    return form;
 }
 
 void Form::set(int index, QString value) {
@@ -38,6 +35,16 @@ void Form::set(int index, const char *format, float value) {
 
 void Form::textEdited(int index, QString value) {
     emit change(index, value);
+}
+
+QString Form::get(int index) const {
+    return fields[index]->text();
+}
+
+void Form::reset() {
+    for(QLineEdit *field : fields) {
+        field->setText("???");
+    }
 }
 
 }
