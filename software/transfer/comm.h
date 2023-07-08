@@ -46,4 +46,8 @@ namespace comm {
 		float angles[4];
 	};
 
+	struct Memory {
+		float test;
+	};
+
 }

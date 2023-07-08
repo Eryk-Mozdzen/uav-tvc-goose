@@ -86,7 +86,8 @@ public:
 
 		CONTROL_SETPOINT,
 		CONTROL_COMMAND,
-		CONTROL_MANUAL
+		CONTROL_MANUAL,
+		CONTROL_MEMORY
 	};
 
 	using FrameTX = _transfer::FrameTX<max_length>;
