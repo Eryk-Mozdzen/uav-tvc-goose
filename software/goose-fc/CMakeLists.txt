@@ -92,8 +92,9 @@ add_executable(${TARGET}
 	"src/control/control.cpp"
 	"src/control/states.cpp"
 	"src/control/events.cpp"
-	"src/control/actuators.cpp"
 	"src/control/controller.cpp"
+	"src/hardware/actuators.cpp"
+	"src/hardware/memory.cpp"
 )
 
 target_compile_definitions(${TARGET} PRIVATE
@@ -132,6 +133,7 @@ target_include_directories(${TARGET} PRIVATE
 	"src/estimator"
 	"src/utils"
 	"src/transport"
+	"src/hardware"
 )
 
 target_compile_options(${TARGET} PRIVATE

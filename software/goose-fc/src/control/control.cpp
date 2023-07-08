@@ -10,6 +10,7 @@
 #include "actuators.h"
 #include "controller.h"
 #include "context.h"
+#include "memory.h"
 
 class Control : public TaskClassS<2048>, public Context {
 	events::Command cmd_start;
@@ -78,8 +79,6 @@ Control::Control() : TaskClassS{"control loop", TaskPrio_Mid},
 
 void Control::task() {
 
-	Actuators::getInstance().init();
-
 	sm.start();
 
 	TickType_t time = xTaskGetTickCount();
@@ -108,6 +107,16 @@ void Control::task() {
 					Actuators::getInstance().setFinAngle(Actuators::FIN2, manual.angles[1]);
 					Actuators::getInstance().setFinAngle(Actuators::FIN3, manual.angles[2]);
 					Actuators::getInstance().setFinAngle(Actuators::FIN4, manual.angles[3]);
+				}
+			}
+
+			if(frame.id==Transfer::ID::CONTROL_MEMORY) {
+				comm::Memory memory;
+				if(frame.getPayload(memory)) {
+					Memory::getInstance().write(memory);
+				} else {
+					const comm::Memory mem = Memory::getInstance().read();
+					Logger::getInstance().send(Transfer::ID::CONTROL_MEMORY, mem);
 				}
 			}
 		}

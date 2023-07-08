@@ -86,7 +86,8 @@ public:
 
 		CONTROL_SETPOINT,
 		CONTROL_COMMAND,
-		CONTROL_MANUAL
+		CONTROL_MANUAL,
+		CONTROL_MEMORY
 	};
 
 	using FrameTX = _transfer::FrameTX<max_length>;
@@ -113,6 +114,14 @@ public:
 	 * @return false If data frame is still not complete.
 	 */
 	bool receive(FrameRX &frame) const;
+
+	/**
+	 * @brief Encode function for empty frame.
+	 *
+	 * @param id ID of message frame.
+	 * @return FrameTX
+	 */
+	static FrameTX encode(const ID id);
 
 	/**
 	 * @brief Encode function for raw data.

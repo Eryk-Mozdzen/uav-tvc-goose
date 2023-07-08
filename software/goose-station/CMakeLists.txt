@@ -7,10 +7,7 @@ set(CMAKE_AUTOUIC ON)
 set(CMAKE_AUTOMOC ON)
 set(CMAKE_AUTORCC ON)
 
-set(CMAKE_CXX_STANDARD 17)
-set(CMAKE_CXX_STANDARD_REQUIRED ON)
-
-find_package(Qt5 COMPONENTS Quick Widgets SerialPort Gamepad REQUIRED)
+find_package(Qt5 COMPONENTS	Widgets SerialPort WebEngineWidgets Gamepad REQUIRED)
 
 add_executable(${PROJECT_NAME}
 	"src/main.cpp"
@@ -37,8 +34,8 @@ target_compile_options(${PROJECT_NAME} PRIVATE
 )
 
 target_link_libraries(${PROJECT_NAME}
-	Qt5::Quick
 	Qt5::Widgets
 	Qt5::SerialPort
+	Qt5::WebEngineWidgets
 	Qt5::Gamepad
 )
