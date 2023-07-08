@@ -79,8 +79,6 @@ Control::Control() : TaskClassS{"control loop", TaskPrio_Mid},
 
 void Control::task() {
 
-	Actuators::getInstance().init();
-
 	sm.start();
 
 	TickType_t time = xTaskGetTickCount();

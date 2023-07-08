@@ -6,6 +6,12 @@ Memory::Memory() : lock{"flash lock"} {
 
 }
 
+void Memory::synchronize() {
+	const comm::Memory mem = read();
+
+	memcpy(&copy, &mem, sizeof(comm::Memory));
+}
+
 void Memory::write(const comm::Memory &data) {
 	const uint8_t *src = reinterpret_cast<const uint8_t *>(&data);
 	const uint32_t bytes = sizeof(comm::Memory);
@@ -39,6 +45,8 @@ void Memory::write(const comm::Memory &data) {
 	HAL_FLASH_Lock();
 	lock.give();
 
+	memcpy(&copy, &data, bytes);
+
 	Logger::getInstance().log(Logger::DEBUG, "mem: successfully write %u bytes to 0x%08X in flash memory", bytes, sector_address);
 }
 
@@ -55,6 +63,10 @@ comm::Memory Memory::read() {
 	Logger::getInstance().log(Logger::DEBUG, "mem: successfully read %u bytes from 0x%08X in flash memory", sizeof(comm::Memory), sector_address);
 
 	return memory;
+}
+
+comm::Memory Memory::get() const {
+	return copy;
 }
 
 Memory & Memory::getInstance() {
