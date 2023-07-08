@@ -116,6 +116,14 @@ public:
 	bool receive(FrameRX &frame) const;
 
 	/**
+	 * @brief Encode function for empty frame.
+	 *
+	 * @param id ID of message frame.
+	 * @return FrameTX
+	 */
+	static FrameTX encode(const ID id);
+
+	/**
 	 * @brief Encode function for raw data.
 	 *
 	 * @param payload Pointer to first byte.

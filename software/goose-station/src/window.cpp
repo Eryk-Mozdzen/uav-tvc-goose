@@ -95,6 +95,43 @@ Window::Window(QWidget *parent) : QWidget(parent),
         layout->addWidget(group, 0, 4, 4, 4);
     }
 
+    {
+        QGroupBox *group = new QGroupBox("memory");
+        QGridLayout *grid = new QGridLayout(group);
+        QFormLayout *form = new QFormLayout(group);
+
+        QPushButton *button_read = new QPushButton("Read");
+        QPushButton *button_write = new QPushButton("Write");
+
+        for(int i=0; i<10; i++) {
+            memory[i] = new QLineEdit("???");
+            memory[i]->setAlignment(Qt::AlignmentFlag::AlignRight);
+            form->addRow(new QLabel("test:"), memory[i]);
+        }
+
+        grid->addLayout(form, 0, 0, 10, 2);
+        grid->addWidget(button_read, 11, 0);
+        grid->addWidget(button_write, 11, 1);
+        layout->addWidget(group, 0, 8, 4, 8);
+
+        connect(button_read, &QPushButton::clicked, [this]() {
+            for(int i=0; i<10; i++) {
+                memory[i]->setText(QString::asprintf("???"));
+            }
+
+            const Transfer::FrameTX frame = Transfer::encode(Transfer::ID::CONTROL_MEMORY);
+            transmit(frame);
+        });
+
+        connect(button_write, &QPushButton::clicked, [this]() {
+            comm::Memory mem;
+            mem.test = memory[0]->text().toFloat();
+
+            const Transfer::FrameTX frame = Transfer::encode(mem, Transfer::ID::CONTROL_MEMORY);
+            transmit(frame);
+        });
+    }
+
     connect(&timer, &QTimer::timeout, this, &Window::sendSetpoint);
     connect(freq, &QComboBox::textActivated, this, &Window::freqChanged);
     connect(cmd_start, &QPushButton::clicked, this, std::bind(&Window::sendCommand, this, comm::Command::START));
@@ -174,15 +211,15 @@ void Window::sendManual() {
 }
 
 void Window::manualSwitch() {
+    manual[0]->setValue(0);
+    manual[1]->setValue(0);
+    manual[2]->setValue(0);
+    manual[3]->setValue(0);
+    manual[4]->setValue(0);
+
     if(manual_timer.isActive()) {
         manual_timer.stop();
     } else {
-        manual[0]->setValue(0);
-        manual[1]->setValue(0);
-        manual[2]->setValue(0);
-        manual[3]->setValue(0);
-        manual[4]->setValue(0);
-
         manual_timer.start();
     }
 }
@@ -283,5 +320,11 @@ void Window::frameReceived(Transfer::FrameRX frame) {
         float distance;
         frame.getPayload(distance);
         others.set(3, "%6.3f", distance);
+    }
+
+    if(frame.id==Transfer::ID::CONTROL_MEMORY) {
+        comm::Memory mem;
+        frame.getPayload(mem);
+        memory[0]->setText(QString::asprintf("%f", mem.test));
     }
 }

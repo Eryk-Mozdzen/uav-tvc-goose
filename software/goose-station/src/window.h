@@ -36,6 +36,8 @@ class Window : public QWidget {
     QTimer timer;
     QTimer manual_timer;
 
+    QLineEdit *memory[10];
+
     USB usb;
 	Telnet telnet;
     Gamepad gamepad;
