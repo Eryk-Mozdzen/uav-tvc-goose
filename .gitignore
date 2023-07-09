@@ -3,6 +3,11 @@
 **/slprj
 **/*.slxc
 **/*.slx.*
+**/*.bak
+**/*_anim_1.tif
+**/*_cgxe.mexa64
+**/*.thumbnail.png
+**/*.asv
 
 # kicad
 **/*-backups

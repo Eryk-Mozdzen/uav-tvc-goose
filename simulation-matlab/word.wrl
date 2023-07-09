@@ -1,0 +1,127 @@
+#VRML V2.0 utf8
+# Created with V-Realm Builder v2.0
+# Integrated Data Systems Inc.
+# www.ids-net.com
+
+PointLight {
+  location 0 10 0
+}
+DEF FrontView Viewpoint {
+  description "Front"
+  position 0 0.2 1.8
+}
+Background {
+  skyColor [
+    0.76238 0.8 0.1427,
+    0.277798 0.219779 0.7,
+    0.222549 0.390234 0.7,
+    0.60094 0.662637 0.69 
+  ]
+  skyAngle [0.1, 1.2, 1.57]
+  groundColor [
+    0 0.8 0,
+    0.174249 0.82 0.187362,
+    0.467223 0.82 0.445801,
+    0.621997 0.67 0.600279 
+  ]
+  groundAngle [0.9, 1.5, 1.57]
+}
+DEF Earth Transform {
+  translation -0.0482871 -1 0.00530291
+  children Shape {
+    appearance Appearance {
+      texture DEF Brick_Red ImageTexture {
+        url "texture/wood.gif" 
+      }
+      material Material {
+        emissiveColor 0.342566 0.8 0.534501
+        diffuseColor 0.0161565 0.8 0.0903135
+      }
+    }
+    geometry Box {
+      size 100 0.01 100
+    }
+  }
+}
+DEF Base Transform {
+  translation 1.03284e-06 1.19209e-07 -3.11062e-07
+  children [
+    PointLight {
+      location -1 -1 1
+    }
+    Shape {
+      appearance Appearance {
+        material Material {
+          diffuseColor 0.0827467 0.306188 0.8
+        }
+      }
+      geometry Box {
+        size 0.2 0.3 0.2
+      }
+    }
+    DEF Fin_1 Transform {
+      translation 0.05 -0.15 0
+      children Shape {
+        appearance Appearance {
+          material Material {
+            diffuseColor 0.129816 0.8 0.175357
+          }
+        }
+        geometry Box {
+          size 0.05 0.2 0.01
+        }
+      }
+    }
+    DEF ThrustView Viewpoint {
+      description "Thrust"
+      position 0 -0.5 1.1
+    }
+    DEF Fin_2 Transform {
+      translation 0 -0.15 0.05
+      children Shape {
+        appearance Appearance {
+          material Material {
+            diffuseColor 0.8 0.708012 0.0783009
+          }
+        }
+        geometry Box {
+          size 0.01 0.2 0.05
+        }
+      }
+    }
+    DEF Fin_3 Transform {
+      translation -0.05 -0.15 0
+      children Shape {
+        appearance Appearance {
+          material Material {
+            diffuseColor 0.8 0.104013 0.0102278
+          }
+        }
+        geometry Box {
+          size 0.05 0.2 0.01
+        }
+      }
+    }
+    DEF Fin_4 Transform {
+      translation 0 -0.15 -0.05
+      children Shape {
+        appearance Appearance {
+          material Material {
+            diffuseColor 0 0.8 0.8
+          }
+        }
+        geometry Box {
+          size 0.01 0.2 0.05
+        }
+      }
+    }
+    DEF PilotView Viewpoint {
+      description "Pilot"
+      position 0 0.5 2
+    }
+  ]
+}
+DEF StaticView Viewpoint {
+  description "Static"
+  position 0 0 0
+}
