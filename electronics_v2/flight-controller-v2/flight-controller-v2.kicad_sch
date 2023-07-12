@@ -529,9 +529,6 @@
     (path "/149c5d61-baf1-4212-9ad9-405f30b44c95/64f94151-1a4d-4f1b-8924-3ddcf51c12d3"
       (reference "#PWR041") (unit 1) (value "+3.3V") (footprint "")
     )
-    (path "/149c5d61-baf1-4212-9ad9-405f30b44c95/aeb6f8b4-c1e7-4798-97e3-56e8bb852aae"
-      (reference "#PWR042") (unit 1) (value "GND") (footprint "")
-    )
     (path "/149c5d61-baf1-4212-9ad9-405f30b44c95/b25ff3ca-dce2-44e8-8390-29e26207adc8"
       (reference "#PWR043") (unit 1) (value "GND") (footprint "")
     )
@@ -543,9 +540,6 @@
     )
     (path "/149c5d61-baf1-4212-9ad9-405f30b44c95/43a778f9-866d-4385-b569-f70244dd4872"
       (reference "#PWR046") (unit 1) (value "+3.3V") (footprint "")
-    )
-    (path "/149c5d61-baf1-4212-9ad9-405f30b44c95/a547d896-f415-4b7c-910e-4373321e5a70"
-      (reference "#PWR047") (unit 1) (value "GND") (footprint "")
     )
     (path "/149c5d61-baf1-4212-9ad9-405f30b44c95/1975ec75-84e0-4bbe-82f1-c7bacfce062d"
       (reference "#PWR048") (unit 1) (value "+3.3V") (footprint "")
@@ -700,9 +694,6 @@
     (path "/149c5d61-baf1-4212-9ad9-405f30b44c95/67debec8-b454-4425-adc1-161875f099fe"
       (reference "C17") (unit 1) (value "4u7") (footprint "Capacitor_SMD:C_0603_1608Metric")
     )
-    (path "/149c5d61-baf1-4212-9ad9-405f30b44c95/5d2b29e6-6a26-43a9-98c8-a869e23c7cbb"
-      (reference "C18") (unit 1) (value "4u7") (footprint "Capacitor_Tantalum_SMD:CP_EIA-3216-18_Kemet-A")
-    )
     (path "/149c5d61-baf1-4212-9ad9-405f30b44c95/64c7dc05-13b5-427a-a3f2-0b1f05f9a62e"
       (reference "C19") (unit 1) (value "100n") (footprint "Capacitor_SMD:C_0603_1608Metric")
     )
@@ -791,19 +782,19 @@
       (reference "J6") (unit 1) (value "Conn_01x05") (footprint "goose:tht_pin_01x05")
     )
     (path "/149c5d61-baf1-4212-9ad9-405f30b44c95/734c20f4-e6bd-4043-950f-c780299b4865"
-      (reference "JP1") (unit 1) (value " ") (footprint "goose:tht_pin_01x02")
+      (reference "JP1") (unit 1) (value " ") (footprint "Jumper:SolderJumper-2_P1.3mm_Open_TrianglePad1.0x1.5mm")
     )
     (path "/149c5d61-baf1-4212-9ad9-405f30b44c95/99dbe549-24e1-4929-81b7-982360d41a1f"
-      (reference "JP2") (unit 1) (value " ") (footprint "goose:tht_pin_01x02")
+      (reference "JP2") (unit 1) (value " ") (footprint "Jumper:SolderJumper-2_P1.3mm_Open_TrianglePad1.0x1.5mm")
     )
     (path "/149c5d61-baf1-4212-9ad9-405f30b44c95/7f4f67ff-1cb6-470b-9ca3-190edc4cea6d"
-      (reference "JP3") (unit 1) (value " ") (footprint "goose:tht_pin_01x02")
+      (reference "JP3") (unit 1) (value " ") (footprint "Jumper:SolderJumper-2_P1.3mm_Open_TrianglePad1.0x1.5mm")
     )
     (path "/149c5d61-baf1-4212-9ad9-405f30b44c95/1218a049-ef7c-4c98-a88d-38ea71394086"
-      (reference "JP4") (unit 1) (value " ") (footprint "goose:tht_pin_01x02")
+      (reference "JP4") (unit 1) (value " ") (footprint "Jumper:SolderJumper-2_P1.3mm_Open_TrianglePad1.0x1.5mm")
     )
     (path "/149c5d61-baf1-4212-9ad9-405f30b44c95/1f536c2f-284e-4bb5-b993-2248d54c9d73"
-      (reference "JP5") (unit 1) (value " ") (footprint "goose:tht_pin_01x02")
+      (reference "JP5") (unit 1) (value " ") (footprint "Jumper:SolderJumper-2_P1.3mm_Open_TrianglePad1.0x1.5mm")
     )
     (path "/815a0815-7930-45ec-8d6e-dc110f979c75/34281a3d-bab1-4f7a-a8c8-08336c9de44c"
       (reference "R1") (unit 1) (value "1k") (footprint "Resistor_SMD:R_0603_1608Metric")
@@ -885,12 +876,6 @@
     )
     (path "/149c5d61-baf1-4212-9ad9-405f30b44c95/c27809fb-60de-4302-ba03-be2529ff59ac"
       (reference "SW2") (unit 1) (value "SW_Push") (footprint "Button_Switch_SMD:SW_SPST_FSMSM")
-    )
-    (path "/149c5d61-baf1-4212-9ad9-405f30b44c95/e4358ae7-a545-4bc4-82da-0c929e76e0d9"
-      (reference "SW3") (unit 1) (value "SW_Push") (footprint "Button_Switch_SMD:SW_SPST_FSMSM")
-    )
-    (path "/149c5d61-baf1-4212-9ad9-405f30b44c95/566854d8-2144-477e-b93c-bcaa2ae5fa5e"
-      (reference "SW4") (unit 1) (value "SW_Push") (footprint "Button_Switch_SMD:SW_SPST_FSMSM")
     )
     (path "/815a0815-7930-45ec-8d6e-dc110f979c75/c4bc13af-0d4f-43ac-b1fb-b6381ae8d5d5"
       (reference "U1") (unit 1) (value "LM1117-3.3") (footprint "Package_TO_SOT_SMD:SOT-223-3_TabPin2")
