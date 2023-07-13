@@ -1,6 +1,6 @@
 (footprint "bmp280_hand_solder" (version 20211014) (generator pcbnew)
   (layer "F.Cu")
-  (tedit 0)
+  (tedit 64AF3FD3)
   (attr smd)
   (fp_text reference "REF**" (at 0 -3.5 unlocked) (layer "F.SilkS")
     (effects (font (size 1 1) (thickness 0.15)))
@@ -34,4 +34,9 @@
   (pad "6" smd rect (at -1.525 0.325) (size 1.95 0.35) (layers "F.Cu" "F.Paste" "F.Mask") (tstamp 6d4c94c2-af56-4251-baaf-5d3638c22515))
   (pad "7" smd rect (at -1.525 -0.325) (size 1.95 0.35) (layers "F.Cu" "F.Paste" "F.Mask") (tstamp 8314d5e4-b173-4009-a23b-ce3231f659fb))
   (pad "8" smd rect (at -1.525 -0.975) (size 1.95 0.35) (layers "F.Cu" "F.Paste" "F.Mask") (tstamp 38c95561-8d6f-48a3-b338-ae0cc2dab179))
+  (model "${KICAD6_3DMODEL_DIR}/Package_LGA.3dshapes/Bosch_LGA-8_2x2.5mm_P0.65mm_ClockwisePinNumbering.wrl"
+    (offset (xyz 0 0 0))
+    (scale (xyz 1 1 1))
+    (rotate (xyz 0 0 90))
+  )
 )

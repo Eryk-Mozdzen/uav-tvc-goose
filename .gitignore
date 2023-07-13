@@ -23,6 +23,7 @@
 **/*.gbrjob
 **/*.drl
 **/*.zip
+**/*.step
 
 # software
 **/.vscode

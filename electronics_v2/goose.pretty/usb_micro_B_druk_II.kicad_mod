@@ -1,6 +1,6 @@
 (footprint "usb_micro_B_druk_II" (version 20211014) (generator pcbnew)
   (layer "F.Cu")
-  (tedit 0)
+  (tedit 64AF4259)
   (attr through_hole)
   (fp_text reference "REF**" (at -1.75 -5.7 unlocked) (layer "F.SilkS")
     (effects (font (size 1 1) (thickness 0.15)))
@@ -51,4 +51,9 @@
   (pad "6" thru_hole oval (at -3.5 0) (size 0.89 1.55) (drill oval 0.5 1.15) (layers *.Cu *.Mask) (tstamp aafa205c-8fbb-4b5a-93ad-7139d021e90b))
   (pad "6" thru_hole oval (at 3.25 -2.7) (size 1.25 0.95) (drill oval 0.85 0.55) (layers *.Cu *.Mask) (tstamp b431cb2d-6700-412a-b350-a1d5eb42a78c))
   (pad "6" thru_hole oval (at 3.5 0) (size 0.89 1.55) (drill oval 0.5 1.15) (layers *.Cu *.Mask) (tstamp b9802497-5677-47ac-aaca-938005ecfdbf))
+  (model "${KICAD6_3DMODEL_DIR}/Connector_USB.3dshapes/USB_Micro-B_Molex_47346-0001.wrl"
+    (offset (xyz 0 1.2 0))
+    (scale (xyz 1 1 1))
+    (rotate (xyz 0 0 0))
+  )
 )
