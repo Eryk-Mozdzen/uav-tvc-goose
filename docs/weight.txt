@@ -4,6 +4,7 @@ motor stator + cables   20g
 8x4 propeller           5g
 hub                     5g
 ESC + cables            25g
+ESC			7g
 servo + cable + crank   11g
 
 battery                 76g
