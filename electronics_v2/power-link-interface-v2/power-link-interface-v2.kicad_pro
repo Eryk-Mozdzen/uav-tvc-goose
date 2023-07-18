@@ -367,7 +367,7 @@
       "idf": "",
       "netlist": "",
       "specctra_dsn": "",
-      "step": "",
+      "step": "power-link-interface-v2.step",
       "vrml": ""
     },
     "page_layout_descr_file": ""
