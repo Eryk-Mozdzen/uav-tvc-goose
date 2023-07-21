@@ -73,7 +73,7 @@ X = np.arange(min(velocity), max(velocity) + 0.1, 0.01)
 plt.plot(X, [Kt*x**2 for x in X], color="red", label="best fit")
 
 plt.xlabel("velocity [rad/s]")
-plt.ylabel("thrust [F]")
+plt.ylabel("thrust [N]")
 plt.title("velocity vs. thrust")
 plt.grid(True)
 plt.legend()
