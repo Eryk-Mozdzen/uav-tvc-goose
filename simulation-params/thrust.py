@@ -1,81 +1,73 @@
 import numpy as np
 import matplotlib.pyplot as plt
-from dataclasses import dataclass
 import sys
+import csv
 
-@dataclass
-class Measurement:
-    throttle: float		# PWM %
-    thrust: float		# grams
-    velocity: float		# RPS
+def read_csv(file, columns):
+	data = []
 
-data = [
-	Measurement(0,		0,		0),
-	Measurement(5,		16,		51),
-	Measurement(10,		38,		81),
-	Measurement(15,		65,		104),
-	Measurement(20,		90,		122),
-	Measurement(25,		113,	142),
-	Measurement(30,		137,	157),
-	Measurement(35,		161,	171),
-	Measurement(40,		177,	181),
-	Measurement(45,		197,	202),
-	Measurement(50,		213,	210),
-	Measurement(55,		230,	217),
-	Measurement(60,		250,	221),
-	Measurement(65,		267,	226),
-	# Measurement(70,		291,	0),
-	# Measurement(75,		320,	0),
-	# Measurement(80,		345,	0),
-	# Measurement(85,		369,	0),
-	# Measurement(90,		385,	0),
-	# Measurement(95,		390,	0),
-	# Measurement(100,	390,	0)
-]
+	with open(file, newline='') as csvfile:
+		reader = csv.DictReader(csvfile)
+		next(reader)
+
+		for row in reader:
+			if all(row[field] for field in columns):
+				values = [float(row[field]) for field in columns]
+				data.append(values)
+
+	return data
 
 g = 9.81
 
-throttle = [measurement.throttle/100 for measurement in data]
-thrust = [measurement.thrust/1000*g for measurement in data]
-velocity = [measurement.velocity*np.pi for measurement in data]
+thrust_samples = read_csv('thrust_data.csv', ['Throttle', 'Thrust'])
 
-K = sum(thrust)/sum(throttle)
+if len(thrust_samples)>0:
+	throttle = [m[0]/100 for m in thrust_samples]
+	thrust = [m[1]/1000*g for m in thrust_samples]
 
-print(f'F(u) = {K:3.5f} u')
+	K = sum(thrust)/sum(throttle)
 
-plt.scatter(throttle, thrust, color="black")
+	print(f'F(u) = {K:3.5f} u')
 
-X = np.arange(min(throttle), max(throttle) + 0.1, 0.01)
-plt.plot(X, K*X, color="red", label="best fit")
+	plt.scatter(throttle, thrust, color="black")
 
-plt.xlabel("throttle [~]")
-plt.ylabel("thrust [N]")
-plt.title("throttle vs. thrust")
-plt.grid(True)
-plt.legend()
+	X = np.linspace(min(throttle), max(throttle), 100)
+	plt.plot(X, K*X, color="red", label="best fit")
 
-Kt = sum(thrust)/sum([v**2 for v in velocity])
+	plt.xlabel("throttle [~]")
+	plt.ylabel("thrust [N]")
+	plt.title("throttle vs. thrust")
+	plt.grid(True)
+	plt.legend()
 
-print(f'F(w) = {Kt:3.10f} w^2')
+velocity_samples = read_csv('thrust_data.csv', ['Thrust', 'Velocity'])
 
-if len(sys.argv)>1:
-	mass = float(sys.argv[1])
+if len(velocity_samples)>0:
+	thrust = [m[0]/1000*g for m in velocity_samples]
+	velocity = [m[1] for m in velocity_samples]
 
-	w0 = np.sqrt(mass*g/Kt)
+	Kt = sum(thrust)/sum([v**2 for v in velocity])
 
-	print(f'w_0 = {w0:3.10f} rad/s')
+	print(f'F(w) = {Kt:3.10f} w^2')
 
-plt.figure()
+	if len(sys.argv)>1:
+		mass = float(sys.argv[1])
 
-plt.scatter(velocity, thrust, color="black")
+		w0 = np.sqrt(mass*g/Kt)
 
-X = np.arange(min(velocity), max(velocity) + 0.1, 0.01)
-plt.plot(X, [Kt*x**2 for x in X], color="red", label="best fit")
+		print(f'w_0 = {w0:5.3f} rad/s')
 
-plt.xlabel("velocity [rad/s]")
-plt.ylabel("thrust [N]")
-plt.title("velocity vs. thrust")
-plt.grid(True)
-plt.legend()
+	plt.figure()
+
+	plt.scatter(velocity, thrust, color="black")
+
+	X = np.linspace(min(velocity), max(velocity), 100)
+	plt.plot(X, [Kt*x**2 for x in X], color="red", label="best fit")
+
+	plt.xlabel("velocity [rad/s]")
+	plt.ylabel("thrust [N]")
+	plt.title("velocity vs. thrust")
+	plt.grid(True)
+	plt.legend()
 
 plt.show()

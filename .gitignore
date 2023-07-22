@@ -28,3 +28,4 @@
 **/.vscode
 **/build
 **/a.out
+!simulation-params/*.csv
