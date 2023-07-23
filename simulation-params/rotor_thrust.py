@@ -8,7 +8,6 @@ def read_csv(file, columns):
 
 	with open(file, newline='') as csvfile:
 		reader = csv.DictReader(csvfile)
-		next(reader)
 
 		for row in reader:
 			if all(row[field] for field in columns):
@@ -19,7 +18,7 @@ def read_csv(file, columns):
 
 g = 9.81
 
-thrust_samples = read_csv('thrust_data.csv', ['Throttle', 'Thrust'])
+thrust_samples = read_csv('rotor_thrust_data.csv', ['Throttle', 'Thrust'])
 
 if len(thrust_samples)>0:
 	throttle = [m[0]/100 for m in thrust_samples]
@@ -40,7 +39,7 @@ if len(thrust_samples)>0:
 	plt.grid(True)
 	plt.legend()
 
-velocity_samples = read_csv('thrust_data.csv', ['Thrust', 'Velocity'])
+velocity_samples = read_csv('rotor_thrust_data.csv', ['Thrust', 'Velocity'])
 
 if len(velocity_samples)>0:
 	thrust = [m[0]/1000*g for m in velocity_samples]
