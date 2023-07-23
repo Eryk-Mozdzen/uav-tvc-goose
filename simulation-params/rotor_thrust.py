@@ -28,6 +28,13 @@ if len(thrust_samples)>0:
 
 	print(f'F(u) = {K:3.5f} u')
 
+	if len(sys.argv)>1:
+		mass = float(sys.argv[1])
+
+		u0 = mass*g/K
+
+		print(f'u_0 = {u0:1.3f}')
+
 	plt.scatter(throttle, thrust, color="black")
 
 	X = np.linspace(min(throttle), max(throttle), 100)
