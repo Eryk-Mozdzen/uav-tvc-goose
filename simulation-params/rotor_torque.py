@@ -1,5 +1,6 @@
 import numpy as np
 import matplotlib.pyplot as plt
+from scipy.optimize import curve_fit
 import csv
 
 def read_csv(file, columns):
@@ -23,7 +24,7 @@ samples = read_csv('rotor_torque_data.csv', ['Throttle', 'Load'])
 throttle = [m[0]/100 for m in samples]
 torque = [m[1]/1000*g*arm for m in samples]
 
-K = sum(torque)/sum(throttle)
+K = curve_fit(lambda x, a: a*x, throttle, torque)[0][0]
 
 print(f'M(u) = {K:3.5f} u')
 

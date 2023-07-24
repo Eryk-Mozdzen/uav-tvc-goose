@@ -1,5 +1,6 @@
 import numpy as np
 import matplotlib.pyplot as plt
+from scipy.optimize import curve_fit
 import sys
 import csv
 
@@ -24,7 +25,7 @@ if len(thrust_samples)>0:
 	throttle = [m[0]/100 for m in thrust_samples]
 	thrust = [m[1]/1000*g for m in thrust_samples]
 
-	K = sum(thrust)/sum(throttle)
+	K = curve_fit(lambda x, a: a*x, throttle, thrust)[0][0]
 
 	print(f'F(u) = {K:3.5f} u')
 
@@ -52,7 +53,7 @@ if len(velocity_samples)>0:
 	thrust = [m[0]/1000*g for m in velocity_samples]
 	velocity = [m[1] for m in velocity_samples]
 
-	Kt = sum(thrust)/sum([v**2 for v in velocity])
+	Kt = curve_fit(lambda x, a: a*x**2, velocity, thrust)[0][0]
 
 	print(f'F(w) = {Kt:3.10f} w^2')
 
