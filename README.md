@@ -8,3 +8,6 @@
 
 ## Program state machine
 ![Alt text](./docs/state_machine.drawio.svg)
+
+## Mechanical design
+Onshape 3D CAD model is available online [here](https://cad.onshape.com/documents/55f630da79af3dc846c30129/w/294f9dbf9e5691d9e0cefd31/e/336c6015864836f3ef9940df).
