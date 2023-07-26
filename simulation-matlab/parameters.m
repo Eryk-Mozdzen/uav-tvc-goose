@@ -5,7 +5,7 @@ clc
 
 fins_max_pos = pi/6;
 fins_max_vel = pi;
-throttle_max_rate = 1;
+throttle_max_rate = 2;
 
 K_t = 3.85756;
 K_w = 0.0000014188;
@@ -83,13 +83,13 @@ B = [
 %% LQR regulator
 
 Q = diag([ ...
-    200;
-    200;
-    50;
-    10;
-    10;
-    50;
     100;
+    100;
+    10;
+    50;
+    50;
+    10;
+    50;
     10;
 ]);
 
