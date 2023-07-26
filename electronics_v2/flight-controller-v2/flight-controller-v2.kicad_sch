@@ -783,7 +783,7 @@
       (reference "#PWR0106") (unit 1) (value "+3.3V") (footprint "")
     )
     (path "/815a0815-7930-45ec-8d6e-dc110f979c75/252691da-170e-440e-a97e-0e0d74cde601"
-      (reference "#PWR?") (unit 1) (value "+3.3V") (footprint "")
+      (reference "#PWR0107") (unit 1) (value "+3.3V") (footprint "")
     )
     (path "/815a0815-7930-45ec-8d6e-dc110f979c75/a4940709-6438-47ae-9a31-ef008889a82f"
       (reference "C1") (unit 1) (value "100n") (footprint "Capacitor_SMD:C_0603_1608Metric")
@@ -1008,7 +1008,7 @@
       (reference "R12") (unit 1) (value "10") (footprint "Resistor_SMD:R_0603_1608Metric")
     )
     (path "/815a0815-7930-45ec-8d6e-dc110f979c75/942bc182-fedb-4361-a398-64d05bf3fae2"
-      (reference "R13") (unit 1) (value "210k") (footprint "Resistor_SMD:R_0603_1608Metric")
+      (reference "R13") (unit 1) (value "200k") (footprint "Resistor_SMD:R_0603_1608Metric")
     )
     (path "/815a0815-7930-45ec-8d6e-dc110f979c75/76cd2633-5bc8-425f-b0a9-11ce11dc8546"
       (reference "R14") (unit 1) (value "39k") (footprint "Resistor_SMD:R_0603_1608Metric")

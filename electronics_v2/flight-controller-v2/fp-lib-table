@@ -1,0 +1,3 @@
+(fp_lib_table
+  (lib (name "goose")(type "KiCad")(uri "/home/emozdzen/Desktop/repos/uav-tvc-goose/electronics_v2/goose.pretty")(options "")(descr ""))
+)
