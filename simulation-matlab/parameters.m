@@ -5,22 +5,26 @@ clc
 
 fins_max_pos = pi/6;
 fins_max_vel = pi;
-throttle_max_rate = 0.3;
+throttle_max_rate = 2;
 
-K_w = convangvel(10000,'rpm','rad/s');
-K_t = 0.0001;
-C_l = 0.2;      % <1
-C_d = 0.1;      % <1
-C_tau = 0.02;
+K_t = 3.85756;
+K_w = 0.0000014188;
+K_tau = 0.04249;
 
-J_xx = 0.1;
-J_yy = 0.1;
-J_zz = 0.1;
-J_r = 0.001;
+A_fin = 0.003228;
+A_rot = pi*0.1^2;
+C_La = 2*pi;
+C_l = 0.5*C_La*A_fin/A_rot;     % <1
+C_d = 0.0;                      % <1
 
-m = 0.5;
-l = 0.1;
-r = 0.1;
+J_xx = 0.000907608;
+J_yy = 0.000924034;
+J_zz = 0.000150630;
+J_r = 0.000016510;
+
+m = 0.294;
+l = 0.01925 + 0.04226;
+r = 0.06475;
 
 g = 9.81;
 
@@ -36,13 +40,13 @@ variance_dst = 0.001;
 %% operating point
 
 alpha_0 = [
-    asin(C_tau/(4*C_l*r));
-    asin(C_tau/(4*C_l*r));
-    asin(C_tau/(4*C_l*r));
-    asin(C_tau/(4*C_l*r));
+    asin(K_tau/(4*r*C_l*K_t));
+    asin(K_tau/(4*r*C_l*K_t));
+    asin(K_tau/(4*r*C_l*K_t));
+    asin(K_tau/(4*r*C_l*K_t));
 ];
 
-throttle_0 = sqrt(m*g/(K_t*(1-C_d)))/K_w;
+throttle_0 = m*g/(K_t*(1-C_d));
 
 operating_point = [alpha_0; throttle_0];
 
@@ -51,8 +55,8 @@ fprintf('Nominalne wychylenie łopatek:      %4.1f deg\n', alpha_0(1)*180/pi)
 
 %% linear model
 
-w_t0 = K_w*throttle_0;
-F_t0 = K_t*w_t0^2;
+w_t0 = sqrt(m*g/K_w);
+F_t0 = K_t*throttle_0;
 
 A = [
     0, 0, 0,  1,               0,               0, 0, 0;
@@ -71,9 +75,9 @@ B = [
      0,                0,                0,                0,               0;
      0,                F_t0*C_l*l/J_xx,  0,               -F_t0*C_l*l/J_xx, 0;
      F_t0*C_l*l/J_yy,  0,               -F_t0*C_l*l/J_yy,  0,               0;
-    -F_t0*C_l*r/J_zz, -F_t0*C_l*r/J_zz, -F_t0*C_l*r/J_zz, -F_t0*C_l*r/J_zz, 2*C_tau*throttle_0*K_t*(K_w^2)/J_zz;
+    -F_t0*C_l*r/J_zz, -F_t0*C_l*r/J_zz, -F_t0*C_l*r/J_zz, -F_t0*C_l*r/J_zz, K_tau/J_zz;
      0,                0,                0,                0,               0;
-     0,                0,                0,                0,               2*(1-C_d)*throttle_0*K_t*(K_w^2)/m;
+     0,                0,                0,                0,               (1-C_d)*K_t/m;
 ];
 
 %% LQR regulator
@@ -82,21 +86,19 @@ Q = diag([ ...
     100;
     100;
     10;
-
-    1;
-    1;
+    50;
+    50;
     10;
-
-    1;
-    1;
+    50;
+    10;
 ]);
 
 R = diag([
-    10;
-    10;
-    10;
-    10;
-    10000;
+    1000;
+    1000;
+    1000;
+    1000;
+    1000;
 ]);
 
 K = lqr(A, B, Q, R)
