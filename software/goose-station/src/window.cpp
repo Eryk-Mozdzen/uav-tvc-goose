@@ -19,8 +19,10 @@ Window::Window(QWidget *parent) : QWidget(parent) {
         QGroupBox *group = new QGroupBox("source");
 
         source = new widgets::Form({"IP address", "COM port"}, false, group);
-        source->set(0, "192.168.101.29");
+        source->set(0, "192.168.79.29");
         source->set(1, "/dev/ttyACM0");
+
+        telnet.changeAddress("192.168.79.29");
 
         layout->addWidget(group, 0, 0);
 
