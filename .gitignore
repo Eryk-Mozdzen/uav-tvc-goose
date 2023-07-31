@@ -16,6 +16,7 @@
 **/fp-lib-table
 **/sym-lib-table
 **/#auto_saved_files#
+**/_autosave-*
 **/*.csv
 **/*.xml
 **/gerber
@@ -23,6 +24,7 @@
 **/*.gbrjob
 **/*.drl
 **/*.zip
+**/*.step
 
 # software
 **/.vscode
