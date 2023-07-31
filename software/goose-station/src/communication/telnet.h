@@ -1,6 +1,5 @@
 #pragma once
 
-#include <QHostAddress>
 #include <QTcpSocket>
 #include "transfer.h"
 
@@ -8,16 +7,13 @@ class Telnet : public QObject {
     Q_OBJECT
 
 private:
+    static constexpr int port = 23;
+    QTcpSocket *socket = nullptr;
     Transfer transfer;
 
-    QHostAddress address;
-    static constexpr int port = 23;
-    QTcpSocket socket;
-
 private slots:
-    void handleConnected();
-    void handleDisconnected();
-    void handleReadyRead();
+    void error(QAbstractSocket::SocketError error);
+    void read();
 
 public slots:
 	void transmit(const Transfer::FrameTX &frame);
@@ -26,7 +22,7 @@ signals:
 	void receive(const Transfer::FrameRX &frame);
 
 public:
-    Telnet(const QString address="192.168.101.29", QObject *parent = nullptr);
+    explicit Telnet(const QString address="192.168.79.29", QObject *parent = nullptr);
 
     void changeAddress(const QString ip);
 };
