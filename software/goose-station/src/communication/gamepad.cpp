@@ -1,5 +1,7 @@
 #include "gamepad.h"
+#include <QGamepad>
 #include <QDebug>
+#include <QTimer>
 
 Gamepad::Gamepad(QObject *parent) : QObject{parent}, analogs{QVector<float>(6)}, buttons{QVector<bool>(15)} {
 
@@ -14,56 +16,58 @@ Gamepad::Gamepad(QObject *parent) : QObject{parent}, analogs{QVector<float>(6)},
             return;
         }
 
-        qDebug() << "connected";
-
         timer->stop();
 
-        gamepad = new QGamepad(*list.begin(), this);
+        QGamepad *gamepad = new QGamepad(*list.begin(), this);
 
-        connect(gamepad, &QGamepad::axisLeftXChanged,   this, std::bind(&Gamepad::updateAnalogs, this, Analog::LX, std::placeholders::_1));
-        connect(gamepad, &QGamepad::axisLeftYChanged,   this, std::bind(&Gamepad::updateAnalogs, this, Analog::LY, std::placeholders::_1));
-        connect(gamepad, &QGamepad::axisRightXChanged,  this, std::bind(&Gamepad::updateAnalogs, this, Analog::RX, std::placeholders::_1));
-        connect(gamepad, &QGamepad::axisRightYChanged,  this, std::bind(&Gamepad::updateAnalogs, this, Analog::RY, std::placeholders::_1));
-        connect(gamepad, &QGamepad::buttonL2Changed,    this, std::bind(&Gamepad::updateAnalogs, this, Analog::L2, std::placeholders::_1));
-        connect(gamepad, &QGamepad::buttonR2Changed,    this, std::bind(&Gamepad::updateAnalogs, this, Analog::R2, std::placeholders::_1));
+		qDebug() << "gamepad connected";
 
-        connect(gamepad, &QGamepad::buttonAChanged,         this, std::bind(&Gamepad::updateButtons, this, Button::CIRCLE_A,    std::placeholders::_1));
-        connect(gamepad, &QGamepad::buttonBChanged,         this, std::bind(&Gamepad::updateButtons, this, Button::CIRCLE_B,    std::placeholders::_1));
-        connect(gamepad, &QGamepad::buttonXChanged,         this, std::bind(&Gamepad::updateButtons, this, Button::CIRCLE_X,    std::placeholders::_1));
-        connect(gamepad, &QGamepad::buttonYChanged,         this, std::bind(&Gamepad::updateButtons, this, Button::CIRCLE_Y,    std::placeholders::_1));
+        connect(gamepad, &QGamepad::axisLeftXChanged,   	[this](float value) {analogs[Analog::LX] = value;});
+        connect(gamepad, &QGamepad::axisLeftYChanged,   	[this](float value) {analogs[Analog::LY] = value;});
+        connect(gamepad, &QGamepad::axisRightXChanged,  	[this](float value) {analogs[Analog::RX] = value;});
+        connect(gamepad, &QGamepad::axisRightYChanged,  	[this](float value) {analogs[Analog::RY] = value;});
+        connect(gamepad, &QGamepad::buttonL2Changed,    	[this](float value) {analogs[Analog::L2] = value;});
+        connect(gamepad, &QGamepad::buttonR2Changed,    	[this](float value) {analogs[Analog::R2] = value;});
 
-        connect(gamepad, &QGamepad::buttonDownChanged,      this, std::bind(&Gamepad::updateButtons, this, Button::CROSS_DOWN,  std::placeholders::_1));
-        connect(gamepad, &QGamepad::buttonUpChanged,        this, std::bind(&Gamepad::updateButtons, this, Button::CROSS_UP,    std::placeholders::_1));
-        connect(gamepad, &QGamepad::buttonLeftChanged,      this, std::bind(&Gamepad::updateButtons, this, Button::CROSS_LEFT,  std::placeholders::_1));
-        connect(gamepad, &QGamepad::buttonRightChanged,     this, std::bind(&Gamepad::updateButtons, this, Button::CROSS_RIGHT, std::placeholders::_1));
+        connect(gamepad, &QGamepad::buttonAChanged,     	[this](bool value) {buttons[Button::CIRCLE_A] = value;});
+        connect(gamepad, &QGamepad::buttonBChanged,     	[this](bool value) {buttons[Button::CIRCLE_B] = value;});
+        connect(gamepad, &QGamepad::buttonXChanged,     	[this](bool value) {buttons[Button::CIRCLE_X] = value;});
+        connect(gamepad, &QGamepad::buttonYChanged,     	[this](bool value) {buttons[Button::CIRCLE_Y] = value;});
 
-        connect(gamepad, &QGamepad::buttonL1Changed,        this, std::bind(&Gamepad::updateButtons, this, Button::L1,          std::placeholders::_1));
-        connect(gamepad, &QGamepad::buttonR1Changed,        this, std::bind(&Gamepad::updateButtons, this, Button::R1,          std::placeholders::_1));
-        connect(gamepad, &QGamepad::buttonL3Changed,        this, std::bind(&Gamepad::updateButtons, this, Button::L3,          std::placeholders::_1));
-        connect(gamepad, &QGamepad::buttonR3Changed,        this, std::bind(&Gamepad::updateButtons, this, Button::R3,          std::placeholders::_1));
+        connect(gamepad, &QGamepad::buttonDownChanged,  	[this](bool value) {buttons[Button::CROSS_DOWN] = value;});
+        connect(gamepad, &QGamepad::buttonUpChanged,    	[this](bool value) {buttons[Button::CROSS_UP] = value;});
+        connect(gamepad, &QGamepad::buttonLeftChanged,  	[this](bool value) {buttons[Button::CROSS_LEFT] = value;});
+        connect(gamepad, &QGamepad::buttonRightChanged, 	[this](bool value) {buttons[Button::CROSS_RIGHT] = value;});
 
-        connect(gamepad, &QGamepad::buttonGuideChanged,     this, std::bind(&Gamepad::updateButtons, this, Button::HOME,        std::placeholders::_1));
-        connect(gamepad, &QGamepad::buttonSelectChanged,    this, std::bind(&Gamepad::updateButtons, this, Button::SELECT,      std::placeholders::_1));
-        connect(gamepad, &QGamepad::buttonStartChanged,     this, std::bind(&Gamepad::updateButtons, this, Button::START,       std::placeholders::_1));
+        connect(gamepad, &QGamepad::buttonL1Changed,    	[this](bool value) {buttons[Button::L1] = value;});
+        connect(gamepad, &QGamepad::buttonR1Changed,    	[this](bool value) {buttons[Button::R1] = value;});
+        connect(gamepad, &QGamepad::buttonL3Changed,    	[this](bool value) {buttons[Button::L3] = value;});
+        connect(gamepad, &QGamepad::buttonR3Changed,    	[this](bool value) {buttons[Button::R3] = value;});
 
-        connect(gamepad, &QGamepad::connectedChanged, [timer, this](bool value) {
+        connect(gamepad, &QGamepad::buttonGuideChanged,		[this](bool value) {buttons[Button::HOME] = value;});
+        connect(gamepad, &QGamepad::buttonSelectChanged,	[this](bool value) {buttons[Button::SELECT] = value;});
+        connect(gamepad, &QGamepad::buttonStartChanged,		[this](bool value) {buttons[Button::START] = value;});
+
+        connect(gamepad, &QGamepad::connectedChanged, [this, timer, gamepad](bool value) {
             if(value) {
                 return;
             }
 
+			for(float &value : analogs) {
+				value = 0;
+			}
+
+			for(bool &value : buttons) {
+				value = 0;
+			}
+
             delete gamepad;
+
+			qDebug() << "gamepad disconnected";
 
             timer->start();
         });
     });
-}
-
-void Gamepad::updateAnalogs(Analog analog, float value) {
-    analogs[analog] = value;
-}
-
-void Gamepad::updateButtons(Button button, bool value) {
-    buttons[button] = value;
 }
 
 float Gamepad::get(Analog analog) const {
