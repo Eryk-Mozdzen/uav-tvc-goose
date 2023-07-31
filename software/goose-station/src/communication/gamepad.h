@@ -1,10 +1,12 @@
 #pragma once
 
 #include <QGamepad>
+#include <QTimer>
 
 class Gamepad : public QObject {
     Q_OBJECT
 
+    QTimer *timer;
     QGamepad *gamepad;
     QVector<float> analogs;
     QVector<bool> buttons;
@@ -38,7 +40,6 @@ public:
     };
 
     Gamepad(QObject *parent=nullptr);
-    ~Gamepad();
 
     float get(Analog analog) const;
     bool get(Button button) const;
