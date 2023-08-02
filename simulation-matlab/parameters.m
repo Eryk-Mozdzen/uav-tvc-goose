@@ -17,13 +17,13 @@ C_La = 2*pi;
 C_l = 0.5*C_La*A_fin/A_rot;     % <1
 C_d = 0.0;                      % <1
 
-J_xx = 0.000907608;
-J_yy = 0.000924034;
-J_zz = 0.000150630;
+J_xx = 0.000878648;
+J_yy = 0.000868024;
+J_zz = 0.000145457;
 J_r = 0.000016510;
 
-m = 0.294;
-l = 0.01925 + 0.04226;
+m = 0.27768;
+l = 0.05637 + 0.007;
 r = 0.06475;
 
 g = 9.81;
@@ -32,18 +32,18 @@ g = 9.81;
 
 measurement_freq = 100;
 measurement_dt = 1/measurement_freq;
-variance_acc = 0.001;
-variance_gyr = 0.001;
-variance_mag = 0.001;
-variance_dst = 0.001;
+variance_acc = 0.01;
+variance_gyr = 0.01;
+variance_mag = 0.01;
+variance_dst = 0.01;
 
 %% operating point
 
 alpha_0 = [
-    asin(K_tau/(4*r*C_l*K_t));
-    asin(K_tau/(4*r*C_l*K_t));
-    asin(K_tau/(4*r*C_l*K_t));
-    asin(K_tau/(4*r*C_l*K_t));
+    K_tau/(4*r*C_l*K_t);
+    K_tau/(4*r*C_l*K_t);
+    K_tau/(4*r*C_l*K_t);
+    K_tau/(4*r*C_l*K_t);
 ];
 
 throttle_0 = m*g/(K_t*(1-C_d));
