@@ -48,7 +48,7 @@ Window::Window(QWidget *parent) : QWidget(parent) {
     {
         QGroupBox *group = new QGroupBox("others");
 
-        others = new widgets::Form({"state", "ground pressure", "pressure", "distance"}, true, group);
+        others = new widgets::Form({"state", "ground pressure", "pressure", "distance", "motor velocity"}, true, group);
 
         layout->addWidget(group, 2, 0);
     }
@@ -369,5 +369,11 @@ void Window::receiveCallback(Transfer::FrameRX frame) {
         comm::Memory mem;
         frame.getPayload(mem);
         memory->set(0, "%.3f", mem.test);
+    }
+
+    if(frame.id==Transfer::ID::SENSOR_MOTOR_VELOCITY) {
+        float velocity;
+        frame.getPayload(velocity);
+        others->set(4, "%6.3f", velocity);
     }
 }
