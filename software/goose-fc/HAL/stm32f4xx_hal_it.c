@@ -41,7 +41,7 @@ void DMA2_Stream7_IRQHandler() {
 }
 
 void EXTI9_5_IRQHandler() {
-	HAL_GPIO_EXTI_IRQHandler(GPIO_PIN_5);
+	HAL_GPIO_EXTI_IRQHandler(GPIO_PIN_7);
 	HAL_GPIO_EXTI_IRQHandler(GPIO_PIN_9);
 }
 
