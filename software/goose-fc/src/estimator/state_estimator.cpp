@@ -76,6 +76,9 @@ void StateEstimator::task() {
 					Transport::getInstance().sensor_queue.getValue(current);
 					battery_estimator.feedCurrent(current);
 				} break;
+				case Transport::Sensors::HALL: {
+
+				} break;
 			}
 		}
 
