@@ -242,54 +242,54 @@ void MPU6050::init() {
 	HAL_NVIC_SetPriority(EXTI15_10_IRQn, 6, 0);
 	HAL_NVIC_EnableIRQ(EXTI15_10_IRQn);
 
-	SensorBus::getInstance().write(MPU6050_ADDR, MPU6050_REG_PWR_MGMT_1,
+	SensorBus::getInstance().write(MPU6050_ADDR, MPU6050_REG_PWR_MGMT_1, static_cast<uint8_t>(
 		MPU6050_PWR_MGMT_1_DEVICE_RESET
-	);
+	));
 
 	vTaskDelay(100);
 
-	SensorBus::getInstance().write(MPU6050_ADDR, MPU6050_REG_SIGNAL_PATH_RESET,
+	SensorBus::getInstance().write(MPU6050_ADDR, MPU6050_REG_SIGNAL_PATH_RESET, static_cast<uint8_t>(
 		MPU6050_SIGNAL_PATH_RESET_GYRO |
 		MPU6050_SIGNAL_PATH_RESET_ACCEL |
 		MPU6050_SIGNAL_PATH_RESET_TEMP
-	);
+	));
 
 	vTaskDelay(100);
 
-	SensorBus::getInstance().write(MPU6050_ADDR, MPU6050_REG_INT_ENABLE,
+	SensorBus::getInstance().write(MPU6050_ADDR, MPU6050_REG_INT_ENABLE, static_cast<uint8_t>(
 		MPU6050_INT_ENABLE_FIFO_OVERLOW_DISABLE |
 		MPU6050_INT_ENABLE_I2C_MST_INT_DISABLE |
 		MPU6050_INT_ENABLE_DATA_RDY_ENABLE
-	);
+	));
 
-	SensorBus::getInstance().write(MPU6050_ADDR, MPU6050_REG_INT_PIN_CFG,
+	SensorBus::getInstance().write(MPU6050_ADDR, MPU6050_REG_INT_PIN_CFG, static_cast<uint8_t>(
 		MPU6050_INT_PIN_CFG_LEVEL_ACTIVE_HIGH |
 		MPU6050_INT_PIN_CFG_PUSH_PULL |
 		MPU6050_INT_PIN_CFG_PULSE |
 		MPU6050_INT_PIN_CFG_STATUS_CLEAR_AFTER_ANY |
 		MPU6050_INT_PIN_CFG_FSYNC_DISABLE |
 		MPU6050_INT_PIN_CFG_I2C_BYPASS_DISABLE
-	);
+	));
 
-	SensorBus::getInstance().write(MPU6050_ADDR, MPU6050_REG_PWR_MGMT_1,
+	SensorBus::getInstance().write(MPU6050_ADDR, MPU6050_REG_PWR_MGMT_1, static_cast<uint8_t>(
 		MPU6050_PWR_MGMT_1_TEMP_DIS |
 		MPU6050_PWR_MGMT_1_CLOCK_INTERNAL
-	);
+	));
 
-	SensorBus::getInstance().write(MPU6050_ADDR, MPU6050_REG_CONFIG,
+	SensorBus::getInstance().write(MPU6050_ADDR, MPU6050_REG_CONFIG, static_cast<uint8_t>(
 		MPU6050_CONFIG_EXT_SYNC_DISABLED |
 		MPU6050_CONFIG_DLPF_SETTING_6
-	);
+	));
 
-	SensorBus::getInstance().write(MPU6050_ADDR, MPU6050_REG_ACCEL_CONFIG,
+	SensorBus::getInstance().write(MPU6050_ADDR, MPU6050_REG_ACCEL_CONFIG, static_cast<uint8_t>(
 		MPU6050_ACCEL_CONFIG_RANGE_4G
-	);
+	));
 
-	SensorBus::getInstance().write(MPU6050_ADDR, MPU6050_REG_GYRO_CONFIG,
+	SensorBus::getInstance().write(MPU6050_ADDR, MPU6050_REG_GYRO_CONFIG, static_cast<uint8_t>(
 		MPU6050_GYRO_CONFIG_RANGE_500DPS
-	);
+	));
 
-	SensorBus::getInstance().write(MPU6050_ADDR, MPU6050_REG_SMPLRT_DIV, 4);
+	SensorBus::getInstance().write(MPU6050_ADDR, MPU6050_REG_SMPLRT_DIV, static_cast<uint8_t>(4));
 
 	Logger::getInstance().log(Logger::INFO, "imu: initialization complete");
 }

@@ -179,19 +179,21 @@ BMP280::BMP280() : TaskClassS{"BMP280 reader", TaskPrio_Low}, pressure{0}, tempe
 
 void BMP280::init() {
 
-	SensorBus::getInstance().write(BMP280_ADDR, BMP280_REG_RESET, BMP280_RESET_VALUE);
+	SensorBus::getInstance().write(BMP280_ADDR, BMP280_REG_RESET, static_cast<uint8_t>(
+		BMP280_RESET_VALUE
+	));
 
-	SensorBus::getInstance().write(BMP280_ADDR, BMP280_REG_CTRL_MEAS,
+	SensorBus::getInstance().write(BMP280_ADDR, BMP280_REG_CTRL_MEAS, static_cast<uint8_t>(
 		BMP280_CTRL_TEMP_OVERSAMPLING_2 |
 		BMP280_CTRL_PRESS_OVERSAMPLING_16 |
 		BMP280_CTRL_MODE_NORMAL
-	);
+	));
 
-	SensorBus::getInstance().write(BMP280_ADDR, BMP280_REG_CONFIG,
+	SensorBus::getInstance().write(BMP280_ADDR, BMP280_REG_CONFIG, static_cast<uint8_t>(
 		BMP280_CONFIG_STANDBY_0_5MS |
 		BMP280_CONFIG_FILTER_X16 |
 		BMP280_CONFIG_SPI_3WIRE_DISABLE
-	);
+	));
 
 	Logger::getInstance().log(Logger::INFO, "bar: initialization complete");
 }

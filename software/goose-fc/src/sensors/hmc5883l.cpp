@@ -89,19 +89,19 @@ void HMC5883L::init() {
 	HAL_NVIC_SetPriority(EXTI9_5_IRQn, 6, 0);
 	HAL_NVIC_EnableIRQ(EXTI9_5_IRQn);
 
-	SensorBus::getInstance().write(HMC5883L_ADDR, HMC5883L_REG_CONFIG_A,
+	SensorBus::getInstance().write(HMC5883L_ADDR, HMC5883L_REG_CONFIG_A, static_cast<uint8_t>(
 		HMC5883L_CONFIG_A_MEAS_NORMAL |
 		HMC5883L_CONFIG_A_RATE_75 |
 		HMC5883L_CONFIG_A_SAMPLES_8
-	);
+	));
 
-	SensorBus::getInstance().write(HMC5883L_ADDR, HMC5883L_REG_CONFIG_B,
+	SensorBus::getInstance().write(HMC5883L_ADDR, HMC5883L_REG_CONFIG_B, static_cast<uint8_t>(
 		HMC5883L_CONFIG_B_RANGE_1_3GA
-	);
+	));
 
-	SensorBus::getInstance().write(HMC5883L_ADDR, HMC5883L_REG_MODE,
+	SensorBus::getInstance().write(HMC5883L_ADDR, HMC5883L_REG_MODE, static_cast<uint8_t>(
 		HMC5883L_MODE_CONTINOUS
-	);
+	));
 
 	Logger::getInstance().log(Logger::INFO, "mag: initialization complete");
 }
