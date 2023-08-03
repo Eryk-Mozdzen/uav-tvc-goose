@@ -2410,7 +2410,7 @@
     (effects (font (size 1.27 1.27)) (justify right))
     (uuid 1a16d021-e733-4058-8cab-16caab58cfca)
   )
-  (hierarchical_label "ESC_TIM1_CH2" (shape output) (at 113.03 106.68 0)
+  (hierarchical_label "ESC_TIM1_CH3" (shape output) (at 113.03 106.68 0)
     (effects (font (size 1.27 1.27)) (justify left))
     (uuid 4ae71b57-61fa-4de6-9588-7553848538df)
   )
