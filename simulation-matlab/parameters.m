@@ -39,19 +39,19 @@ variance_dst = 0.01;
 
 %% operating point
 
-alpha_0 = [
-    K_tau/(4*r*C_l*K_t);
-    K_tau/(4*r*C_l*K_t);
-    K_tau/(4*r*C_l*K_t);
-    K_tau/(4*r*C_l*K_t);
-];
-
+alpha_0 = K_tau/(4*r*C_l*K_t);
 throttle_0 = m*g/(K_t*(1-C_d));
 
-operating_point = [alpha_0; throttle_0];
+operating_point = [
+    alpha_0;
+    alpha_0;
+    alpha_0;
+    alpha_0;
+    throttle_0;
+];
 
 fprintf('Nominalne wychylenie przepustnicy: %4.1f %%\n', throttle_0*100)
-fprintf('Nominalne wychylenie łopatek:      %4.1f deg\n', alpha_0(1)*180/pi)
+fprintf('Nominalne wychylenie łopatek:      %4.1f deg\n', alpha_0*180/pi)
 
 %% linear model
 
@@ -59,14 +59,19 @@ w_t0 = sqrt(m*g/K_w);
 F_t0 = K_t*throttle_0;
 
 A = [
-    0, 0, 0,  1,               0,               0, 0, 0;
-    0, 0, 0,  0,               1,               0, 0, 0;
-    0, 0, 0,  0,               0,               1, 0, 0;
-    0, 0, 0,  0,               (J_r/J_xx)*w_t0, 0, 0, 0;
-    0, 0, 0, -(J_r/J_yy)*w_t0, 0,               0, 0, 0;
-    0, 0, 0,  0,               0,               0, 0, 0;
-    0, 0, 0,  0,               0,               0, 0, 1;
-    0, 0, 0,  0,               0,               0, 0, 0;
+    0, 0, 0,  1,               0,               0, 0, 0,    0, 0, 0, 0;
+    0, 0, 0,  0,               1,               0, 0, 0,    0, 0, 0, 0;
+    0, 0, 0,  0,               0,               1, 0, 0,    0, 0, 0, 0;
+    0, 0, 0,  0,               (J_r/J_xx)*w_t0, 0, 0, 0,    0, 0, 0, 0;
+    0, 0, 0, -(J_r/J_yy)*w_t0, 0,               0, 0, 0,    0, 0, 0, 0;
+    0, 0, 0,  0,               0,               0, 0, 0,    0, 0, 0, 0;
+    0, 0, 0,  0,               0,               0, 0, 1,    0, 0, 0, 0;
+    0, 0, 0,  0,               0,               0, 0, 0,    0, 0, 0, 0;
+
+    1, 0, 0,  0,               0,               0, 0, 0,    0, 0, 0, 0;
+    0, 1, 0,  0,               0,               0, 0, 0,    0, 0, 0, 0;
+    0, 0, 1,  0,               0,               0, 0, 0,    0, 0, 0, 0;
+    0, 0, 0,  0,               0,               0, 1, 0,    0, 0, 0, 0;
 ];
 
 B = [
@@ -78,6 +83,18 @@ B = [
     -F_t0*C_l*r/J_zz, -F_t0*C_l*r/J_zz, -F_t0*C_l*r/J_zz, -F_t0*C_l*r/J_zz, K_tau/J_zz;
      0,                0,                0,                0,               0;
      0,                0,                0,                0,               (1-C_d)*K_t/m;
+
+     0,                0,                0,                0,               0;
+     0,                0,                0,                0,               0;
+     0,                0,                0,                0,               0;
+     0,                0,                0,                0,               0;
+];
+
+G = [
+    1, 0, 0, 0, 0, 0, 0, 0;
+    0, 1, 0, 0, 0, 0, 0, 0;
+    0, 0, 1, 0, 0, 0, 0, 0;
+    0, 0, 0, 0, 0, 0, 1, 0;
 ];
 
 %% LQR regulator
@@ -90,6 +107,11 @@ Q = diag([ ...
     50;
     10;
     50;
+    10;
+
+    100;
+    100;
+    10;
     10;
 ]);
 
