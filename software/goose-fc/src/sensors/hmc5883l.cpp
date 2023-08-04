@@ -52,9 +52,9 @@
 #define HMC5883L_MODE_IDLE				(0x02<<0)
 
 class HMC5883L : public TaskClassS<512> {
-	Vector magnetic_field;
-
 	IntervalLogger<Vector> telemetry;
+
+	uint8_t buffer[6];
 
 public:
 
@@ -107,12 +107,15 @@ void HMC5883L::init() {
 }
 
 bool HMC5883L::readData() {
-	uint8_t buffer[6] = {0};
 
 	if(SensorBus::getInstance().read(HMC5883L_ADDR, HMC5883L_REG_DATA_X_MSB, buffer, sizeof(buffer))) {
 		return false;
 	}
 
+	return true;
+}
+
+Vector HMC5883L::getMagneticField() const {
 	const int16_t raw_x = (((int16_t)buffer[0])<<8) | buffer[1];
 	const int16_t raw_y = (((int16_t)buffer[4])<<8) | buffer[5];
 	const int16_t raw_z = (((int16_t)buffer[2])<<8) | buffer[3];
@@ -123,21 +126,17 @@ bool HMC5883L::readData() {
 
 	constexpr float gain = 1090.f;
 
-	const Vector mag_raw = Vector(raw_x, raw_y, raw_z)/gain;
+	const Vector pre_calibrated = Vector(raw_z, raw_y, -raw_x)/gain;
 
-	constexpr Vector offset = {0.04157f, -0.10032f, -0.06273f};
+	constexpr Vector offset = {0, 0, 0};
 	constexpr Matrix<3, 3> scale = {
-		1.98471f, 0,		0,
-		0,		  2.07220f, 0,
-		0,		  0,		2.31329f
+		1, 0, 0,
+		0, 1, 0,
+		0, 0, 1
 	};
 
-	magnetic_field = scale*(mag_raw - offset);
+	const Vector magnetic_field = scale*(pre_calibrated - offset);
 
-	return true;
-}
-
-Vector HMC5883L::getMagneticField() const {
 	return magnetic_field;
 }
 
