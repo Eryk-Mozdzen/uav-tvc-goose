@@ -8,7 +8,7 @@ class Window : public QWidget {
 
     using Sample = Viewer::Sample;
 
-    static constexpr float min_dist = 0.2f;
+    static constexpr float min_dist = 0.25f;
 
     Viewer *raw;
     Viewer *calibrated;

@@ -63,22 +63,63 @@ void Window::callback(Transfer::FrameRX frame) {
 
     samples.push_back(s);
 
-    raw->add(s);
+    while(true) {
+        const float N = samples.size();
 
-    const float num = samples.size();
-    offset[0] = std::accumulate(samples.begin(), samples.end(), 0.0f, [](float sum, const Sample& s) {return sum + s.x;})/num;
-    offset[1] = std::accumulate(samples.begin(), samples.end(), 0.0f, [](float sum, const Sample& s) {return sum + s.y;})/num;
-    offset[2] = std::accumulate(samples.begin(), samples.end(), 0.0f, [](float sum, const Sample& s) {return sum + s.z;})/num;
+        offset[0] = std::accumulate(samples.begin(), samples.end(), 0.0f, [](float sum, const Sample& s) {return sum + s.x;})/N;
+        offset[1] = std::accumulate(samples.begin(), samples.end(), 0.0f, [](float sum, const Sample& s) {return sum + s.y;})/N;
+        offset[2] = std::accumulate(samples.begin(), samples.end(), 0.0f, [](float sum, const Sample& s) {return sum + s.z;})/N;
 
-    scale[0] = num/std::accumulate(samples.begin(), samples.end(), 0.0f, [this](float sum, const Sample& s) {return sum + fabs(s.x - offset[0]);});
-    scale[1] = num/std::accumulate(samples.begin(), samples.end(), 0.0f, [this](float sum, const Sample& s) {return sum + fabs(s.y - offset[1]);});
-    scale[2] = num/std::accumulate(samples.begin(), samples.end(), 0.0f, [this](float sum, const Sample& s) {return sum + fabs(s.z - offset[2]);});
+        scale[0] = N/std::accumulate(samples.begin(), samples.end(), 0.0f, [this](float sum, const Sample& s) {return sum + fabs(s.x - offset[0]);});
+        scale[1] = N/std::accumulate(samples.begin(), samples.end(), 0.0f, [this](float sum, const Sample& s) {return sum + fabs(s.y - offset[1]);});
+        scale[2] = N/std::accumulate(samples.begin(), samples.end(), 0.0f, [this](float sum, const Sample& s) {return sum + fabs(s.z - offset[2]);});
 
-    //qDebug() << offset[0] << offset[1] << offset[2];
+        const float radius_mean = std::accumulate(samples.begin(), samples.end(), 0.0f,
+            [this](float sum, const Sample& s) {
+                const Sample calib = get_calibrated(s);
+                return sum + sqrt(calib.x*calib.x + calib.y*calib.y + calib.z*calib.z);
+            }
+        )/N;
 
+        const float radius_variance = std::accumulate(samples.begin(), samples.end(), 0.0f,
+            [this, radius_mean](float sum, const Sample& s) {
+                const Sample calib = get_calibrated(s);
+                const float radius = sqrt(calib.x*calib.x + calib.y*calib.y + calib.z*calib.z);
+                return sum + (radius - radius_mean)*(radius - radius_mean);
+            }
+        )/N;
+
+        const float radius_sigma = sqrt(radius_variance);
+
+        QVector<Sample> pass;
+        bool more = false;
+        for(const Sample &sample : samples) {
+            const Sample calib = get_calibrated(sample);
+            const float radius = sqrt(calib.x*calib.x + calib.y*calib.y + calib.z*calib.z);
+
+            if(radius>(radius_mean+3*radius_sigma) || radius<(radius_mean-3*radius_sigma)) {
+                more = true;
+                continue;
+            }
+
+            pass.push_back(sample);
+        }
+
+        samples = pass;
+
+        if(!more) {
+            break;
+        }
+    }
+
+    qDebug() << "offset:" << offset[0] << offset[1] << offset[2];
+    qDebug() << "scale: " << scale[0] << scale[1] << scale[2];
+
+    raw->clear();
     calibrated->clear();
 
     for(const Sample &sample : samples) {
+        raw->add(sample);
         calibrated->add(get_calibrated(sample));
     }
 }
