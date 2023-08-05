@@ -7,11 +7,12 @@
 #include <iomanip>
 
 Window::Window(QWidget *parent) : QWidget(parent), J{0, 6}, K{0, 1} {
-    QHBoxLayout *layout = new QHBoxLayout(this);
-
     raw = new Viewer(samples, this);
     calibrated = new Viewer(samples, this);
 
+    QHBoxLayout *layout = new QHBoxLayout(this);
+    layout->setContentsMargins(0, 0, 0, 0);
+    layout->setSpacing(0);
     layout->addWidget(raw);
     layout->addWidget(calibrated);
 

@@ -1,10 +1,9 @@
 #include "viewer.h"
 #include <cmath>
+#include <QPainter>
 
 Viewer::Viewer(const QVector<Sample> &s, QWidget *parent) : QWidget{parent}, samples{s} {
 	setFixedSize(size, size);
-	setBackgroundRole(QPalette::Window);
-	setAutoFillBackground(true);
 }
 
 void Viewer::set(const Params &p) {
@@ -17,11 +16,11 @@ void Viewer::paintEvent(QPaintEvent *event) {
 
 	float max = -1.f;
 	for(const Sample &sample : samples) {
-		max = std::max(max, std::abs(sample.x));
-		max = std::max(max, std::abs(sample.y));
-		max = std::max(max, std::abs(sample.z));
+		max = std::max(max, std::abs((sample.x - params.offset[0])/params.scale[0]));
+		max = std::max(max, std::abs((sample.y - params.offset[1])/params.scale[1]));
+		max = std::max(max, std::abs((sample.z - params.offset[2])/params.scale[2]));
 	}
-	const float window_scale = 0.4*size/max;
+	const float window_scale = 0.4f*size/max;
 
 	QPainter painter(this);
 	painter.fillRect(rect(), Qt::black);
