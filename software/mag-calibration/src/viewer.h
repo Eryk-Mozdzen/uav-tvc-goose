@@ -21,6 +21,7 @@ protected:
 	void paintEvent(QPaintEvent *event) override;
 
 private:
+	static constexpr int point = 4;
 	static constexpr int size = 800;
 	float scale;
 

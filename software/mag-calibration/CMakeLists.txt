@@ -18,6 +18,7 @@ add_executable(${PROJECT_NAME}
 	"src/usb.cpp"
 	"src/window.cpp"
 	"src/viewer.cpp"
+	"src/matrix.cpp"
 )
 
 target_include_directories(${PROJECT_NAME} PRIVATE

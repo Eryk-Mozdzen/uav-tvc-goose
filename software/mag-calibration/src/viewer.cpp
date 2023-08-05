@@ -19,12 +19,12 @@ void Viewer::paintEvent(QPaintEvent *event) {
 		const float y = scale*sample.y + offset;
 		const float z = scale*sample.z + offset;
 
-		painter.setPen(Qt::red);
-		painter.drawPoint(x, y);
-		painter.setPen(Qt::green);
-		painter.drawPoint(y, z);
-		painter.setPen(Qt::blue);
-		painter.drawPoint(z, x);
+		painter.setBrush(Qt::red);
+		painter.drawEllipse(x, y, point, point);
+		painter.setBrush(Qt::green);
+		painter.drawEllipse(y, z, point, point);
+		painter.setBrush(Qt::blue);
+		painter.drawEllipse(z, x, point, point);
 	}
 }
 
