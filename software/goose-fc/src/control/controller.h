@@ -43,6 +43,7 @@ public:
 
     void setSetpoint(const Matrix<X_NUM, 1> sp);
     void setProcessValue(const Matrix<X_NUM, 1> pv);
+    void resetIntegral();
     Matrix<U_NUM, 1> calculate();
 
     Matrix<X_NUM, 1> getSetpoint() const;

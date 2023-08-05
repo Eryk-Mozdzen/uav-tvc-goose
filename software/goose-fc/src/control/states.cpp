@@ -62,6 +62,8 @@ void TakeOff::enter() {
     Logger::getInstance().log(Logger::INFO, "sm: starting...");
 
     sp_altitude = context->process_value.z;
+
+    Controller::getInstance().resetIntegral();
 }
 
 void TakeOff::execute() {

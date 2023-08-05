@@ -12,6 +12,12 @@ void Controller::setProcessValue(const Matrix<X_NUM, 1> pv) {
     process_value = pv;
 }
 
+void Controller::resetIntegral() {
+    for(int i=0; i<G_NUM; i++) {
+        error_integral(i, 0) = 0.f;
+    }
+}
+
 Matrix<Controller::U_NUM, 1> Controller::calculate() {
     const Matrix<X_NUM, 1> error = process_value - setpoint;
 
