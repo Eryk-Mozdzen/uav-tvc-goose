@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.16)
 
-project(acc-calibration)
+project(calibration-mag)
 
 set(CMAKE_INCLUDE_CURRENT_DIR ON)
 set(CMAKE_AUTOUIC ON)
@@ -17,7 +17,8 @@ add_executable(${PROJECT_NAME}
 	"../transfer/transfer.cpp"
 	"src/usb.cpp"
 	"src/window.cpp"
-	"src/axis.cpp"
+	"src/viewer.cpp"
+	"src/matrix.cpp"
 )
 
 target_include_directories(${PROJECT_NAME} PRIVATE
