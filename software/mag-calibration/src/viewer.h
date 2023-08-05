@@ -4,26 +4,20 @@
 #include <QPainter>
 #include <QColor>
 #include <QVector>
+#include "utils.h"
 
 class Viewer : public QWidget {
 public:
+    Viewer(const QVector<Sample> &s, QWidget *parent=nullptr);
 
-	struct Sample {
-		float x, y, z;
-	};
-
-    Viewer(const float s, QWidget *parent=nullptr);
-
-	void add(const Sample &sample);
-	void clear();
-
-protected:
-	void paintEvent(QPaintEvent *event) override;
+	void set(const Params &p);
 
 private:
 	static constexpr int point = 4;
-	static constexpr int size = 800;
-	float scale;
+	static constexpr int size = 500;
 
-	QVector<Sample> samples;
+	const QVector<Sample> &samples;
+	Params params;
+
+	void paintEvent(QPaintEvent *event) override;
 };

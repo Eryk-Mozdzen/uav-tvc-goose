@@ -3,11 +3,10 @@
 #include "viewer.h"
 #include "usb.h"
 #include "matrix.h"
+#include "utils.h"
 
 class Window : public QWidget {
     Q_OBJECT
-
-    using Sample = Viewer::Sample;
 
     static constexpr float min_dist = 0.05f;
 
@@ -15,13 +14,11 @@ class Window : public QWidget {
     Viewer *calibrated;
     USB usb;
 
-    float offset[3];
-    float scale[3];
     QVector<Sample> samples;
     Matrix J;
+    Matrix K;
 
     bool is_far_enough(const Sample &test) const;
-    Sample get_calibrated(const Sample &sample) const;
 
 private slots:
     void callback(Transfer::FrameRX frame);

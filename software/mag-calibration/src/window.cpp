@@ -4,21 +4,13 @@
 #include <cmath>
 #include <algorithm>
 #include <iostream>
+#include <iomanip>
 
-Window::Window(QWidget *parent) : QWidget(parent), J{0, 9} {
-
-    offset[0] = 0.f;
-    offset[1] = 0.f;
-    offset[2] = 0.f;
-
-    scale[0] = 1.f;
-    scale[1] = 1.f;
-    scale[2] = 1.f;
-
+Window::Window(QWidget *parent) : QWidget(parent), J{0, 6}, K{0, 1} {
     QHBoxLayout *layout = new QHBoxLayout(this);
 
-    raw = new Viewer(200, this);
-    calibrated = new Viewer(200, this);
+    raw = new Viewer(samples, this);
+    calibrated = new Viewer(samples, this);
 
     layout->addWidget(raw);
     layout->addWidget(calibrated);
@@ -44,14 +36,6 @@ bool Window::is_far_enough(const Sample &test) const {
     return true;
 }
 
-Window::Sample Window::get_calibrated(const Sample &sample) const {
-    const float x = (sample.x - offset[0])/scale[0];
-    const float y = (sample.y - offset[1])/scale[1];
-    const float z = (sample.z - offset[2])/scale[2];
-
-    return {x, y, z};
-}
-
 void Window::callback(Transfer::FrameRX frame) {
     if(frame.id!=Transfer::ID::SENSOR_MAGNETIC_FIELD) {
         return;
@@ -67,14 +51,9 @@ void Window::callback(Transfer::FrameRX frame) {
     }
 
     samples.push_back(s);
-    const int N = samples.size();
 
-    J.append({s.x*s.x, s.y*s.y, s.z*s.z, s.x*s.y, s.x*s.z, s.y*s.z, s.x, s.y, s.z});
-
-    Matrix K(N, 1);
-    for(int i=0; i<N; i++) {
-        K(i, 0) = 1.f;
-    }
+    J.append({s.x*s.x, s.y*s.y, s.z*s.z, s.x, s.y, s.z});
+    K.append({1.f});
 
     const Matrix JT = J.transposition();
     const Matrix JTJ = JT*J;
@@ -83,27 +62,25 @@ void Window::callback(Transfer::FrameRX frame) {
     const float A = ABC(0, 0);
     const float B = ABC(1, 0);
     const float C = ABC(2, 0);
-    const float G = ABC(6, 0);
-    const float H = ABC(7, 0);
-    const float I = ABC(8, 0);
+    const float G = ABC(3, 0);
+    const float H = ABC(4, 0);
+    const float I = ABC(5, 0);
 
-    scale[0] = sqrt(1.f/A);
-    scale[1] = sqrt(1.f/B);
-    scale[2] = sqrt(1.f/C);
+    Params params;
 
-    offset[0] = -0.5f*G*scale[0]*scale[0];
-    offset[1] = -0.5f*H*scale[1]*scale[1];
-    offset[2] = -0.5f*I*scale[2]*scale[2];
+    params.scale[0] = sqrt(1.f/A);
+    params.scale[1] = sqrt(1.f/B);
+    params.scale[2] = sqrt(1.f/C);
 
-    std::cout << ABC << std::endl;
-    qDebug() << "offset:" << offset[0] << offset[1] << offset[2];
-    qDebug() << "scale: " << scale[0] << scale[1] << scale[2];
+    params.offset[0] = -0.5f*G*params.scale[0]*params.scale[0];
+    params.offset[1] = -0.5f*H*params.scale[1]*params.scale[1];
+    params.offset[2] = -0.5f*I*params.scale[2]*params.scale[2];
 
-    raw->clear();
-    calibrated->clear();
+    std::cout << "samples: " << std::setw(6) << std::noshowpos << samples.size() << " | ";
+    std::cout << std::setprecision(4) << std::fixed << std::showpos;
+    std::cout << "offset: " << params.offset[0] << " " << params.offset[1] << " " << params.offset[2] << " | ";
+    std::cout << "scale: "  << params.scale[0]  << " " << params.scale[1]  << " " << params.scale[2]  << std::endl;
 
-    for(const Sample &sample : samples) {
-        raw->add(sample);
-        calibrated->add(get_calibrated(sample));
-    }
+    raw->update();
+    calibrated->set(params);
 }
