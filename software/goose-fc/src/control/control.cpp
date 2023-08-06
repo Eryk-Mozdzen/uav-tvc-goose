@@ -15,6 +15,7 @@
 class Control : public TaskClassS<2048>, public Context {
 	events::Command cmd_start;
 	events::Command cmd_land;
+	events::Command cmd_abort;
 	events::Watchdog disconnect;
 	events::Limits limits;
 	events::Movement movement;
@@ -22,13 +23,10 @@ class Control : public TaskClassS<2048>, public Context {
 	events::Negation connect;
 	events::Negation stil;
 	events::Combination<3> readiness;
-	events::Altitude alt_reached;
-	events::Negation alt_timeout;
 
 	states::Abort abort;
 	states::Ready ready;
 	states::Active active;
-	states::TakeOff takeoff;
 	states::Landing landing;
 
 	sm::StateMachine<5, 4, Context> sm;
@@ -48,32 +46,29 @@ Control control;
 Control::Control() : TaskClassS{"control loop", TaskPrio_Mid},
 		cmd_start{comm::Command::START},
 		cmd_land{comm::Command::LAND},
+		cmd_abort{comm::Command::ABORT},
 		disconnect{1000},
 		correct{&limits, 3000},
 		connect{&disconnect, 3000},
 		stil{&movement, 3000},
 		readiness{&correct, &connect, &stil},
-		alt_timeout(&alt_reached, 6000),
 		sm{&abort, this},
 		telemetry_controller{"controller telememetry", Transfer::ID::TELEMETRY_CONTROLLER} {
 
 	sm.transit(&abort, &ready, &readiness);
 
+	sm.transit(&ready, &active, &cmd_start);
 	sm.transit(&ready, &abort, &limits);
-	sm.transit(&ready, &abort, &disconnect);
 	sm.transit(&ready, &abort, &movement);
-	sm.transit(&ready, &takeoff, &cmd_start);
-
-	sm.transit(&takeoff, &abort, &limits);
-	sm.transit(&takeoff, &active, &alt_reached);
-	sm.transit(&takeoff, &landing, &alt_timeout);
-	sm.transit(&takeoff, &landing, &disconnect);
+	sm.transit(&ready, &abort, &disconnect);
 
 	sm.transit(&active, &abort, &limits);
+	sm.transit(&active, &abort, &cmd_abort);
 	sm.transit(&active, &landing, &cmd_land);
 	sm.transit(&active, &landing, &disconnect);
 
 	sm.transit(&landing, &abort, &limits);
+	sm.transit(&landing, &abort, &cmd_abort);
 	sm.transit(&landing, &ready, &stil);
 }
 
@@ -91,6 +86,7 @@ void Control::task() {
 			if(frame.id==Transfer::ID::CONTROL_COMMAND) {
 				cmd_start.check(frame);
 				cmd_land.check(frame);
+				cmd_abort.check(frame);
 			}
 
 			if(frame.id==Transfer::ID::CONTROL_SETPOINT) {
