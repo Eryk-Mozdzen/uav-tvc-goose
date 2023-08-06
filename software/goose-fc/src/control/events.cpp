@@ -99,26 +99,4 @@ bool Movement::triggered() {
     return (Wx>angular_velocity_threshold || Wy>angular_velocity_threshold || Wz>angular_velocity_threshold || Vz>linear_velocity_threshold);
 }
 
-Altitude::Altitude() :
-        timer{"altitude timer", this, &Altitude::callback, period, pdTRUE},
-        flag{false} {
-
-    timer.start();
-}
-
-bool Altitude::triggered() {
-    const float altitude = context->process_value.z;
-
-    if(std::abs(altitude - desired)>margin) {
-        flag = false;
-        timer.reset();
-    }
-
-    return flag;
-}
-
-void Altitude::callback() {
-    flag = true;
-}
-
 }
