@@ -39,7 +39,7 @@ void Stats::task() {
 
 		if(ulTotalTime>0) {
 			for(uint32_t x=0; x<uxArraySize; x++) {
-				Logger::getInstance().log(Logger::DEBUG, "%-20s%8lu %3lu%%%6u",
+				Logger::getInstance().log(Logger::DEBUG, "%-25s%8lu %3lu%%%6u",
 					pxTaskStatusArray[x].pcTaskName,
 					pxTaskStatusArray[x].ulRunTimeCounter,
 					pxTaskStatusArray[x].ulRunTimeCounter/ulTotalTime,
