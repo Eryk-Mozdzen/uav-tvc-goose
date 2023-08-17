@@ -171,6 +171,5 @@ Quaternion AttitudeEstimator::getAttitude() const {
 }
 
 Vector AttitudeEstimator::getRotationRates() const {
-    return Vector(-gyration.y, gyration.x, -gyration.z);
+    return gyration;
 }
-
