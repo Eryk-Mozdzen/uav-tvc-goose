@@ -92,7 +92,12 @@ void SensorBus::write(const uint8_t device, const uint8_t reg, uint8_t src) {
 void SensorBus::write(const uint8_t device, const uint8_t reg, uint16_t src) {
 	lock.take(portMAX_DELAY);
 
-	const HAL_StatusTypeDef status = HAL_I2C_Mem_Write(&hi2c1, device<<1, reg, 1, reinterpret_cast<uint8_t *>(src), 2, 100);
+	uint8_t reverse[2] = {
+		static_cast<uint8_t>(src>>8),
+		static_cast<uint8_t>(src)
+	};
+
+	const HAL_StatusTypeDef status = HAL_I2C_Mem_Write(&hi2c1, device<<1, reg, 1, reverse, 2, 100);
 
 	switch(status) {
 		case HAL_ERROR:		Logger::getInstance().log(Logger::ERROR, "bus: write into 0x%02X device ended with HAL_ERROR", device);		break;

@@ -50,4 +50,11 @@ namespace comm {
 		float test;
 	};
 
+	struct Power {
+		float shunt;
+		float bus;
+		float current;
+		float power;
+	};
+
 }

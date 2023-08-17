@@ -11,7 +11,7 @@
 #define INA226_REG_SHUNT_VOLTAGE	0x01
 #define INA226_REG_BUS_VOLTAGE		0x02
 #define INA226_REG_POWER			0x03
-#define INA226_REG_CURRENT		`	0x04
+#define INA226_REG_CURRENT			0x04
 #define INA226_REG_CALIBRATION		0x05
 #define INA226_REG_MASK_ENABLE		0x06
 #define INA226_REG_ALERT_LIMIT		0x07
@@ -66,16 +66,19 @@
 #define INA226_MASK_ENABLE_ALERT_LATCH_TRANSPARENT		(0x00<<0)
 
 class INA226 : TaskClassS<512> {
-	IntervalLogger<float> telemetry_voltage;
-	IntervalLogger<float> telemetry_current;
+	IntervalLogger<comm::Power> telemetry;
 
 	static constexpr float Rshunt = 0.002f;
-	static constexpr float max_expected_current = 50.f;
-	static constexpr float current_LSB = max_expected_current/(1<<15);
-	static constexpr float voltage_LSB = 0.00125f;
+	static constexpr float max_current = 30.f;
+
+	static constexpr float shunt_voltage_LSB = 0.0000025f;
+	static constexpr float bus_voltage_LSB = 0.00125f;
+	static constexpr float current_LSB = max_current/32768.f;
 	static constexpr float power_LSB = 25.f*current_LSB;
 
-	uint16_t buffer[3];
+	static constexpr uint16_t calib = 0.00512f/(current_LSB*Rshunt);
+
+	uint8_t buffer[8];
 
 	void init();
 
@@ -84,7 +87,9 @@ public:
 
 	bool readData();
 
-	float getVoltage() const;
+	float getShuntVoltage() const;
+	float getBusVoltage() const;
+	float getPower() const;
 	float getCurrent() const;
 
 	void task();
@@ -93,9 +98,9 @@ public:
 INA226 power_monitor;
 
 INA226::INA226() : TaskClassS{"INA226 reader", TaskPrio_Low},
-		telemetry_voltage{"INA226 telemetry voltage", Transfer::ID::SENSOR_VOLTAGE},
-		telemetry_current{"INA226 telemetry current", Transfer::ID::SENSOR_CURRENT} {
+		telemetry{"INA226 telemetry", Transfer::ID::SENSOR_POWER_MONITOR} {
 
+	static_assert(max_current*Rshunt<0.081f);
 }
 
 void INA226::init() {
@@ -113,28 +118,46 @@ void INA226::init() {
 		INA226_CONFIGURATION_MODE_CONTINOUS_SHUNT_BUS
 	));
 
-	constexpr uint16_t CAL = 0.00512f/(current_LSB*Rshunt);
-
-	SensorBus::getInstance().write(INA226_ADDR, INA226_REG_CALIBRATION, CAL);
+	SensorBus::getInstance().write(INA226_ADDR, INA226_REG_CALIBRATION, calib);
 
 	Logger::getInstance().log(Logger::INFO, "pwr: initialization complete");
 }
 
 bool INA226::readData() {
+	int status = 0;
 
-	if(SensorBus::getInstance().read(INA226_ADDR, INA226_REG_BUS_VOLTAGE, reinterpret_cast<uint8_t *>(buffer), 3*sizeof(uint16_t))) {
-		return false;
-	}
+	memset(buffer, 0, 8);
 
-	return true;
+	if(!status) status = SensorBus::getInstance().read(INA226_ADDR, INA226_REG_SHUNT_VOLTAGE,	&buffer[0], 2);
+	if(!status) status = SensorBus::getInstance().read(INA226_ADDR, INA226_REG_BUS_VOLTAGE,		&buffer[2], 2);
+	if(!status) status = SensorBus::getInstance().read(INA226_ADDR, INA226_REG_POWER,			&buffer[4], 2);
+	if(!status) status = SensorBus::getInstance().read(INA226_ADDR, INA226_REG_CURRENT,			&buffer[6], 2);
+
+	return !status;
 }
 
-float INA226::getVoltage() const {
-	return buffer[0]*voltage_LSB;
+float INA226::getShuntVoltage() const {
+	const int16_t raw = (((uint16_t)buffer[0])<<8) | buffer[1];
+
+	return raw*shunt_voltage_LSB;
+}
+
+float INA226::getBusVoltage() const {
+	const uint16_t raw = (((uint16_t)buffer[2])<<8) | buffer[3];
+
+	return raw*bus_voltage_LSB;
+}
+
+float INA226::getPower() const {
+	const uint16_t raw = (((uint16_t)buffer[4])<<8) | buffer[5];
+
+	return raw*power_LSB;
 }
 
 float INA226::getCurrent() const {
-	return buffer[2]*current_LSB;
+	const int16_t raw = (((uint16_t)buffer[6])<<8) | buffer[7];
+
+	return raw*current_LSB;
 }
 
 void INA226::task() {
@@ -150,13 +173,15 @@ void INA226::task() {
 			continue;
 		}
 
-		const float voltage = getVoltage();
-		const float current = getCurrent();
+		comm::Power data;
+		data.shunt = getShuntVoltage();
+		data.bus = getBusVoltage();
+		data.current = getCurrent();
+		data.power = getPower();
 
-		Transport::getInstance().sensor_queue.add(Transport::Sensors::VOLTAGE, voltage, 0);
-		Transport::getInstance().sensor_queue.add(Transport::Sensors::CURRENT, current, 0);
+		Transport::getInstance().sensor_queue.add(Transport::Sensors::VOLTAGE, data.bus, 0);
+		Transport::getInstance().sensor_queue.add(Transport::Sensors::CURRENT, data.current, 0);
 
-		telemetry_voltage.feed(voltage);
-		telemetry_current.feed(current);
+		telemetry.feed(data);
 	}
 }
