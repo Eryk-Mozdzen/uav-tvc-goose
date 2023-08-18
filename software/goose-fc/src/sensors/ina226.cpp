@@ -167,7 +167,7 @@ void INA226::task() {
 	TickType_t time = xTaskGetTickCount();
 
 	while(1) {
-		vTaskDelayUntil(&time, 20);
+		vTaskDelayUntil(&time, 50);
 
 		if(!readData()) {
 			continue;
