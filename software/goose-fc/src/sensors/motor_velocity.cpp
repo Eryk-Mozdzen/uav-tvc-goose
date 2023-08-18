@@ -74,10 +74,10 @@ void MotorVelocity::task() {
 		const float counter = __HAL_TIM_GET_COUNTER(&htim2);
 		__HAL_TIM_SET_COUNTER(&htim2, 0);
 
-		const float rps = counter/motor_pole_pairs;
-		const float current_velocity = 2.f*pi*rps;
+		const float current_rps = frequency*counter/motor_pole_pairs;
+		const float current_radps = 2.f*pi*current_rps;
 
-		average.add(current_velocity);
+		average.add(current_radps);
 
 		const float filtererd_velocity = average.get();
 
