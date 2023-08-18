@@ -5,6 +5,7 @@
 #include "logger.h"
 #include "transport.h"
 #include "interval_logger.h"
+#include "moving_average.h"
 
 #include "stm32f4xx_hal.h"
 
@@ -15,6 +16,9 @@ class MotorVelocity : TaskClassS<512> {
 	static constexpr float frequency = 50.f;
 	static constexpr float delta_time = 1.f/frequency;
 	static constexpr float pi = 3.1415f;
+	static constexpr float average_time = 1.f;
+
+	MovingAverage<static_cast<uint32_t>(average_time*frequency)> average;
 
 	TIM_HandleTypeDef htim2;
 
@@ -71,10 +75,14 @@ void MotorVelocity::task() {
 		__HAL_TIM_SET_COUNTER(&htim2, 0);
 
 		const float rps = counter/motor_pole_pairs;
-		const float velocity = 2.f*pi*rps;
+		const float current_velocity = 2.f*pi*rps;
 
-		Transport::getInstance().sensor_queue.add(Transport::Sensors::HALL, velocity, 0);
+		average.add(current_velocity);
 
-		telemetry.feed(velocity);
+		const float filtererd_velocity = average.get();
+
+		Transport::getInstance().sensor_queue.add(Transport::Sensors::HALL, filtererd_velocity, 0);
+
+		telemetry.feed(filtererd_velocity);
 	}
 }
