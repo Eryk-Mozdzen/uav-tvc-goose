@@ -83,10 +83,12 @@ Window::Window(QWidget *parent) : QWidget(parent) {
 
         QPushButton *cmd_start = new QPushButton("Start Command", this);
         QPushButton *cmd_land = new QPushButton("Land Command", this);
+        QPushButton *cmd_abort = new QPushButton("Abort Command", this);
 
         grid->addWidget(freq, 0, 0, 1, 2);
         grid->addWidget(cmd_start, 1, 0);
         grid->addWidget(cmd_land, 1, 1);
+        grid->addWidget(cmd_abort, 2, 0, 1, 2);
 
         layout->addWidget(group, 2, 1);
 
@@ -102,19 +104,35 @@ Window::Window(QWidget *parent) : QWidget(parent) {
             transmit(Transfer::encode(comm::Command::LAND, Transfer::ID::CONTROL_COMMAND));
         });
 
+        connect(cmd_abort, &QPushButton::clicked, [this]() {
+            transmit(Transfer::encode(comm::Command::ABORT, Transfer::ID::CONTROL_COMMAND));
+        });
+
         connect(timer, &QTimer::timeout, [this]() {
             comm::Controller::State setpoint;
 
-            setpoint.rpy[0] = -30.f*deg2rad*gamepad.get(Gamepad::Analog::LX);
-            setpoint.rpy[1] = +30.f*deg2rad*gamepad.get(Gamepad::Analog::LY);
-            setpoint.rpy[2] = 0.f;
+            setpoint.rpy[0] = -10.f*deg2rad*gamepad.get(Gamepad::Analog::LX);
+            setpoint.rpy[1] = +10.f*deg2rad*gamepad.get(Gamepad::Analog::LY);
+            setpoint.rpy[2] = -90.f*deg2rad*gamepad.get(Gamepad::Analog::RX);
             setpoint.w[0] = 0.f;
             setpoint.w[1] = 0.f;
             setpoint.w[2] = 0.f;
-            setpoint.z = 1.f - gamepad.get(Gamepad::Analog::RY);
+            setpoint.z = std::max(-1.f*gamepad.get(Gamepad::Analog::RY), 0.f);
             setpoint.vz = 0.f;
 
             transmit(Transfer::encode(setpoint, Transfer::ID::CONTROL_SETPOINT));
+
+            if(gamepad.get(Gamepad::Button::CROSS_UP)) {
+                transmit(Transfer::encode(comm::Command::START, Transfer::ID::CONTROL_COMMAND));
+            }
+
+            if(gamepad.get(Gamepad::Button::CROSS_DOWN)) {
+                transmit(Transfer::encode(comm::Command::LAND, Transfer::ID::CONTROL_COMMAND));
+            }
+
+            if(gamepad.get(Gamepad::Button::CIRCLE_X)) {
+                transmit(Transfer::encode(comm::Command::ABORT, Transfer::ID::CONTROL_COMMAND));
+            }
         });
 
         connect(freq, &QComboBox::textActivated, [timer](QString value) {
@@ -321,7 +339,6 @@ void Window::receiveCallback(Transfer::FrameRX frame) {
         switch(controller_data.state) {
             case comm::Controller::SMState::ABORT:      others->set(0, "abort");     break;
             case comm::Controller::SMState::READY:      others->set(0, "ready");     break;
-            case comm::Controller::SMState::TAKE_OFF:   others->set(0, "take off");  break;
             case comm::Controller::SMState::ACTIVE:     others->set(0, "active");    break;
             case comm::Controller::SMState::LANDING:    others->set(0, "landing");   break;
         }

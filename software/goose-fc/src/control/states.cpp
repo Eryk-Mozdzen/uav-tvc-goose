@@ -33,6 +33,7 @@ void Ready::enter() {
 
 void Active::enter() {
     context->current = comm::Controller::SMState::ACTIVE;
+    Controller::getInstance().resetIntegral();
     Logger::getInstance().log(Logger::INFO, "sm: ready to fly");
 }
 
@@ -46,38 +47,6 @@ void Active::execute() {
         context->setpoint.w[2],
         context->setpoint.z,
         context->setpoint.vz
-    });
-
-    const Matrix<5, 1> u = Controller::getInstance().calculate();
-
-    Actuators::getInstance().setFinAngle(Actuators::Fin::FIN1, u(0, 0));
-	Actuators::getInstance().setFinAngle(Actuators::Fin::FIN2, u(1, 0));
-	Actuators::getInstance().setFinAngle(Actuators::Fin::FIN3, u(2, 0));
-	Actuators::getInstance().setFinAngle(Actuators::Fin::FIN4, u(3, 0));
-	Actuators::getInstance().setMotorThrottle(u(4, 0));
-}
-
-void TakeOff::enter() {
-    context->current = comm::Controller::SMState::TAKE_OFF;
-    Logger::getInstance().log(Logger::INFO, "sm: starting...");
-
-    sp_altitude = context->process_value.z;
-}
-
-void TakeOff::execute() {
-    if(sp_altitude<limit) {
-        sp_altitude +=increment;
-    }
-
-    Controller::getInstance().setSetpoint({
-        0.f,
-        0.f,
-        0.f,
-        0.f,
-        0.f,
-        0.f,
-        sp_altitude,
-        0.f
     });
 
     const Matrix<5, 1> u = Controller::getInstance().calculate();

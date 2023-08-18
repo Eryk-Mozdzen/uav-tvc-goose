@@ -83,18 +83,4 @@ public:
     bool triggered();
 };
 
-class Altitude : public sm::Event<Context> {
-    static constexpr float desired = 1.f;
-    static constexpr float margin = 0.2f;
-    static constexpr TickType_t period = 1000;
-    TimerMember<Altitude> timer;
-    bool flag;
-
-    void callback();
-
-public:
-    Altitude();
-    bool triggered();
-};
-
 }

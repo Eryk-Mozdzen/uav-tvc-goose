@@ -6,7 +6,8 @@ namespace comm {
 
     enum Command : uint8_t {
 		START,
-		LAND
+		LAND,
+		ABORT
 	};
 
 	struct Estimator {
@@ -29,7 +30,6 @@ namespace comm {
 		enum SMState : uint32_t {
 			ABORT,
 			READY,
-			TAKE_OFF,
 			ACTIVE,
 			LANDING
 		};
