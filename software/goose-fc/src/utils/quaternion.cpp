@@ -117,12 +117,7 @@ Matrix<3, 1> Quaternion::getRollPitchYaw() const {
 	const float t4 = 1.f - 2.f * (ysqr + qz * qz);
 	const float yaw = atan2f(t3, t4);
 
-	float roll_fixed = pitch;
-	float pitch_fixed = roll + 3.1415f;
-	while(pitch_fixed>+3.1415f) pitch_fixed -=2*3.1415f;
-	while(pitch_fixed<-3.1415f) pitch_fixed +=2*3.1415f;
-
-    return {roll_fixed, pitch_fixed, yaw};
+    return {roll, pitch, yaw};
 }
 
 void Quaternion::normalize() {
