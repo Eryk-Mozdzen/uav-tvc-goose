@@ -17,7 +17,8 @@ public:
 		BAROMETER,
 		LASER,
 		VOLTAGE,
-		CURRENT
+		CURRENT,
+		HALL
 	};
 
 	MultiQueue<Sensors, 16, Vector, float> sensor_queue;

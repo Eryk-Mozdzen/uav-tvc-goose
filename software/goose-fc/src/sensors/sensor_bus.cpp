@@ -89,6 +89,26 @@ void SensorBus::write(const uint8_t device, const uint8_t reg, uint8_t src) {
 	lock.give();
 }
 
+void SensorBus::write(const uint8_t device, const uint8_t reg, uint16_t src) {
+	lock.take(portMAX_DELAY);
+
+	uint8_t reverse[2] = {
+		static_cast<uint8_t>(src>>8),
+		static_cast<uint8_t>(src)
+	};
+
+	const HAL_StatusTypeDef status = HAL_I2C_Mem_Write(&hi2c1, device<<1, reg, 1, reverse, 2, 100);
+
+	switch(status) {
+		case HAL_ERROR:		Logger::getInstance().log(Logger::ERROR, "bus: write into 0x%02X device ended with HAL_ERROR", device);		break;
+		case HAL_BUSY:		Logger::getInstance().log(Logger::ERROR, "bus: write into 0x%02X device ended with HAL_BUSY", device);		break;
+		case HAL_TIMEOUT:	Logger::getInstance().log(Logger::ERROR, "bus: write into 0x%02X device ended with HAL_TIMEOUT", device);	break;
+		case HAL_OK: break;
+	}
+
+	lock.give();
+}
+
 int SensorBus::read(const uint8_t device, const uint8_t reg, uint8_t *dest, const uint8_t len) {
 	lock.take(portMAX_DELAY);
 

@@ -31,14 +31,14 @@ void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin) {
 		vTaskNotifyGiveIndexedFromISR(imu_task, 1, &xHigherPriorityTaskWoken);
 		portYIELD_FROM_ISR(xHigherPriorityTaskWoken);
 
-	} else if(GPIO_Pin==GPIO_PIN_5) {
+	} else if(GPIO_Pin==GPIO_PIN_7) {
 
 		// magnetometer
 		BaseType_t xHigherPriorityTaskWoken = pdFALSE;
 		vTaskNotifyGiveIndexedFromISR(mag_task, 1, &xHigherPriorityTaskWoken);
 		portYIELD_FROM_ISR(xHigherPriorityTaskWoken);
 
-	} else if(GPIO_Pin==GPIO_PIN_14) {
+	} else if(GPIO_Pin==GPIO_PIN_9) {
 
 		// distance
 		BaseType_t xHigherPriorityTaskWoken = pdFALSE;

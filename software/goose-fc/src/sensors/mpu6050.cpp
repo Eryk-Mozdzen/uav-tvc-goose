@@ -201,11 +201,10 @@
 #define MPU6050_WHO_AM_I_VALUE						(0x68<<0)
 
 class MPU6050 : public TaskClassS<512> {
-	Vector gyration;
-	Vector acceleration;
-
 	IntervalLogger<Vector> telemetry_acc;
 	IntervalLogger<Vector> telemetry_gyr;
+
+	uint8_t buffer[14];
 
 public:
 
@@ -242,100 +241,99 @@ void MPU6050::init() {
 	HAL_NVIC_SetPriority(EXTI15_10_IRQn, 6, 0);
 	HAL_NVIC_EnableIRQ(EXTI15_10_IRQn);
 
-	SensorBus::getInstance().write(MPU6050_ADDR, MPU6050_REG_PWR_MGMT_1,
+	SensorBus::getInstance().write(MPU6050_ADDR, MPU6050_REG_PWR_MGMT_1, static_cast<uint8_t>(
 		MPU6050_PWR_MGMT_1_DEVICE_RESET
-	);
+	));
 
 	vTaskDelay(100);
 
-	SensorBus::getInstance().write(MPU6050_ADDR, MPU6050_REG_SIGNAL_PATH_RESET,
+	SensorBus::getInstance().write(MPU6050_ADDR, MPU6050_REG_SIGNAL_PATH_RESET, static_cast<uint8_t>(
 		MPU6050_SIGNAL_PATH_RESET_GYRO |
 		MPU6050_SIGNAL_PATH_RESET_ACCEL |
 		MPU6050_SIGNAL_PATH_RESET_TEMP
-	);
+	));
 
 	vTaskDelay(100);
 
-	SensorBus::getInstance().write(MPU6050_ADDR, MPU6050_REG_INT_ENABLE,
+	SensorBus::getInstance().write(MPU6050_ADDR, MPU6050_REG_INT_ENABLE, static_cast<uint8_t>(
 		MPU6050_INT_ENABLE_FIFO_OVERLOW_DISABLE |
 		MPU6050_INT_ENABLE_I2C_MST_INT_DISABLE |
 		MPU6050_INT_ENABLE_DATA_RDY_ENABLE
-	);
+	));
 
-	SensorBus::getInstance().write(MPU6050_ADDR, MPU6050_REG_INT_PIN_CFG,
+	SensorBus::getInstance().write(MPU6050_ADDR, MPU6050_REG_INT_PIN_CFG, static_cast<uint8_t>(
 		MPU6050_INT_PIN_CFG_LEVEL_ACTIVE_HIGH |
 		MPU6050_INT_PIN_CFG_PUSH_PULL |
 		MPU6050_INT_PIN_CFG_PULSE |
 		MPU6050_INT_PIN_CFG_STATUS_CLEAR_AFTER_ANY |
 		MPU6050_INT_PIN_CFG_FSYNC_DISABLE |
 		MPU6050_INT_PIN_CFG_I2C_BYPASS_DISABLE
-	);
+	));
 
-	SensorBus::getInstance().write(MPU6050_ADDR, MPU6050_REG_PWR_MGMT_1,
+	SensorBus::getInstance().write(MPU6050_ADDR, MPU6050_REG_PWR_MGMT_1, static_cast<uint8_t>(
 		MPU6050_PWR_MGMT_1_TEMP_DIS |
 		MPU6050_PWR_MGMT_1_CLOCK_INTERNAL
-	);
+	));
 
-	SensorBus::getInstance().write(MPU6050_ADDR, MPU6050_REG_CONFIG,
+	SensorBus::getInstance().write(MPU6050_ADDR, MPU6050_REG_CONFIG, static_cast<uint8_t>(
 		MPU6050_CONFIG_EXT_SYNC_DISABLED |
 		MPU6050_CONFIG_DLPF_SETTING_6
-	);
+	));
 
-	SensorBus::getInstance().write(MPU6050_ADDR, MPU6050_REG_ACCEL_CONFIG,
+	SensorBus::getInstance().write(MPU6050_ADDR, MPU6050_REG_ACCEL_CONFIG, static_cast<uint8_t>(
 		MPU6050_ACCEL_CONFIG_RANGE_4G
-	);
+	));
 
-	SensorBus::getInstance().write(MPU6050_ADDR, MPU6050_REG_GYRO_CONFIG,
+	SensorBus::getInstance().write(MPU6050_ADDR, MPU6050_REG_GYRO_CONFIG, static_cast<uint8_t>(
 		MPU6050_GYRO_CONFIG_RANGE_500DPS
-	);
+	));
 
-	SensorBus::getInstance().write(MPU6050_ADDR, MPU6050_REG_SMPLRT_DIV, 4);
+	SensorBus::getInstance().write(MPU6050_ADDR, MPU6050_REG_SMPLRT_DIV, static_cast<uint8_t>(4));
 
 	Logger::getInstance().log(Logger::INFO, "imu: initialization complete");
 }
 
 bool MPU6050::readData() {
-	uint8_t buffer[14] = {0};
 
 	if(SensorBus::getInstance().read(MPU6050_ADDR, MPU6050_REG_ACCEL_XOUT_H, buffer, sizeof(buffer))) {
 		return false;
 	}
 
-	const int16_t acc_raw_x = (((int16_t)buffer[0])<<8) | buffer[1];
-	const int16_t acc_raw_y = (((int16_t)buffer[2])<<8) | buffer[3];
-	const int16_t acc_raw_z = (((int16_t)buffer[4])<<8) | buffer[5];
-
-	constexpr float acc_gain = 8192.f;
-	constexpr float g_to_ms2 = 9.81f;
-
-	const Vector acc_pre_calibrated = Vector(acc_raw_x, acc_raw_y, acc_raw_z)*g_to_ms2/acc_gain;
-
-	constexpr Vector acc_offset = {0.1150f, -0.0250f, -0.3150f};
-	constexpr Matrix<3, 3> acc_scale = {
-		0.9914f,	0,			0,
-		0,			0.9954f,	0,
-		0,			0,			0.9874f
-	};
-
-	acceleration = acc_scale*(acc_pre_calibrated - acc_offset);
-
-	const int16_t gyr_raw_x = (((int16_t)buffer[8])<<8) | buffer[9];
-	const int16_t gyr_raw_y = (((int16_t)buffer[10])<<8) | buffer[11];
-	const int16_t gyr_raw_z = (((int16_t)buffer[12])<<8) | buffer[13];
-
-	constexpr float gyr_gain = 65.5f;
-	constexpr float dps_to_rads = 0.017453292519943f;
-
-	gyration = Vector(gyr_raw_x, gyr_raw_y, gyr_raw_z)*dps_to_rads/gyr_gain;
-
 	return true;
 }
 
 Vector MPU6050::getGyration() const {
+	const int16_t raw_x = (((int16_t)buffer[8])<<8) | buffer[9];
+	const int16_t raw_y = (((int16_t)buffer[10])<<8) | buffer[11];
+	const int16_t raw_z = (((int16_t)buffer[12])<<8) | buffer[13];
+
+	constexpr float gain = 65.5f;
+	constexpr float dps_to_rads = 0.017453292519943f;
+
+	const Vector gyration = Vector(raw_z, raw_x, raw_y)*dps_to_rads/gain;
+
 	return gyration;
 }
 
 Vector MPU6050::getAcceleration() const {
+	const int16_t raw_x = (((int16_t)buffer[0])<<8) | buffer[1];
+	const int16_t raw_y = (((int16_t)buffer[2])<<8) | buffer[3];
+	const int16_t raw_z = (((int16_t)buffer[4])<<8) | buffer[5];
+
+	constexpr float gain = 8192.f;
+	constexpr float g_to_ms2 = 9.81f;
+
+	const Vector pre_calibrated = Vector(-raw_z, -raw_x, -raw_y)*g_to_ms2/gain;
+
+	constexpr Vector offset = {-0.1108f, -0.1605f, 0.0347f};
+	constexpr Matrix<3, 3> scale = {
+		0.9865f,	0,			0,
+		0,			0.9897f,	0,
+		0,			0,			0.9930f
+	};
+
+	const Vector acceleration = scale*(pre_calibrated - offset);
+
 	return acceleration;
 }
 

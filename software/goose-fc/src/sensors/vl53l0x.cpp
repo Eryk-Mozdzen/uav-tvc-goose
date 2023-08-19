@@ -79,23 +79,23 @@ void VL53L0X::gpioInit() {
 	GPIO_InitTypeDef GPIO_InitStruct;
 
 	// interrupt
-	__HAL_RCC_GPIOC_CLK_ENABLE();
-	GPIO_InitStruct.Pin = GPIO_PIN_14;
+	__HAL_RCC_GPIOA_CLK_ENABLE();
+	GPIO_InitStruct.Pin = GPIO_PIN_9;
 	GPIO_InitStruct.Mode = GPIO_MODE_IT_FALLING;
 	GPIO_InitStruct.Pull = GPIO_PULLUP;
-	HAL_GPIO_Init(GPIOC, &GPIO_InitStruct);
-	HAL_NVIC_SetPriority(EXTI15_10_IRQn, 6, 0);
-	HAL_NVIC_EnableIRQ(EXTI15_10_IRQn);
+	HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
+	HAL_NVIC_SetPriority(EXTI9_5_IRQn, 6, 0);
+	HAL_NVIC_EnableIRQ(EXTI9_5_IRQn);
 
 	// xshut
 	__HAL_RCC_GPIOC_CLK_ENABLE();
-	GPIO_InitStruct.Pin = GPIO_PIN_13;
+	GPIO_InitStruct.Pin = GPIO_PIN_8;
 	GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
 	GPIO_InitStruct.Pull = GPIO_NOPULL;
 	GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
 	HAL_GPIO_Init(GPIOC, &GPIO_InitStruct);
 
-	HAL_GPIO_WritePin(GPIOC, GPIO_PIN_13, GPIO_PIN_SET);
+	HAL_GPIO_WritePin(GPIOC, GPIO_PIN_8, GPIO_PIN_SET);
 }
 
 void VL53L0X::busInit() {
@@ -121,9 +121,9 @@ void VL53L0X::busInit() {
 
 void VL53L0X::sensorInit() {
 
-	HAL_GPIO_WritePin(GPIOC, GPIO_PIN_13, GPIO_PIN_RESET);
+	HAL_GPIO_WritePin(GPIOC, GPIO_PIN_8, GPIO_PIN_RESET);
 	vTaskDelay(20);
-	HAL_GPIO_WritePin(GPIOC, GPIO_PIN_13, GPIO_PIN_SET);
+	HAL_GPIO_WritePin(GPIOC, GPIO_PIN_8, GPIO_PIN_SET);
 	vTaskDelay(20);
 
 	uint32_t refSpadCount;
@@ -133,7 +133,7 @@ void VL53L0X::sensorInit() {
 
 	VL53L0X_Error status = VL53L0X_ERROR_NONE;
 
-	HAL_NVIC_DisableIRQ(EXTI15_10_IRQn);
+	HAL_NVIC_DisableIRQ(EXTI9_5_IRQn);
 
 	VL53L0X_WaitDeviceBooted(&vlx_sensor);
 	if(status==VL53L0X_ERROR_NONE) status = VL53L0X_DataInit(&vlx_sensor);
@@ -152,7 +152,7 @@ void VL53L0X::sensorInit() {
 
 	if(status==VL53L0X_ERROR_NONE) status = VL53L0X_StartMeasurement(&vlx_sensor);
 
-	HAL_NVIC_EnableIRQ(EXTI15_10_IRQn);
+	HAL_NVIC_EnableIRQ(EXTI9_5_IRQn);
 
 	if(status!=VL53L0X_ERROR_NONE) {
 		Logger::getInstance().log(Logger::ERROR, "vlx: initialization error: %d", status);

@@ -75,7 +75,8 @@ add_executable(${TARGET}
 	"src/sensors/mpu6050.cpp"
 	"src/sensors/hmc5883l.cpp"
 	"src/sensors/vl53l0x.cpp"
-	"src/sensors/power_stats.cpp"
+	"src/sensors/ina226.cpp"
+	"src/sensors/motor_velocity.cpp"
 	"src/communication/logger.cpp"
 	"src/communication/wire_transmitter.cpp"
 	"src/communication/wire_receiver.cpp"
@@ -95,6 +96,7 @@ add_executable(${TARGET}
 	"src/control/controller.cpp"
 	"src/hardware/actuators.cpp"
 	"src/hardware/memory.cpp"
+	"src/hardware/lights.cpp"
 )
 
 target_compile_definitions(${TARGET} PRIVATE

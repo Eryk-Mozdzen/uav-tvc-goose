@@ -7,7 +7,7 @@ void HAL_TIM_MspPostInit(TIM_HandleTypeDef* htim) {
 	if(htim->Instance==TIM1) {
 		__HAL_RCC_GPIOA_CLK_ENABLE();
 
-		GPIO_InitStruct.Pin = GPIO_PIN_9;
+		GPIO_InitStruct.Pin = GPIO_PIN_10;
 		GPIO_InitStruct.Mode = GPIO_MODE_AF_PP;
 		GPIO_InitStruct.Pull = GPIO_NOPULL;
 		GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
@@ -74,9 +74,9 @@ void Actuators::init() {
 	htim1_esc.Init.CounterMode = TIM_COUNTERMODE_UP;
 
     HAL_TIM_PWM_Init(&htim1_esc);
-    HAL_TIM_PWM_ConfigChannel(&htim1_esc, &sConfigOC, TIM_CHANNEL_2);
+    HAL_TIM_PWM_ConfigChannel(&htim1_esc, &sConfigOC, TIM_CHANNEL_3);
     HAL_TIM_MspPostInit(&htim1_esc);
-    HAL_TIM_PWM_Start(&htim1_esc, TIM_CHANNEL_2);
+    HAL_TIM_PWM_Start(&htim1_esc, TIM_CHANNEL_3);
 }
 
 void Actuators::setFinAngle(const Fin fin, float alpha) {
@@ -88,7 +88,7 @@ void Actuators::setFinAngle(const Fin fin, float alpha) {
 void Actuators::setMotorThrottle(float thorttle) {
     thorttle = thorttle>1.f ? 1.f : thorttle<0.f ? 0.f : thorttle;
 
-    __HAL_TIM_SET_COMPARE(&htim1_esc, TIM_CHANNEL_2, ESC::min_compare + (ESC::max_compare - ESC::min_compare)*thorttle);
+    __HAL_TIM_SET_COMPARE(&htim1_esc, TIM_CHANNEL_3, ESC::min_compare + (ESC::max_compare - ESC::min_compare)*thorttle);
 }
 
 float Actuators::getFinAngle(const Fin fin) const {
@@ -98,7 +98,7 @@ float Actuators::getFinAngle(const Fin fin) const {
 }
 
 float Actuators::getMotorThrottle() const {
-    const uint16_t compare = __HAL_TIM_GET_COMPARE(&htim1_esc, TIM_CHANNEL_2);
+    const uint16_t compare = __HAL_TIM_GET_COMPARE(&htim1_esc, TIM_CHANNEL_3);
 
     return (((float)compare) - ((float)ESC::min_compare))/(((float)ESC::max_compare) - ((float)ESC::min_compare));
 }

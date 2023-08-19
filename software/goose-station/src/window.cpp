@@ -38,9 +38,9 @@ Window::Window(QWidget *parent) : QWidget(parent) {
     }
 
     {
-        QGroupBox *group = new QGroupBox("power");
+        QGroupBox *group = new QGroupBox("power monitor");
 
-        power = new widgets::Form({"voltage", "current", "battery"}, true, group);
+        power = new widgets::Form({"shunt voltage", "bus voltage", "current", "power", "battery"}, true, group);
 
         layout->addWidget(group, 1, 0);
     }
@@ -48,7 +48,7 @@ Window::Window(QWidget *parent) : QWidget(parent) {
     {
         QGroupBox *group = new QGroupBox("others");
 
-        others = new widgets::Form({"state", "ground pressure", "pressure", "distance"}, true, group);
+        others = new widgets::Form({"state", "ground pressure", "pressure", "distance", "motor velocity"}, true, group);
 
         layout->addWidget(group, 2, 0);
     }
@@ -291,7 +291,7 @@ void Window::receiveCallback(Transfer::FrameRX frame) {
         comm::Estimator estimator_data;
         frame.getPayload(estimator_data);
 
-        power->set(2, "%1.2f", estimator_data.soc);
+        power->set(4, "%1.2f", estimator_data.soc);
 
         position->set(0, "%+3.2f", estimator_data.position[0]);
         position->set(1, "%+3.2f", estimator_data.position[1]);
@@ -358,16 +358,14 @@ void Window::receiveCallback(Transfer::FrameRX frame) {
 		return;
 	}
 
-    if(frame.id==Transfer::ID::SENSOR_VOLTAGE) {
-        float voltage;
-        frame.getPayload(voltage);
-        power->set(0, "%2.2f", voltage);
-    }
+    if(frame.id==Transfer::ID::SENSOR_POWER_MONITOR) {
+        comm::Power monitor;
+        frame.getPayload(monitor);
 
-    if(frame.id==Transfer::ID::SENSOR_CURRENT) {
-        float current;
-        frame.getPayload(current);
-        power->set(1, "%2.2f", current);
+        power->set(0, "%2.6f", monitor.shunt);
+        power->set(1, "%2.2f", monitor.bus);
+        power->set(2, "%2.2f", monitor.current);
+        power->set(3, "%2.2f", monitor.power);
     }
 
     if(frame.id==Transfer::ID::SENSOR_PRESSURE) {
@@ -386,5 +384,11 @@ void Window::receiveCallback(Transfer::FrameRX frame) {
         comm::Memory mem;
         frame.getPayload(mem);
         memory->set(0, "%.3f", mem.test);
+    }
+
+    if(frame.id==Transfer::ID::SENSOR_MOTOR_VELOCITY) {
+        float velocity;
+        frame.getPayload(velocity);
+        others->set(4, "%6.3f", velocity);
     }
 }

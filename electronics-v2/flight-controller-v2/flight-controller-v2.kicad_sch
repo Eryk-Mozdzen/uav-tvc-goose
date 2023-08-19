@@ -336,10 +336,6 @@
       (effects (font (size 1.27 1.27)) (justify right))
       (uuid 07ca088b-f6d0-4bfc-b8ba-f180cea54a4d)
     )
-    (pin "ESC_TIM1_CH2" output (at 114.3 81.28 180)
-      (effects (font (size 1.27 1.27)) (justify left))
-      (uuid 68a3e193-afe0-4a49-8f45-d415889c00b6)
-    )
     (pin "SERVO3_TIM3_CH3" output (at 114.3 88.9 180)
       (effects (font (size 1.27 1.27)) (justify left))
       (uuid 9da1cdfd-ee98-45ec-8556-d99b62a95ed9)
@@ -359,6 +355,10 @@
     (pin "HALL_TIM2_ETR" input (at 166.37 80.01 0)
       (effects (font (size 1.27 1.27)) (justify right))
       (uuid d51479af-a497-4634-bf2d-cee3b3f30c30)
+    )
+    (pin "ESC_TIM1_CH3" output (at 114.3 81.28 180)
+      (effects (font (size 1.27 1.27)) (justify left))
+      (uuid 55fdbf37-93ec-4489-b99d-2778986cddf5)
     )
   )
 
@@ -1019,10 +1019,10 @@
       (reference "R29") (unit 1) (value "4k7") (footprint "Resistor_SMD:R_0603_1608Metric")
     )
     (path "/d1a36df1-5a51-492c-9a9f-effbb0092bf0/701a0902-e3fc-43c6-9811-ce7aecf33d86"
-      (reference "R30") (unit 1) (value "100k") (footprint "Resistor_SMD:R_0603_1608Metric")
+      (reference "R30") (unit 1) (value "200k") (footprint "Resistor_SMD:R_0603_1608Metric")
     )
     (path "/d1a36df1-5a51-492c-9a9f-effbb0092bf0/71e4532c-0456-4789-9a2a-aa4a489625de"
-      (reference "R31") (unit 1) (value "100k") (footprint "Resistor_SMD:R_0603_1608Metric")
+      (reference "R31") (unit 1) (value "220k") (footprint "Resistor_SMD:R_0603_1608Metric")
     )
     (path "/d1a36df1-5a51-492c-9a9f-effbb0092bf0/7584f1ef-8386-4964-a02e-6599a7969b57"
       (reference "R32") (unit 1) (value "1k5") (footprint "Resistor_SMD:R_0603_1608Metric")
