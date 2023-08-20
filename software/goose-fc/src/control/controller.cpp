@@ -32,6 +32,8 @@ Matrix<Controller::U_NUM, 1> Controller::calculate() {
     }
 
     return operating_point - K*e;
+
+    //return operating_point - K*error;
 }
 
 Matrix<Controller::X_NUM, 1> Controller::getSetpoint() const {
