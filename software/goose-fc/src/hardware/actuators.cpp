@@ -33,7 +33,7 @@ void HAL_TIM_MspPostInit(TIM_HandleTypeDef* htim) {
 	}
 }
 
-Actuators::Actuators() : throttle_ramp{0.5, 100} {
+Actuators::Actuators() : throttle_ramp{0.333, 100} {
 
 }
 
@@ -85,22 +85,23 @@ void Actuators::setFinAngle(const Fin fin, float alpha) {
     __HAL_TIM_SET_COMPARE(&htim3_servo, fin, Servo::center_compare + Servo::radius_compare*alpha/(0.5f*pi));
 }
 
-void Actuators::setMotorThrottle(float throttle) {
+void Actuators::setMotorThrottle(float throttle, const Mode mode) {
     throttle = throttle>1 ? 1 : throttle<0 ? 0 : throttle;
 
 	throttle_ramp.setTarget(throttle);
 
-	const float ramped = throttle_ramp.getOutput();
+	switch(mode) {
+		case Mode::PASSTHROUGH: {
 
-    __HAL_TIM_SET_COMPARE(&htim1_esc, TIM_CHANNEL_3, ESC::min_compare + (ESC::max_compare - ESC::min_compare)*ramped);
-}
+		} break;
+		case Mode::RAMP: {
+			throttle = throttle_ramp.getOutput();
+		} break;
+	}
 
-void Actuators::stop() {
-	Actuators::getInstance().setFinAngle(Actuators::Fin::FIN1, 0);
-	Actuators::getInstance().setFinAngle(Actuators::Fin::FIN2, 0);
-	Actuators::getInstance().setFinAngle(Actuators::Fin::FIN3, 0);
-	Actuators::getInstance().setFinAngle(Actuators::Fin::FIN4, 0);
-	Actuators::getInstance().setMotorThrottle(0);
+	const uint16_t compare = ESC::min_compare + (ESC::max_compare - ESC::min_compare)*throttle;
+
+    __HAL_TIM_SET_COMPARE(&htim1_esc, TIM_CHANNEL_3, arr - compare);
 }
 
 float Actuators::getFinAngle(const Fin fin) const {
@@ -110,7 +111,7 @@ float Actuators::getFinAngle(const Fin fin) const {
 }
 
 float Actuators::getMotorThrottle() const {
-    const uint16_t compare = __HAL_TIM_GET_COMPARE(&htim1_esc, TIM_CHANNEL_3);
+    const uint16_t compare = arr - __HAL_TIM_GET_COMPARE(&htim1_esc, TIM_CHANNEL_3);
 
     return (((float)compare) - ((float)ESC::min_compare))/(((float)ESC::max_compare) - ((float)ESC::min_compare));
 }

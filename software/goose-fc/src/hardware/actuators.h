@@ -38,14 +38,18 @@ public:
         FIN4 = TIM_CHANNEL_4
     };
 
+    enum Mode {
+        PASSTHROUGH,
+        RAMP
+    };
+
     Actuators(Actuators &) = delete;
 	void operator=(const Actuators &) = delete;
 
     void init();
 
     void setFinAngle(const Fin fin, float alpha);
-    void setMotorThrottle(float throttle);
-    void stop();
+    void setMotorThrottle(float throttle, const Mode mode);
 
     float getFinAngle(const Fin fin) const;
     float getMotorThrottle() const;

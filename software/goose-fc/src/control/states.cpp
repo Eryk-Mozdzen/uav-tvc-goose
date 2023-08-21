@@ -11,7 +11,11 @@ void Abort::enter() {
 
     Controller::getInstance().setSetpoint({0.f, 0.f, 0.f, 0.f, 0.f, 0.f, 0.f, 0.f});
 
-    Actuators::getInstance().stop();
+    Actuators::getInstance().setFinAngle(Actuators::Fin::FIN1, 0);
+	Actuators::getInstance().setFinAngle(Actuators::Fin::FIN2, 0);
+	Actuators::getInstance().setFinAngle(Actuators::Fin::FIN3, 0);
+	Actuators::getInstance().setFinAngle(Actuators::Fin::FIN4, 0);
+	Actuators::getInstance().setMotorThrottle(0, Actuators::Mode::PASSTHROUGH);
 }
 
 void Ready::enter() {
@@ -20,7 +24,15 @@ void Ready::enter() {
 
     Controller::getInstance().setSetpoint({0.f, 0.f, 0.f, 0.f, 0.f, 0.f, 0.f, 0.f});
 
-    Actuators::getInstance().stop();
+    Actuators::getInstance().setFinAngle(Actuators::Fin::FIN1, 0);
+	Actuators::getInstance().setFinAngle(Actuators::Fin::FIN2, 0);
+	Actuators::getInstance().setFinAngle(Actuators::Fin::FIN3, 0);
+	Actuators::getInstance().setFinAngle(Actuators::Fin::FIN4, 0);
+	Actuators::getInstance().setMotorThrottle(0, Actuators::Mode::RAMP);
+}
+
+void Ready::execute() {
+	Actuators::getInstance().setMotorThrottle(0, Actuators::Mode::RAMP);
 }
 
 void Active::enter() {
@@ -47,7 +59,7 @@ void Active::execute() {
 	Actuators::getInstance().setFinAngle(Actuators::Fin::FIN2, u(1, 0));
 	Actuators::getInstance().setFinAngle(Actuators::Fin::FIN3, u(2, 0));
 	Actuators::getInstance().setFinAngle(Actuators::Fin::FIN4, u(3, 0));
-	Actuators::getInstance().setMotorThrottle(u(4, 0));
+	Actuators::getInstance().setMotorThrottle(u(4, 0), Actuators::Mode::RAMP);
 }
 
 void Landing::enter() {
@@ -77,7 +89,7 @@ void Landing::execute() {
 	Actuators::getInstance().setFinAngle(Actuators::Fin::FIN2, u(1, 0));
 	Actuators::getInstance().setFinAngle(Actuators::Fin::FIN3, u(2, 0));
 	Actuators::getInstance().setFinAngle(Actuators::Fin::FIN4, u(3, 0));
-	Actuators::getInstance().setMotorThrottle(u(4, 0));
+	Actuators::getInstance().setMotorThrottle(u(4, 0), Actuators::Mode::RAMP);
 }
 
 }
