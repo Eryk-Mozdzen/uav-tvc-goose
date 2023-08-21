@@ -11,11 +11,7 @@ void Abort::enter() {
 
     Controller::getInstance().setSetpoint({0.f, 0.f, 0.f, 0.f, 0.f, 0.f, 0.f, 0.f});
 
-    Actuators::getInstance().setFinAngle(Actuators::Fin::FIN1, 0.f);
-	Actuators::getInstance().setFinAngle(Actuators::Fin::FIN2, 0.f);
-	Actuators::getInstance().setFinAngle(Actuators::Fin::FIN3, 0.f);
-	Actuators::getInstance().setFinAngle(Actuators::Fin::FIN4, 0.f);
-	Actuators::getInstance().setMotorThrottle(0.f);
+    Actuators::getInstance().stop();
 }
 
 void Ready::enter() {
@@ -24,11 +20,7 @@ void Ready::enter() {
 
     Controller::getInstance().setSetpoint({0.f, 0.f, 0.f, 0.f, 0.f, 0.f, 0.f, 0.f});
 
-    Actuators::getInstance().setFinAngle(Actuators::Fin::FIN1, 0.f);
-	Actuators::getInstance().setFinAngle(Actuators::Fin::FIN2, 0.f);
-	Actuators::getInstance().setFinAngle(Actuators::Fin::FIN3, 0.f);
-	Actuators::getInstance().setFinAngle(Actuators::Fin::FIN4, 0.f);
-	Actuators::getInstance().setMotorThrottle(0.f);
+    Actuators::getInstance().stop();
 }
 
 void Active::enter() {

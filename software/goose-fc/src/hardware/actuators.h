@@ -1,5 +1,6 @@
 #pragma once
 
+#include "ramp.h"
 #include "stm32f4xx_hal.h"
 
 class Actuators {
@@ -24,6 +25,8 @@ class Actuators {
     TIM_HandleTypeDef htim3_servo;
     TIM_HandleTypeDef htim1_esc;
 
+    Ramp throttle_ramp;
+
     Actuators();
 
 public:
@@ -41,10 +44,11 @@ public:
     void init();
 
     void setFinAngle(const Fin fin, float alpha);
-    void setMotorThrottle(float thorttle);
+    void setMotorThrottle(float throttle);
+    void stop();
 
     float getFinAngle(const Fin fin) const;
     float getMotorThrottle() const;
 
-    static  Actuators & getInstance();
+    static Actuators & getInstance();
 };

@@ -97,6 +97,7 @@ add_executable(${TARGET}
 	"src/hardware/actuators.cpp"
 	"src/hardware/memory.cpp"
 	"src/hardware/lights.cpp"
+	"src/hardware/ramp.cpp"
 )
 
 target_compile_definitions(${TARGET} PRIVATE
