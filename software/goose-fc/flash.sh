@@ -9,7 +9,7 @@ elif [ "$type" == "dfu" ]; then
 	dfu-util -a 0 --dfuse-address 0x08000000:leave --download $file
 elif  [ "$type" == "ota" ]; then
 	arm-none-eabi-gdb -q $file << GDBSCRIPT
-		target extended-remote 192.168.102.29:2022
+		target extended-remote 10.42.0.220:2022
 		load
 		monitor reset
 		detach
