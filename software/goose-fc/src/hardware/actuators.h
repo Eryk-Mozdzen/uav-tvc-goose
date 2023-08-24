@@ -20,7 +20,8 @@ class Actuators {
     };
 
     static constexpr float pi = 3.1415f;
-    static constexpr float max_servo = 0.25f*pi;
+    static constexpr float deg2rad = pi/180.f;
+    static constexpr float max_servo = 25.f*deg2rad;
 
     TIM_HandleTypeDef htim3_servo;
     TIM_HandleTypeDef htim1_esc;

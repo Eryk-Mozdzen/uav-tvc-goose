@@ -5,6 +5,7 @@ clc
 
 fins_max_pos = deg2rad(15);
 fins_max_vel = deg2rad(180);
+throttle_ramp = 0.333;
 
 K_t = 3.85756;
 K_w = 0.0000014188;
@@ -21,8 +22,8 @@ J_yy = 0.000827389;
 J_zz = 0.000150260;
 J_r = 0.000014703;
 
-m = 0.27765;
-l = 0.04581 + 0.00625;
+m = 0.279;
+l = 0.06;
 r = 0.06575;
 
 g = 9.81;
@@ -31,10 +32,10 @@ g = 9.81;
 
 measurement_freq = 100;
 measurement_dt = 1/measurement_freq;
-variance_acc = 0.01;
-variance_gyr = 0.01;
-variance_mag = 0.01;
-variance_dst = 0.01;
+variance_acc = 0.000001;
+variance_gyr = 0.000001;
+variance_mag = 0.000001;
+variance_dst = 0.000001;
 
 %% operating point
 
@@ -99,27 +100,27 @@ G = [
 %% LQR regulator
 
 Q = diag([ ...
-    1000;
-    1000;
-    100;
     50;
     50;
+    50;
+    10;
+    10;
     10;
     50;
     10;
 
-    100;
-    100;
     10;
     10;
+    10;
+    20;
 ]);
 
 R = diag([
-    500;
-    500;
-    500;
-    500;
     1000;
+    1000;
+    1000;
+    1000;
+    10000;
 ]);
 
 K = lqr(A, B, Q, R)
