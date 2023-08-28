@@ -25,6 +25,7 @@ J_r = 0.000014703;
 m = 0.308;
 l = 0.04364 - 0.01325;
 r = 0.065;
+alpha_s = -deg2rad(9);
 
 g = 9.81;
 
@@ -32,16 +33,14 @@ g = 9.81;
 
 measurement_freq = 100;
 measurement_dt = 1/measurement_freq;
-variance_acc = 0.000001;
-variance_gyr = 0.000001;
-variance_mag = 0.000001;
-variance_dst = 0.000001;
+variance_acc = 0.01;
+variance_gyr = 0.01;
+variance_mag = 0.01;
+variance_dst = 0.01;
 
 %% operating point
 
-%alpha_0 = -K_tau/(4*r*C_l*K_t);
-%alpha_0 = 0;
-alpha_0 = -(K_tau/(4*r*C_l*K_t) - deg2rad(9));
+alpha_0 = -K_tau/(4*r*C_l*K_t) - alpha_s;
 throttle_0 = m*g/K_t;
 
 operating_point = [
