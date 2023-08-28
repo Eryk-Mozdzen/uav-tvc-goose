@@ -19,10 +19,10 @@ Window::Window(QWidget *parent) : QWidget(parent) {
         QGroupBox *group = new QGroupBox("source");
 
         source = new widgets::Form({"IP address", "COM port"}, false, group);
-        source->set(0, "192.168.79.29");
+        source->set(0, "10.42.0.220");
         source->set(1, "/dev/ttyACM0");
 
-        telnet.changeAddress("192.168.79.29");
+        telnet.changeAddress("10.42.0.220");
 
         layout->addWidget(group, 0, 0);
 
@@ -117,7 +117,7 @@ Window::Window(QWidget *parent) : QWidget(parent) {
             setpoint.w[0] = 0.f;
             setpoint.w[1] = 0.f;
             setpoint.w[2] = 0.f;
-            setpoint.z = std::max(-1.f*gamepad.get(Gamepad::Analog::RY), 0.f);
+            setpoint.z = 0.3f*(-gamepad.get(Gamepad::Analog::RY) + 1.f);
             setpoint.vz = 0.f;
 
             transmit(Transfer::encode(setpoint, Transfer::ID::CONTROL_SETPOINT));

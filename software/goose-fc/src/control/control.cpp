@@ -98,7 +98,7 @@ void Control::task() {
 			if(frame.id==Transfer::ID::CONTROL_MANUAL) {
 				comm::Manual manual;
 				if(frame.getPayload(manual)) {
-					Actuators::getInstance().setMotorThrottle(manual.throttle);
+					Actuators::getInstance().setMotorThrottle(manual.throttle, Actuators::Mode::RAMP);
 					Actuators::getInstance().setFinAngle(Actuators::FIN1, manual.angles[0]);
 					Actuators::getInstance().setFinAngle(Actuators::FIN2, manual.angles[1]);
 					Actuators::getInstance().setFinAngle(Actuators::FIN3, manual.angles[2]);

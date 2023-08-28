@@ -15,6 +15,7 @@ public:
 class Ready : public sm::State<Context> {
 public:
     void enter() override;
+    void execute() override;
 };
 
 class Active : public sm::State<Context> {

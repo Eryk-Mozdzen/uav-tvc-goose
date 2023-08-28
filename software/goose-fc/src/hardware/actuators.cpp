@@ -33,7 +33,7 @@ void HAL_TIM_MspPostInit(TIM_HandleTypeDef* htim) {
 	}
 }
 
-Actuators::Actuators() {
+Actuators::Actuators() : throttle_ramp{0.333, 100} {
 
 }
 
@@ -85,10 +85,23 @@ void Actuators::setFinAngle(const Fin fin, float alpha) {
     __HAL_TIM_SET_COMPARE(&htim3_servo, fin, Servo::center_compare + Servo::radius_compare*alpha/(0.5f*pi));
 }
 
-void Actuators::setMotorThrottle(float thorttle) {
-    thorttle = thorttle>1.f ? 1.f : thorttle<0.f ? 0.f : thorttle;
+void Actuators::setMotorThrottle(float throttle, const Mode mode) {
+    throttle = throttle>1 ? 1 : throttle<0 ? 0 : throttle;
 
-    __HAL_TIM_SET_COMPARE(&htim1_esc, TIM_CHANNEL_3, ESC::min_compare + (ESC::max_compare - ESC::min_compare)*thorttle);
+	throttle_ramp.setTarget(throttle);
+
+	switch(mode) {
+		case Mode::PASSTHROUGH: {
+
+		} break;
+		case Mode::RAMP: {
+			throttle = throttle_ramp.getOutput();
+		} break;
+	}
+
+	const uint16_t compare = ESC::min_compare + (ESC::max_compare - ESC::min_compare)*throttle;
+
+    __HAL_TIM_SET_COMPARE(&htim1_esc, TIM_CHANNEL_3, arr - compare);
 }
 
 float Actuators::getFinAngle(const Fin fin) const {
@@ -98,7 +111,7 @@ float Actuators::getFinAngle(const Fin fin) const {
 }
 
 float Actuators::getMotorThrottle() const {
-    const uint16_t compare = __HAL_TIM_GET_COMPARE(&htim1_esc, TIM_CHANNEL_3);
+    const uint16_t compare = arr - __HAL_TIM_GET_COMPARE(&htim1_esc, TIM_CHANNEL_3);
 
     return (((float)compare) - ((float)ESC::min_compare))/(((float)ESC::max_compare) - ((float)ESC::min_compare));
 }
