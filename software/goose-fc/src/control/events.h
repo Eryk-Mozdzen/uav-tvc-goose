@@ -5,6 +5,7 @@
 #include "TimerCPP.h"
 #include "comm.h"
 #include "context.h"
+#include "logger.h"
 
 namespace events {
 
@@ -17,6 +18,7 @@ public:
     void check(const Transfer::FrameRX &frame);
     bool triggered();
     void clear() override;
+    void action() override;
 };
 
 class Watchdog : public sm::Event<Context> {
@@ -29,6 +31,7 @@ public:
     Watchdog(const TickType_t period);
     bool triggered();
     void reset() override;
+    void action() override;
 };
 
 class Negation : public sm::Event<Context> {
@@ -42,6 +45,7 @@ public:
     Negation(sm::Event<Context> *target, const TickType_t period);
     bool triggered();
     void reset() override;
+    void action() override;
 };
 
 template<int N>
@@ -63,6 +67,10 @@ public:
 
         return true;
     }
+
+    void action() override {
+        Logger::getInstance().log(Logger::DEBUG, "ev: Combination occure");
+    }
 };
 
 class Limits : public sm::Event<Context> {
@@ -72,6 +80,7 @@ class Limits : public sm::Event<Context> {
 
 public:
     bool triggered();
+    void action() override;
 };
 
 class Movement : public sm::Event<Context> {
@@ -81,6 +90,7 @@ class Movement : public sm::Event<Context> {
 
 public:
     bool triggered();
+    void action() override;
 };
 
 }

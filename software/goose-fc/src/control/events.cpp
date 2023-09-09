@@ -1,5 +1,4 @@
 #include "events.h"
-#include "logger.h"
 
 namespace events {
 
@@ -21,7 +20,6 @@ void Command::check(const Transfer::FrameRX &frame) {
         return;
     }
 
-    Logger::getInstance().log(Logger::INFO, "sm: command %d received", cmd);
     flag = true;
 }
 
@@ -31,6 +29,10 @@ bool Command::triggered() {
 
 void Command::clear() {
     flag = false;
+}
+
+void Command::action() {
+    Logger::getInstance().log(Logger::DEBUG, "ev: Command %d received", cmd);
 }
 
 Watchdog::Watchdog(const TickType_t period) :
@@ -45,12 +47,15 @@ void Watchdog::reset() {
 }
 
 void Watchdog::timeout() {
-    Logger::getInstance().log(Logger::INFO, "sm: watchdog timeout");
     flag = true;
 }
 
 bool Watchdog::triggered() {
     return flag;
+}
+
+void Watchdog::action() {
+    Logger::getInstance().log(Logger::DEBUG, "ev: Watchdog timeout");
 }
 
 Negation::Negation(sm::Event<Context> *target, const TickType_t period) :
@@ -79,6 +84,10 @@ void Negation::reset() {
     repeat = false;
 }
 
+void Negation::action() {
+    Logger::getInstance().log(Logger::DEBUG, "ev: Negation occure");
+}
+
 bool Limits::triggered() {
     const float roll = context->process_value.rpy[0];
     const float pitch = context->process_value.rpy[1];
@@ -90,6 +99,27 @@ bool Limits::triggered() {
     return (curr_cos<max_cos || altitude>max_altitude);
 }
 
+void Limits::action() {
+    const float roll = context->process_value.rpy[0];
+    const float pitch = context->process_value.rpy[1];
+    const float altitude = context->process_value.z;
+
+    const float curr_cos = fabs(cosf(roll)*cosf(pitch));
+    const float max_cos = fabs(cosf(max_angle));
+
+    if(curr_cos<max_cos) {
+        Logger::getInstance().log(
+            Logger::DEBUG,
+            "ev: Attitude exceeds limits: roll: %+3.0f deg, pitch: %+3.0f deg",
+            (double)(roll/deg2rad),
+            (double)(pitch/deg2rad));
+    }
+
+    if(altitude>max_altitude) {
+        Logger::getInstance().log(Logger::DEBUG, "ev: Altitude exceeds limits: %+3.3f m", (double)altitude);
+    }
+}
+
 bool Movement::triggered() {
     const float Wx = fabs(context->process_value.w[0]);
     const float Wy = fabs(context->process_value.w[1]);
@@ -97,6 +127,10 @@ bool Movement::triggered() {
     const float Vz = fabs(context->process_value.vz);
 
     return (Wx>angular_velocity_threshold || Wy>angular_velocity_threshold || Wz>angular_velocity_threshold || Vz>linear_velocity_threshold);
+}
+
+void Movement::action() {
+    Logger::getInstance().log(Logger::DEBUG, "ev: Movement detected");
 }
 
 }
