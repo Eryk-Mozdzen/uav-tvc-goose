@@ -58,6 +58,37 @@ void Watchdog::action() {
     Logger::getInstance().log(Logger::DEBUG, "ev: Watchdog timeout");
 }
 
+
+Buffer::Buffer(sm::Event<Context> *target, const TickType_t period) :
+        target{target},
+        timer{"buffer timer", this, &Buffer::callback, period, pdFALSE},
+        repeat{false} {
+
+    timer.start();
+}
+
+bool Buffer::triggered() {
+    if(!target->triggered()) {
+        timer.reset();
+        repeat = false;
+    }
+
+    return repeat;
+}
+
+void Buffer::callback() {
+    repeat = true;
+}
+
+void Buffer::reset() {
+    timer.reset();
+    repeat = false;
+}
+
+void Buffer::action() {
+    target->action();
+}
+
 Negation::Negation(sm::Event<Context> *target, const TickType_t period) :
         target{target},
         timer{"negation timer", this, &Negation::callback, period, pdFALSE},

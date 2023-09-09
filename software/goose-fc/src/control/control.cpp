@@ -18,6 +18,7 @@ class Control : public TaskClassS<2048>, public Context {
 	events::Command cmd_abort;
 	events::Watchdog disconnect;
 	events::Limits limits;
+	events::Buffer limits_continous;
 	events::Movement movement;
 	events::Negation correct;
 	events::Negation connect;
@@ -48,6 +49,7 @@ Control::Control() : TaskClassS{"control loop", TaskPrio_Mid},
 		cmd_land{comm::Command::LAND},
 		cmd_abort{comm::Command::ABORT},
 		disconnect{1000},
+		limits_continous{&limits, 500},
 		correct{&limits, 3000},
 		connect{&disconnect, 3000},
 		stil{&movement, 3000},
@@ -62,12 +64,12 @@ Control::Control() : TaskClassS{"control loop", TaskPrio_Mid},
 	sm.transit(&ready, &abort, &movement);
 	sm.transit(&ready, &abort, &disconnect);
 
-	sm.transit(&active, &abort, &limits);
+	sm.transit(&active, &abort, &limits_continous);
 	sm.transit(&active, &abort, &cmd_abort);
 	sm.transit(&active, &landing, &cmd_land);
 	sm.transit(&active, &landing, &disconnect);
 
-	sm.transit(&landing, &abort, &limits);
+	sm.transit(&landing, &abort, &limits_continous);
 	sm.transit(&landing, &abort, &cmd_abort);
 	sm.transit(&landing, &ready, &stil);
 }

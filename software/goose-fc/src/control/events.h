@@ -34,6 +34,20 @@ public:
     void action() override;
 };
 
+class Buffer : public sm::Event<Context> {
+    sm::Event<Context> *target;
+    TimerMember<Buffer> timer;
+    bool repeat;
+
+    void callback();
+
+public:
+    Buffer(sm::Event<Context> *target, const TickType_t period);
+    bool triggered();
+    void reset() override;
+    void action() override;
+};
+
 class Negation : public sm::Event<Context> {
     sm::Event<Context> *target;
     TimerMember<Negation> timer;
