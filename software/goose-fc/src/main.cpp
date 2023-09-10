@@ -5,7 +5,6 @@
 #include "sensor_bus.h"
 #include "communication_bus.h"
 #include "actuators.h"
-#include "memory.h"
 #include "lights.h"
 
 void clock() {
@@ -42,7 +41,6 @@ int main() {
 
 	Lights::init();
 	Actuators::getInstance().init();
-	Memory::getInstance().synchronize();
 
 	vTaskStartScheduler();
 }

@@ -95,7 +95,6 @@ add_executable(${TARGET}
 	"src/control/events.cpp"
 	"src/control/controller.cpp"
 	"src/hardware/actuators.cpp"
-	"src/hardware/memory.cpp"
 	"src/hardware/lights.cpp"
 	"src/hardware/ramp.cpp"
 )

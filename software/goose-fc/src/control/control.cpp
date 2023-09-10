@@ -107,16 +107,6 @@ void Control::task() {
 					Actuators::getInstance().setFinAngle(Actuators::FIN4, manual.angles[3]);
 				}
 			}
-
-			if(frame.id==Transfer::ID::CONTROL_MEMORY) {
-				comm::Memory memory;
-				if(frame.getPayload(memory)) {
-					Memory::getInstance().write(memory);
-				} else {
-					const comm::Memory mem = Memory::getInstance().read();
-					Logger::getInstance().send(Transfer::ID::CONTROL_MEMORY, mem);
-				}
-			}
 		}
 
 		while(Transport::getInstance().state_queue.pop(process_value, 0)) {

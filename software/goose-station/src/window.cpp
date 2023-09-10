@@ -111,13 +111,13 @@ Window::Window(QWidget *parent) : QWidget(parent) {
         connect(timer, &QTimer::timeout, [this]() {
             comm::Controller::State setpoint;
 
-            setpoint.rpy[0] = -10.f*deg2rad*gamepad.get(Gamepad::Analog::LX);
-            setpoint.rpy[1] = +10.f*deg2rad*gamepad.get(Gamepad::Analog::LY);
+            setpoint.rpy[0] = -30.f*deg2rad*gamepad.get(Gamepad::Analog::LX);
+            setpoint.rpy[1] = +30.f*deg2rad*gamepad.get(Gamepad::Analog::LY);
             setpoint.rpy[2] = -90.f*deg2rad*gamepad.get(Gamepad::Analog::RX);
             setpoint.w[0] = 0.f;
             setpoint.w[1] = 0.f;
             setpoint.w[2] = 0.f;
-            setpoint.z = 0.3f*(-gamepad.get(Gamepad::Analog::RY) + 1.f);
+            setpoint.z = -gamepad.get(Gamepad::Analog::RY) + 1.f;
             setpoint.vz = 0.f;
 
             transmit(Transfer::encode(setpoint, Transfer::ID::CONTROL_SETPOINT));
@@ -250,35 +250,6 @@ Window::Window(QWidget *parent) : QWidget(parent) {
         layout->addWidget(group, 0, 4, 4, 4);
     }
 
-    {
-        QGroupBox *group = new QGroupBox("memory");
-
-        memory = new widgets::Form({"test", "test", "test", "test", "test", "test", "test", "test", "test", "test"}, false);
-        QPushButton *read = new QPushButton("Read");
-        QPushButton *write = new QPushButton("Write");
-
-        QGridLayout *grid = new QGridLayout(group);
-        grid->addLayout(memory->getLayout(), 0, 0, 10, 2);
-        grid->addWidget(read, 11, 0);
-        grid->addWidget(write, 11, 1);
-        layout->addWidget(group, 0, 8, 4, 8);
-
-        connect(read, &QPushButton::clicked, [this]() {
-            memory->reset();
-
-            const Transfer::FrameTX frame = Transfer::encode(Transfer::ID::CONTROL_MEMORY);
-            transmit(frame);
-        });
-
-        connect(write, &QPushButton::clicked, [this]() {
-            comm::Memory mem;
-            mem.test = memory->get(0).toFloat();
-
-            const Transfer::FrameTX frame = Transfer::encode(mem, Transfer::ID::CONTROL_MEMORY);
-            transmit(frame);
-        });
-    }
-
     connect(&usb, &USB::receive, this, &Window::receiveCallback);
     connect(&telnet, &Telnet::receive, this, &Window::receiveCallback);
     connect(this, &Window::transmit, &usb, &USB::transmit);
@@ -378,12 +349,6 @@ void Window::receiveCallback(Transfer::FrameRX frame) {
         float distance;
         frame.getPayload(distance);
         others->set(3, "%6.3f", distance);
-    }
-
-    if(frame.id==Transfer::ID::CONTROL_MEMORY) {
-        comm::Memory mem;
-        frame.getPayload(mem);
-        memory->set(0, "%.3f", mem.test);
     }
 
     if(frame.id==Transfer::ID::SENSOR_MOTOR_VELOCITY) {

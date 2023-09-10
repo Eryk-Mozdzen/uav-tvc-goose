@@ -67,7 +67,7 @@ public:
 	 * @brief Identification number of data frame.
 	 *
 	 */
-	enum ID {
+	enum ID : uint8_t {
 		LOG_DEBUG,
 		LOG_INFO,
 		LOG_WARNING,
@@ -86,8 +86,7 @@ public:
 
 		CONTROL_SETPOINT,
 		CONTROL_COMMAND,
-		CONTROL_MANUAL,
-		CONTROL_MEMORY
+		CONTROL_MANUAL
 	};
 
 	using FrameTX = _transfer::FrameTX<max_length>;

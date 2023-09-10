@@ -46,10 +46,6 @@ namespace comm {
 		float angles[4];
 	};
 
-	struct Memory {
-		float test;
-	};
-
 	struct Power {
 		float shunt;
 		float bus;
