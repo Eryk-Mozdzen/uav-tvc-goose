@@ -250,6 +250,18 @@ Window::Window(QWidget *parent) : QWidget(parent) {
         layout->addWidget(group, 0, 4, 4, 4);
     }
 
+    {
+        altitude = new widgets::LiveChart(0, 3, this);
+
+        layout->addWidget(altitude, 0, 8, 2, 1);
+    }
+
+    {
+        attitude = new widgets::LiveChart(-180, 180, this);
+
+        layout->addWidget(attitude, 2, 8, 2, 1);
+    }
+
     connect(&usb, &USB::receive, this, &Window::receiveCallback);
     connect(&telnet, &Telnet::receive, this, &Window::receiveCallback);
     connect(this, &Window::transmit, &usb, &USB::transmit);
@@ -313,6 +325,16 @@ void Window::receiveCallback(Transfer::FrameRX frame) {
             case comm::Controller::SMState::ACTIVE:     others->set(0, "active");    break;
             case comm::Controller::SMState::LANDING:    others->set(0, "landing");   break;
         }
+
+        altitude->append(QColorConstants::Svg::blue, controller_data.setpoint.z);
+        altitude->append(QColorConstants::Svg::red, controller_data.process_value.z);
+
+        attitude->append(QColorConstants::Svg::cyan, rad2deg*controller_data.setpoint.rpy[0]);
+        attitude->append(QColorConstants::Svg::lime, rad2deg*controller_data.setpoint.rpy[1]);
+        attitude->append(QColorConstants::Svg::pink, rad2deg*controller_data.setpoint.rpy[2]);
+        attitude->append(QColorConstants::Svg::blue, rad2deg*controller_data.process_value.rpy[0]);
+        attitude->append(QColorConstants::Svg::green, rad2deg*controller_data.process_value.rpy[1]);
+        attitude->append(QColorConstants::Svg::red, rad2deg*controller_data.process_value.rpy[2]);
     }
 
     if(frame.id<=Transfer::ID::LOG_ERROR) {

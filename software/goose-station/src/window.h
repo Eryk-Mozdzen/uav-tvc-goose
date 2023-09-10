@@ -6,6 +6,7 @@
 #include <QPushButton>
 #include <QSlider>
 #include "form.h"
+#include "livechart.h"
 #include "usb.h"
 #include "telnet.h"
 #include "gamepad.h"
@@ -27,6 +28,9 @@ class Window : public QWidget {
     widgets::Form *velocity;
     widgets::Form *acceleration;
     widgets::Form *memory;
+
+    widgets::LiveChart *altitude;
+    widgets::LiveChart *attitude;
 
     USB usb;
 	Telnet telnet;

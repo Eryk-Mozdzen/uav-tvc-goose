@@ -7,7 +7,13 @@ set(CMAKE_AUTOUIC ON)
 set(CMAKE_AUTOMOC ON)
 set(CMAKE_AUTORCC ON)
 
-find_package(Qt5 COMPONENTS	Widgets SerialPort WebEngineWidgets Gamepad REQUIRED)
+find_package(Qt5 COMPONENTS
+	Widgets
+	SerialPort
+	WebEngineWidgets
+	Gamepad
+	Charts
+REQUIRED)
 
 add_executable(${PROJECT_NAME}
 	"src/main.cpp"
@@ -16,6 +22,7 @@ add_executable(${PROJECT_NAME}
 	"src/communication/telnet.cpp"
 	"src/communication/gamepad.cpp"
 	"src/widgets/form.cpp"
+	"src/widgets/livechart.cpp"
 	"src/window.cpp"
 	"src/escape_codes.cpp"
 )
@@ -38,4 +45,5 @@ target_link_libraries(${PROJECT_NAME}
 	Qt5::SerialPort
 	Qt5::WebEngineWidgets
 	Qt5::Gamepad
+	Qt5::Charts
 )
