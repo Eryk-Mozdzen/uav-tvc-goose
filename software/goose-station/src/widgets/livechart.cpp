@@ -47,25 +47,31 @@ LiveChart::LiveChart(const float _minY, const float _maxY, QWidget *parent) : QW
     });
 }
 
+void LiveChart::addSeries(const QString name, const QPen pen) {
+    QtCharts::QLineSeries *s = new QtCharts::QLineSeries();
+    s->setPen(pen);
+    s->setName(name);
+
+    chart->addSeries(s);
+    series.append(s);
+}
+
 float LiveChart::getTime() const {
     return static_cast<float>(QDateTime::currentMSecsSinceEpoch() - start)/1000.f;
 }
 
-void LiveChart::append(const QColor color, const float value) {
+void LiveChart::append(const QString name, const float value) {
     QtCharts::QLineSeries *selectedSeries = nullptr;
 
     for(QtCharts::QLineSeries *existingSeries : series) {
-        if(existingSeries->color()==color) {
+        if(existingSeries->name()==name) {
             selectedSeries = existingSeries;
             break;
         }
     }
 
     if(!selectedSeries) {
-        selectedSeries = new QtCharts::QLineSeries();
-        selectedSeries->setColor(color);
-        chart->addSeries(selectedSeries);
-        series.append(selectedSeries);
+        return;
     }
 
     selectedSeries->append(getTime(), value);

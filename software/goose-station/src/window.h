@@ -1,10 +1,6 @@
 #pragma once
 
 #include <QWidget>
-#include <QTimer>
-#include <QComboBox>
-#include <QPushButton>
-#include <QSlider>
 #include "form.h"
 #include "livechart.h"
 #include "usb.h"

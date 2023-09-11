@@ -20,8 +20,9 @@ class LiveChart : public QWidget {
 
 public:
     LiveChart(const float _minY, const float _maxY, QWidget *parent=nullptr);
+    void addSeries(const QString name, const QPen pen);
 
-    void append(const QColor color, const float value);
+    void append(const QString name, const float value);
 };
 
 }
