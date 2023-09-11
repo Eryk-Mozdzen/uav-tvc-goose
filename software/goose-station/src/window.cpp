@@ -46,7 +46,7 @@ Window::Window(QWidget *parent) : QWidget(parent) {
 
         power = new widgets::Form({"shunt voltage", "bus voltage", "current", "power", "battery"}, true, group);
 
-        layout->addWidget(group, 1, 0);
+        layout->addWidget(group, 3, 0);
     }
 
     {
@@ -54,47 +54,22 @@ Window::Window(QWidget *parent) : QWidget(parent) {
 
         others = new widgets::Form({"state", "ground pressure", "pressure", "distance", "motor velocity"}, true, group);
 
-        layout->addWidget(group, 2, 0);
-    }
-
-    {
-        QGroupBox *group = new QGroupBox("setpoint");
-
-        setpoint = new widgets::Form({"roll", "pitch", "yaw", "Wx", "Wy", "Wz", "z", "Vz"}, true, group);
-
-        layout->addWidget(group, 0, 1, 2, 1);
-    }
-
-    {
-        QGroupBox *group = new QGroupBox("process");
-
-        process = new widgets::Form({"roll", "pitch", "yaw", "Wx", "Wy", "Wz", "z", "Vz"}, true, group);
-
-        layout->addWidget(group, 0, 2, 2, 1);
+        layout->addWidget(group, 1, 0);
     }
 
     {
         QGroupBox *group = new QGroupBox("steering");
         QGridLayout *grid = new QGridLayout(group);
 
-        QComboBox *freq = new QComboBox();
-        freq->addItem("off");
-        freq->addItem("0.5 Hz");
-        freq->addItem("1 Hz");
-        freq->addItem("2 Hz");
-        freq->addItem("50 Hz");
-        freq->setCurrentIndex(4);
-
         QPushButton *cmd_start = new QPushButton("Start Command", this);
         QPushButton *cmd_land = new QPushButton("Land Command", this);
         QPushButton *cmd_abort = new QPushButton("Abort Command", this);
 
-        grid->addWidget(freq, 0, 0, 1, 2);
-        grid->addWidget(cmd_start, 1, 0);
-        grid->addWidget(cmd_land, 1, 1);
-        grid->addWidget(cmd_abort, 2, 0, 1, 2);
+        grid->addWidget(cmd_start, 0, 0);
+        grid->addWidget(cmd_land, 1, 0);
+        grid->addWidget(cmd_abort, 2, 0);
 
-        layout->addWidget(group, 2, 1);
+        layout->addWidget(group, 2, 0);
 
         QTimer *timer = new QTimer();
         timer->setInterval(20);
@@ -138,64 +113,6 @@ Window::Window(QWidget *parent) : QWidget(parent) {
                 transmit(Transfer::encode(comm::Command::ABORT, Transfer::ID::CONTROL_COMMAND));
             }
         });
-
-        connect(freq, &QComboBox::textActivated, [timer](QString value) {
-            if(value=="off") {
-                timer->stop();
-            }
-
-            if(value=="0.5 Hz") {
-                timer->setInterval(2000);
-                timer->start();
-            }
-
-            if(value=="1 Hz") {
-                timer->setInterval(1000);
-                timer->start();
-            }
-
-            if(value=="2 Hz") {
-                timer->setInterval(500);
-                timer->start();
-            }
-
-            if(value=="50 Hz") {
-                timer->setInterval(20);
-                timer->start();
-            }
-        });
-    }
-
-    {
-        QGroupBox *group = new QGroupBox("actuators");
-
-        actuators = new widgets::Form({"fin 1", "fin 2", "fin 3", "fin 4", "throttle"}, true, group);
-
-        layout->addWidget(group, 2, 2);
-    }
-
-    {
-        QGroupBox *group = new QGroupBox("position");
-
-        position = new widgets::Form({"x", "y", "z"}, true, group);
-
-        layout->addWidget(group, 3, 0);
-    }
-
-    {
-        QGroupBox *group = new QGroupBox("velocity");
-
-        velocity = new widgets::Form({"x", "y", "z"}, true, group);
-
-        layout->addWidget(group, 3, 1);
-    }
-
-    {
-        QGroupBox *group = new QGroupBox("acceleration");
-
-        acceleration = new widgets::Form({"x", "y", "z"}, true, group);
-
-        layout->addWidget(group, 3, 2);
     }
 
     {
@@ -251,7 +168,7 @@ Window::Window(QWidget *parent) : QWidget(parent) {
         grid->addWidget(manual[3], 0, 3);
         grid->addWidget(manual[4], 0, 4);
         grid->addWidget(manual_switch, 1, 0, 4, 0);
-        layout->addWidget(group, 0, 4, 4, 4);
+        layout->addWidget(group, 0, 1, 4, 1);
     }
 
     {
@@ -259,7 +176,7 @@ Window::Window(QWidget *parent) : QWidget(parent) {
         altitude->addSeries("setpoint", QPen(Qt::black,   1, Qt::DashLine));
         altitude->addSeries("process", QPen(Qt::black,    2, Qt::SolidLine));
 
-        layout->addWidget(altitude, 0, 8, 2, 1);
+        layout->addWidget(altitude, 0, 4, 2, 1);
     }
 
     {
@@ -271,7 +188,24 @@ Window::Window(QWidget *parent) : QWidget(parent) {
         attitude->addSeries("Y process", QPen(Qt::green,    2, Qt::SolidLine));
         attitude->addSeries("Z process", QPen(Qt::blue,     2, Qt::SolidLine));
 
-        layout->addWidget(attitude, 2, 8, 2, 1);
+        layout->addWidget(attitude, 2, 4, 2, 1);
+    }
+
+    {
+        throttle = new widgets::LiveChart(0, 100, this);
+        throttle->addSeries("throttle", QPen(Qt::black, 2, Qt::SolidLine));
+
+        layout->addWidget(throttle, 0, 3, 2, 1);
+    }
+
+    {
+        fins = new widgets::LiveChart(-45, 45, this);
+        fins->addSeries("fin 1", QPen(Qt::red,      2, Qt::SolidLine));
+        fins->addSeries("fin 2", QPen(Qt::green,    2, Qt::SolidLine));
+        fins->addSeries("fin 3", QPen(Qt::blue,     2, Qt::SolidLine));
+        fins->addSeries("fin 4", QPen(Qt::magenta,  2, Qt::SolidLine));
+
+        layout->addWidget(fins, 2, 3, 2, 1);
     }
 
     connect(&usb, &USB::receive, this, &Window::receiveCallback);
@@ -288,18 +222,6 @@ void Window::receiveCallback(Transfer::FrameRX frame) {
 
         power->set(4, "%1.2f", estimator_data.soc);
 
-        position->set(0, "%+3.2f", estimator_data.position[0]);
-        position->set(1, "%+3.2f", estimator_data.position[1]);
-        position->set(2, "%+3.2f", estimator_data.position[2]);
-
-        velocity->set(0, "%+3.2f", estimator_data.velocity[0]);
-        velocity->set(1, "%+3.2f", estimator_data.velocity[1]);
-        velocity->set(2, "%+3.2f", estimator_data.velocity[2]);
-
-        acceleration->set(0, "%+3.2f", estimator_data.acceleration[0]);
-        acceleration->set(1, "%+3.2f", estimator_data.acceleration[1]);
-        acceleration->set(2, "%+3.2f", estimator_data.acceleration[2]);
-
         others->set(1, "%6.0f", estimator_data.ground_pressure);
     }
 
@@ -307,36 +229,18 @@ void Window::receiveCallback(Transfer::FrameRX frame) {
         comm::Controller controller_data;
         frame.getPayload(controller_data);
 
-        setpoint->set(0, "%+3.0f", rad2deg*controller_data.setpoint.rpy[0]);
-        setpoint->set(1, "%+3.0f", rad2deg*controller_data.setpoint.rpy[1]);
-        setpoint->set(2, "%+3.0f", rad2deg*controller_data.setpoint.rpy[2]);
-        setpoint->set(3, "%+3.0f", rad2deg*controller_data.setpoint.w[0]);
-        setpoint->set(4, "%+3.0f", rad2deg*controller_data.setpoint.w[1]);
-        setpoint->set(5, "%+3.0f", rad2deg*controller_data.setpoint.w[2]);
-        setpoint->set(6, "%+2.2f", controller_data.setpoint.z);
-        setpoint->set(7, "%+2.2f", controller_data.setpoint.vz);
-
-        process->set(0, "%+3.0f", rad2deg*controller_data.process_value.rpy[0]);
-        process->set(1, "%+3.0f", rad2deg*controller_data.process_value.rpy[1]);
-        process->set(2, "%+3.0f", rad2deg*controller_data.process_value.rpy[2]);
-        process->set(3, "%+3.0f", rad2deg*controller_data.process_value.w[0]);
-        process->set(4, "%+3.0f", rad2deg*controller_data.process_value.w[1]);
-        process->set(5, "%+3.0f", rad2deg*controller_data.process_value.w[2]);
-        process->set(6, "%+2.2f", controller_data.process_value.z);
-        process->set(7, "%+2.2f", controller_data.process_value.vz);
-
-        actuators->set(0, "%+3.0f", rad2deg*controller_data.angles[0]);
-        actuators->set(1, "%+3.0f", rad2deg*controller_data.angles[1]);
-        actuators->set(2, "%+3.0f", rad2deg*controller_data.angles[2]);
-        actuators->set(3, "%+3.0f", rad2deg*controller_data.angles[3]);
-        actuators->set(4, "%1.2f", controller_data.throttle);
-
         switch(controller_data.state) {
             case comm::Controller::SMState::ABORT:      others->set(0, "abort");     break;
             case comm::Controller::SMState::READY:      others->set(0, "ready");     break;
             case comm::Controller::SMState::ACTIVE:     others->set(0, "active");    break;
             case comm::Controller::SMState::LANDING:    others->set(0, "landing");   break;
         }
+
+        throttle->append("throttle", 100*controller_data.throttle);
+        fins->append("fin 1", rad2deg*controller_data.angles[0]);
+        fins->append("fin 2", rad2deg*controller_data.angles[1]);
+        fins->append("fin 3", rad2deg*controller_data.angles[2]);
+        fins->append("fin 4", rad2deg*controller_data.angles[3]);
 
         altitude->append("setpoint", controller_data.setpoint.z);
         altitude->append("process", controller_data.process_value.z);
