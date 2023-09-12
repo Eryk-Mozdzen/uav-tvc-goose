@@ -1,11 +1,8 @@
 #pragma once
 
 #include <QWidget>
-#include <QTimer>
-#include <QComboBox>
-#include <QPushButton>
-#include <QSlider>
 #include "form.h"
+#include "livechart.h"
 #include "usb.h"
 #include "telnet.h"
 #include "gamepad.h"
@@ -18,15 +15,13 @@ class Window : public QWidget {
     static constexpr float deg2rad = pi/180.f;
 
     widgets::Form *source;
-    widgets::Form *setpoint;
-    widgets::Form *process;
-    widgets::Form *actuators;
     widgets::Form *others;
     widgets::Form *power;
-    widgets::Form *position;
-    widgets::Form *velocity;
-    widgets::Form *acceleration;
-    widgets::Form *memory;
+
+    widgets::LiveChart *altitude;
+    widgets::LiveChart *attitude;
+    widgets::LiveChart *throttle;
+    widgets::LiveChart *fins;
 
     USB usb;
 	Telnet telnet;
