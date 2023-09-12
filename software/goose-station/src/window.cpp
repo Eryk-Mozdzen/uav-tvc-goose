@@ -250,10 +250,10 @@ void Window::receiveCallback(Transfer::FrameRX frame) {
         }
 
         if(controller_data.state==comm::Controller::SMState::ABORT) {
-            altitude->stop();
-            attitude->stop();
-            throttle->stop();
-            fins->stop();
+            altitude->pause();
+            attitude->pause();
+            throttle->pause();
+            fins->pause();
         }
 
         throttle->append("throttle", 100*controller_data.throttle);

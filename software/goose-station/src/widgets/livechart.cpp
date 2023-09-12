@@ -1,8 +1,7 @@
 #include "livechart.h"
-#include <QTimer>
 #include <QDateTime>
-#include <QValueAxis>
 #include <QDebug>
+#include <QChartView>
 
 namespace widgets {
 
@@ -10,61 +9,53 @@ LiveChart::LiveChart(const float _minY, const float _maxY, QWidget *parent) : QW
         start{QDateTime::currentMSecsSinceEpoch()},
         minY{_minY},
         maxY{_maxY},
+        minX{-10},
         ignoreSamples{false} {
     setFixedSize(500, 320);
 
     chart = new QtCharts::QChart();
-    chart->createDefaultAxes();
     chart->legend()->hide();
 
-    view = new QtCharts::QChartView(chart, this);
+    QtCharts::QChartView *view = new QtCharts::QChartView(chart, this);
     view->setRenderHint(QPainter::Antialiasing);
     view->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
     view->setGeometry(0, 0, width(), height());
+
+    axisX = new QtCharts::QValueAxis(this);
+    axisY = new QtCharts::QValueAxis(this);
+    axisX->setRange(minX, 0);
+    axisY->setRange(minY, maxY);
+
+    chart->addAxis(axisX, Qt::AlignBottom);
+    chart->addAxis(axisY, Qt::AlignLeft);
 
     timer = new QTimer(this);
     timer->setInterval(20);
     timer->start();
 
     connect(timer, &QTimer::timeout, [this]() {
-        updateAxes();
+        const float t = getTime();
+
+        axisX->setRange(minX+t, t);
+        axisY->setRange(minY, maxY);
     });
 }
 
 void LiveChart::addSeries(const QString name, const QPen pen) {
-    QtCharts::QLineSeries *s = new QtCharts::QLineSeries();
-    s->setPen(pen);
-    s->setName(name);
+    QtCharts::QLineSeries *s = new QtCharts::QLineSeries(this);
 
     chart->addSeries(s);
-    series.append(s);
 
-    updateAxes();
+    s->setPen(pen);
+    s->setName(name);
+    s->attachAxis(axisX);
+    s->attachAxis(axisY);
+
+    series.append(s);
 }
 
 float LiveChart::getTime() const {
     return static_cast<float>(QDateTime::currentMSecsSinceEpoch() - start)/1000.f;
-}
-
-void LiveChart::updateAxes() {
-    const float t = getTime();
-
-    QtCharts::QValueAxis *axisX = new QtCharts::QValueAxis;
-    axisX->setRange(t-10, t);
-    //axisX->setTickCount(1000);
-    //axisX->setLabelFormat("%.2f");
-    //chart->setAxisX(axisX);
-
-    QtCharts::QValueAxis *axisY = new QtCharts::QValueAxis;
-    axisY->setRange(minY, maxY);
-    //axisY->setTickCount(0.1);
-    //axisX->setLabelFormat("%.2f");
-    //chart->setAxisY(axisY);
-
-    for(QtCharts::QLineSeries *s : series) {
-        chart->setAxisX(axisX, s);
-        chart->setAxisY(axisY, s);
-    }
 }
 
 void LiveChart::append(const QString name, const float value) {
@@ -97,7 +88,7 @@ void LiveChart::resume() {
     }
 }
 
-void LiveChart::stop() {
+void LiveChart::pause() {
     timer->stop();
     ignoreSamples = true;
 }
