@@ -168,7 +168,7 @@ Window::Window(QWidget *parent) : QWidget(parent) {
         grid->addWidget(manual[3], 0, 3);
         grid->addWidget(manual[4], 0, 4);
         grid->addWidget(manual_switch, 1, 0, 4, 0);
-        layout->addWidget(group, 0, 1, 4, 1);
+        layout->addWidget(group, 1, 1, 4, 1);
     }
 
     {
@@ -208,6 +208,19 @@ Window::Window(QWidget *parent) : QWidget(parent) {
         layout->addWidget(fins, 2, 3, 2, 1);
     }
 
+    {
+        QPushButton *resume = new QPushButton("Resume", this);
+
+        layout->addWidget(resume, 0, 1);
+
+        connect(resume, &QPushButton::clicked, [this]() {
+            altitude->resume();
+            attitude->resume();
+            throttle->resume();
+            fins->resume();
+        });
+    }
+
     connect(&usb, &USB::receive, this, &Window::receiveCallback);
     connect(&telnet, &Telnet::receive, this, &Window::receiveCallback);
     connect(this, &Window::transmit, &usb, &USB::transmit);
@@ -234,6 +247,13 @@ void Window::receiveCallback(Transfer::FrameRX frame) {
             case comm::Controller::SMState::READY:      others->set(0, "ready");     break;
             case comm::Controller::SMState::ACTIVE:     others->set(0, "active");    break;
             case comm::Controller::SMState::LANDING:    others->set(0, "landing");   break;
+        }
+
+        if(controller_data.state==comm::Controller::SMState::ABORT) {
+            altitude->stop();
+            attitude->stop();
+            throttle->stop();
+            fins->stop();
         }
 
         throttle->append("throttle", 100*controller_data.throttle);
