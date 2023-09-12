@@ -89,6 +89,13 @@ void Control::task() {
 				cmd_start.check(frame);
 				cmd_land.check(frame);
 				cmd_abort.check(frame);
+
+				comm::Command command;
+				if(frame.getPayload(command)) {
+					if(command==comm::Command::RESET) {
+						NVIC_SystemReset();
+					}
+				}
 			}
 
 			if(frame.id==Transfer::ID::CONTROL_SETPOINT) {

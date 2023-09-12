@@ -61,13 +61,15 @@ Window::Window(QWidget *parent) : QWidget(parent) {
         QGroupBox *group = new QGroupBox("steering");
         QGridLayout *grid = new QGridLayout(group);
 
-        QPushButton *cmd_start = new QPushButton("Start Command", this);
-        QPushButton *cmd_land = new QPushButton("Land Command", this);
-        QPushButton *cmd_abort = new QPushButton("Abort Command", this);
+        QPushButton *cmd_start = new QPushButton("Start", this);
+        QPushButton *cmd_land = new QPushButton("Land", this);
+        QPushButton *cmd_abort = new QPushButton("Abort", this);
+        QPushButton *cmd_reset = new QPushButton("Reset", this);
 
         grid->addWidget(cmd_start, 0, 0);
         grid->addWidget(cmd_land, 1, 0);
         grid->addWidget(cmd_abort, 2, 0);
+        grid->addWidget(cmd_reset, 4, 0);
 
         layout->addWidget(group, 2, 0);
 
@@ -85,6 +87,10 @@ Window::Window(QWidget *parent) : QWidget(parent) {
 
         connect(cmd_abort, &QPushButton::clicked, [this]() {
             transmit(Transfer::encode(comm::Command::ABORT, Transfer::ID::CONTROL_COMMAND));
+        });
+
+        connect(cmd_reset, &QPushButton::clicked, [this]() {
+            transmit(Transfer::encode(comm::Command::RESET, Transfer::ID::CONTROL_COMMAND));
         });
 
         connect(timer, &QTimer::timeout, [this]() {

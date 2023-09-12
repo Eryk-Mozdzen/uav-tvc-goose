@@ -7,7 +7,8 @@ namespace comm {
     enum Command : uint8_t {
 		START,
 		LAND,
-		ABORT
+		ABORT,
+		RESET
 	};
 
 	struct Estimator {
