@@ -186,7 +186,7 @@ Window::Window(QWidget *parent) : QWidget(parent) {
     }
 
     {
-        attitude = new widgets::LiveChart(-90, 90, this);
+        attitude = new widgets::LiveChart(-180, 180, this);
         attitude->addSeries("X setpoint", QPen(Qt::red,     1, Qt::DashLine));
         attitude->addSeries("Y setpoint", QPen(Qt::green,   1, Qt::DashLine));
         attitude->addSeries("Z setpoint", QPen(Qt::blue,    1, Qt::DashLine));
@@ -205,7 +205,7 @@ Window::Window(QWidget *parent) : QWidget(parent) {
     }
 
     {
-        fins = new widgets::LiveChart(-45, 45, this);
+        fins = new widgets::LiveChart(-20, 20, this);
         fins->addSeries("fin 1", QPen(Qt::red,      2, Qt::SolidLine));
         fins->addSeries("fin 2", QPen(Qt::green,    2, Qt::SolidLine));
         fins->addSeries("fin 3", QPen(Qt::blue,     2, Qt::SolidLine));
