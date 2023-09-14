@@ -11,7 +11,7 @@ public:
 	void task();
 };
 
-Stats stats;
+//Stats stats;
 
 Stats::Stats() : TaskClassS{"stats", TaskPrio_Idle} {
 
