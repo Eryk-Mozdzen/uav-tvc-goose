@@ -178,7 +178,14 @@ Window::Window(QWidget *parent) : QWidget(parent) {
     }
 
     {
-        altitude = new widgets::LiveChart(0, 2, this);
+        widgets::LiveChart::Config config;
+        config.title = "Altitude";
+        config.yLabel = "[m]";
+        config.yMin = 0;
+        config.yMax = 2;
+        config.yFormat = "%1.1f";
+
+        altitude = new widgets::LiveChart(config, this);
         altitude->addSeries("setpoint", QPen(Qt::black,   1, Qt::DashLine));
         altitude->addSeries("process", QPen(Qt::black,    2, Qt::SolidLine));
 
@@ -186,30 +193,51 @@ Window::Window(QWidget *parent) : QWidget(parent) {
     }
 
     {
-        attitude = new widgets::LiveChart(-180, 180, this);
-        attitude->addSeries("X setpoint", QPen(Qt::red,     1, Qt::DashLine));
-        attitude->addSeries("Y setpoint", QPen(Qt::green,   1, Qt::DashLine));
-        attitude->addSeries("Z setpoint", QPen(Qt::blue,    1, Qt::DashLine));
-        attitude->addSeries("X process", QPen(Qt::red,      2, Qt::SolidLine));
-        attitude->addSeries("Y process", QPen(Qt::green,    2, Qt::SolidLine));
-        attitude->addSeries("Z process", QPen(Qt::blue,     2, Qt::SolidLine));
+        widgets::LiveChart::Config config;
+        config.title = "Attitude";
+        config.yLabel = "[°]";
+        config.yMin = -180;
+        config.yMax = 180;
+        config.yFormat = "%3.0f";
+
+        attitude = new widgets::LiveChart(config, this);
+        attitude->addSeries("roll setpoint", QPen(Qt::red,      1, Qt::DashLine));
+        attitude->addSeries("roll process", QPen(Qt::red,       2, Qt::SolidLine));
+        attitude->addSeries("pitch setpoint", QPen(Qt::green,   1, Qt::DashLine));
+        attitude->addSeries("pitch process", QPen(Qt::green,    2, Qt::SolidLine));
+        attitude->addSeries("yaw setpoint", QPen(Qt::blue,      1, Qt::DashLine));
+        attitude->addSeries("yaw process", QPen(Qt::blue,       2, Qt::SolidLine));
 
         layout->addWidget(attitude, 2, 4, 2, 1);
     }
 
     {
-        throttle = new widgets::LiveChart(0, 100, this);
+        widgets::LiveChart::Config config;
+        config.title = "Motor Throttle";
+        config.yLabel = "[%]";
+        config.yMin = 0;
+        config.yMax = 100;
+        config.yFormat = "%3.0f";
+
+        throttle = new widgets::LiveChart(config, this);
         throttle->addSeries("throttle", QPen(Qt::black, 2, Qt::SolidLine));
 
         layout->addWidget(throttle, 0, 3, 2, 1);
     }
 
     {
-        fins = new widgets::LiveChart(-20, 20, this);
-        fins->addSeries("fin 1", QPen(Qt::red,      2, Qt::SolidLine));
-        fins->addSeries("fin 2", QPen(Qt::green,    2, Qt::SolidLine));
-        fins->addSeries("fin 3", QPen(Qt::blue,     2, Qt::SolidLine));
-        fins->addSeries("fin 4", QPen(Qt::magenta,  2, Qt::SolidLine));
+        widgets::LiveChart::Config config;
+        config.title = "Thrust Vanes";
+        config.yLabel = "[°]";
+        config.yMin = -30;
+        config.yMax = 30;
+        config.yFormat = "%2.0f";
+
+        fins = new widgets::LiveChart(config, this);
+        fins->addSeries("vane 1", QPen(Qt::red,      2, Qt::SolidLine));
+        fins->addSeries("vane 2", QPen(Qt::green,    2, Qt::SolidLine));
+        fins->addSeries("vane 3", QPen(Qt::blue,     2, Qt::SolidLine));
+        fins->addSeries("vane 4", QPen(Qt::magenta,  2, Qt::SolidLine));
 
         layout->addWidget(fins, 2, 3, 2, 1);
     }
@@ -263,20 +291,20 @@ void Window::receiveCallback(Transfer::FrameRX frame) {
         }
 
         throttle->append("throttle", 100*controller_data.throttle);
-        fins->append("fin 1", rad2deg*controller_data.angles[0]);
-        fins->append("fin 2", rad2deg*controller_data.angles[1]);
-        fins->append("fin 3", rad2deg*controller_data.angles[2]);
-        fins->append("fin 4", rad2deg*controller_data.angles[3]);
+        fins->append("vane 1", rad2deg*controller_data.angles[0]);
+        fins->append("vane 2", rad2deg*controller_data.angles[1]);
+        fins->append("vane 3", rad2deg*controller_data.angles[2]);
+        fins->append("vane 4", rad2deg*controller_data.angles[3]);
 
         altitude->append("setpoint", controller_data.setpoint.z);
         altitude->append("process", controller_data.process_value.z);
 
-        attitude->append("X setpoint", rad2deg*controller_data.setpoint.rpy[0]);
-        attitude->append("Y setpoint", rad2deg*controller_data.setpoint.rpy[1]);
-        attitude->append("Z setpoint", rad2deg*controller_data.setpoint.rpy[2]);
-        attitude->append("X process", rad2deg*controller_data.process_value.rpy[0]);
-        attitude->append("Y process", rad2deg*controller_data.process_value.rpy[1]);
-        attitude->append("Z process", rad2deg*controller_data.process_value.rpy[2]);
+        attitude->append("roll setpoint", rad2deg*controller_data.setpoint.rpy[0]);
+        attitude->append("pitch setpoint", rad2deg*controller_data.setpoint.rpy[1]);
+        attitude->append("yaw setpoint", rad2deg*controller_data.setpoint.rpy[2]);
+        attitude->append("roll process", rad2deg*controller_data.process_value.rpy[0]);
+        attitude->append("pitch process", rad2deg*controller_data.process_value.rpy[1]);
+        attitude->append("yaw process", rad2deg*controller_data.process_value.rpy[2]);
     }
 
     if(frame.id<=Transfer::ID::LOG_ERROR) {

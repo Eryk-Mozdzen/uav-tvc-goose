@@ -2,19 +2,21 @@
 #include <QDateTime>
 #include <QDebug>
 #include <QChartView>
+#include <QLegend>
 
 namespace widgets {
 
-LiveChart::LiveChart(const float _minY, const float _maxY, QWidget *parent) : QWidget{parent},
+LiveChart::LiveChart(const Config &config, QWidget *parent) : QWidget{parent},
         start{QDateTime::currentMSecsSinceEpoch()},
-        minY{_minY},
-        maxY{_maxY},
-        minX{-10},
-        ignoreSamples{false} {
+        paused{false} {
     setFixedSize(500, 320);
 
     chart = new QtCharts::QChart();
+    chart->setTitle(config.title);
+
     chart->legend()->hide();
+    //chart->legend()->setAlignment(Qt::AlignLeft);
+    //chart->legend()->setMarkerShape(QtCharts::QLegend::MarkerShapeFromSeries);
 
     QtCharts::QChartView *view = new QtCharts::QChartView(chart, this);
     view->setRenderHint(QPainter::Antialiasing);
@@ -22,11 +24,14 @@ LiveChart::LiveChart(const float _minY, const float _maxY, QWidget *parent) : QW
     view->setGeometry(0, 0, width(), height());
 
     axisX = new QtCharts::QValueAxis(this);
-    axisY = new QtCharts::QValueAxis(this);
-    axisX->setRange(minX, 0);
-    axisY->setRange(minY, maxY);
-
+    axisX->setTitleText("time [s]");
+    axisX->setLabelFormat("%5.1f");
     chart->addAxis(axisX, Qt::AlignBottom);
+
+    axisY = new QtCharts::QValueAxis(this);
+    axisY->setTitleText(config.yLabel);
+    axisY->setLabelFormat(config.yFormat);
+    axisY->setRange(config.yMin, config.yMax);
     chart->addAxis(axisY, Qt::AlignLeft);
 
     timer = new QTimer(this);
@@ -36,8 +41,7 @@ LiveChart::LiveChart(const float _minY, const float _maxY, QWidget *parent) : QW
     connect(timer, &QTimer::timeout, [this]() {
         const float t = getTime();
 
-        axisX->setRange(minX+t, t);
-        axisY->setRange(minY, maxY);
+        axisX->setRange(t-10, t);
     });
 }
 
@@ -59,29 +63,21 @@ float LiveChart::getTime() const {
 }
 
 void LiveChart::append(const QString name, const float value) {
-    if(ignoreSamples) {
+    if(paused) {
         return;
     }
 
-    QtCharts::QLineSeries *selectedSeries = nullptr;
-
-    for(QtCharts::QLineSeries *existingSeries : series) {
-        if(existingSeries->name()==name) {
-            selectedSeries = existingSeries;
-            break;
+    for(QtCharts::QLineSeries *s : series) {
+        if(s->name()==name) {
+            s->append(getTime(), value);
+            return;
         }
     }
-
-    if(!selectedSeries) {
-        return;
-    }
-
-    selectedSeries->append(getTime(), value);
 }
 
 void LiveChart::resume() {
     timer->start();
-    ignoreSamples = false;
+    paused = false;
 
     for(QtCharts::QLineSeries *s : series) {
         s->clear();
@@ -90,7 +86,7 @@ void LiveChart::resume() {
 
 void LiveChart::pause() {
     timer->stop();
-    ignoreSamples = true;
+    paused = true;
 }
 
 }

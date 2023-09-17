@@ -10,10 +10,7 @@ namespace widgets {
 
 class LiveChart : public QWidget {
     const qint64 start;
-    const float minY;
-    const float maxY;
-    const float minX;
-    bool ignoreSamples;
+    bool paused;
 
     QTimer *timer;
     QtCharts::QChart *chart;
@@ -24,7 +21,15 @@ class LiveChart : public QWidget {
     float getTime() const;
 
 public:
-    LiveChart(const float _minY, const float _maxY, QWidget *parent=nullptr);
+    struct Config {
+        QString title;
+        QString yLabel;
+        QString yFormat;
+        float yMin;
+        float yMax;
+    };
+
+    LiveChart(const Config &config, QWidget *parent=nullptr);
     void addSeries(const QString name, const QPen pen);
 
     void append(const QString name, const float value);
