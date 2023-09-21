@@ -61,7 +61,6 @@ Control::Control() : TaskClassS{"control loop", TaskPrio_Mid},
 
 	sm.transit(&ready, &active, &cmd_start);
 	sm.transit(&ready, &abort, &limits);
-	sm.transit(&ready, &abort, &movement);
 	sm.transit(&ready, &abort, &disconnect);
 
 	sm.transit(&active, &abort, &limits_continous);
