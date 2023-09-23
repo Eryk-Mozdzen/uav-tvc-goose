@@ -119,7 +119,7 @@ void Control::task() {
 			Controller::getInstance().setProcessValue({
 				process_value.rpy[0],
 				process_value.rpy[1],
-				process_value.rpy[2],
+				//process_value.rpy[2],
 				process_value.w[0],
 				process_value.w[1],
 				process_value.w[2],
@@ -135,16 +135,17 @@ void Control::task() {
 }
 
 comm::Controller Control::getTelemetry() {
-	const Matrix<8, 1> controller_sp_raw = Controller::getInstance().getSetpoint();
+	const Matrix<7, 1> controller_sp_raw = Controller::getInstance().getSetpoint();
 	comm::Controller::State controller_sp;
 	controller_sp.rpy[0] = controller_sp_raw(0, 0);
 	controller_sp.rpy[1] = controller_sp_raw(1, 0);
-	controller_sp.rpy[2] = controller_sp_raw(2, 0);
-	controller_sp.w[0] = controller_sp_raw(3, 0);
-	controller_sp.w[1] = controller_sp_raw(4, 0);
-	controller_sp.w[2] = controller_sp_raw(5, 0);
-	controller_sp.z = controller_sp_raw(6, 0);
-	controller_sp.vz = controller_sp_raw(7, 0);
+	//controller_sp.rpy[2] = controller_sp_raw(2, 0);
+	controller_sp.rpy[2] = 0;
+	controller_sp.w[0] = controller_sp_raw(2, 0);
+	controller_sp.w[1] = controller_sp_raw(3, 0);
+	controller_sp.w[2] = controller_sp_raw(4, 0);
+	controller_sp.z = controller_sp_raw(5, 0);
+	controller_sp.vz = controller_sp_raw(6, 0);
 
 	comm::Controller controller_data;
 	controller_data.setpoint = controller_sp;

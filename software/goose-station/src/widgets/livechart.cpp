@@ -9,7 +9,7 @@ namespace widgets {
 LiveChart::LiveChart(const Config &config, QWidget *parent) : QWidget{parent},
         start{QDateTime::currentMSecsSinceEpoch()},
         paused{false} {
-    setFixedSize(500, 320);
+    setFixedSize(450, 320);
 
     chart = new QtCharts::QChart();
     chart->setTitle(config.title);

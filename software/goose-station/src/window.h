@@ -22,6 +22,7 @@ class Window : public QWidget {
     widgets::LiveChart *attitude;
     widgets::LiveChart *throttle;
     widgets::LiveChart *fins;
+    widgets::LiveChart *angular_vel;
 
     USB usb;
 	Telnet telnet;

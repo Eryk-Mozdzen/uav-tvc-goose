@@ -9,7 +9,7 @@ void Abort::enter() {
     context->current = comm::Controller::SMState::ABORT;
     Logger::getInstance().log(Logger::ERROR, "sm: aborting");
 
-    Controller::getInstance().setSetpoint({0.f, 0.f, 0.f, 0.f, 0.f, 0.f, 0.f, 0.f});
+    Controller::getInstance().setSetpoint({0.f, 0.f, /*0.f,*/ 0.f, 0.f, 0.f, 0.f, 0.f});
 
     Actuators::getInstance().setFinAngle(Actuators::Fin::FIN1, 0);
 	Actuators::getInstance().setFinAngle(Actuators::Fin::FIN2, 0);
@@ -22,7 +22,7 @@ void Ready::enter() {
     context->current = comm::Controller::SMState::READY;
     Logger::getInstance().log(Logger::INFO, "sm: ready to launch");
 
-    Controller::getInstance().setSetpoint({0.f, 0.f, 0.f, 0.f, 0.f, 0.f, 0.f, 0.f});
+    Controller::getInstance().setSetpoint({0.f, 0.f, /*0.f,*/ 0.f, 0.f, 0.f, 0.f, 0.f});
 
     Actuators::getInstance().setFinAngle(Actuators::Fin::FIN1, 0);
 	Actuators::getInstance().setFinAngle(Actuators::Fin::FIN2, 0);
@@ -45,7 +45,7 @@ void Active::execute() {
     Controller::getInstance().setSetpoint({
         context->setpoint.rpy[0],
         context->setpoint.rpy[1],
-        context->setpoint.rpy[2],
+        //context->setpoint.rpy[2],
         context->setpoint.w[0],
         context->setpoint.w[1],
         context->setpoint.w[2],
@@ -75,7 +75,7 @@ void Landing::execute() {
     Controller::getInstance().setSetpoint({
         0.f,
         0.f,
-        0.f,
+        //0.f,
         0.f,
         0.f,
         0.f,

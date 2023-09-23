@@ -98,10 +98,10 @@ Window::Window(QWidget *parent) : QWidget(parent) {
 
             setpoint.rpy[0] = -30.f*deg2rad*gamepad.get(Gamepad::Analog::LX);
             setpoint.rpy[1] = +30.f*deg2rad*gamepad.get(Gamepad::Analog::LY);
-            setpoint.rpy[2] = -90.f*deg2rad*gamepad.get(Gamepad::Analog::RX);
+            setpoint.rpy[2] = 0.f;
             setpoint.w[0] = 0.f;
             setpoint.w[1] = 0.f;
-            setpoint.w[2] = 0.f;
+            setpoint.w[2] = -90.f*deg2rad*gamepad.get(Gamepad::Analog::RX);
             setpoint.z = -gamepad.get(Gamepad::Analog::RY) + 1.f;
             setpoint.vz = 0.f;
 
@@ -252,7 +252,27 @@ Window::Window(QWidget *parent) : QWidget(parent) {
             attitude->resume();
             throttle->resume();
             fins->resume();
+            angular_vel->resume();
         });
+    }
+
+    {
+        widgets::LiveChart::Config config;
+        config.title = "Angular Velocity";
+        config.yLabel = "[°/s]";
+        config.yMin = -360;
+        config.yMax = 360;
+        config.yFormat = "%3.0f";
+
+        angular_vel = new widgets::LiveChart(config, this);
+        angular_vel->addSeries("X setpoint",    QPen(Qt::red,   1, Qt::DashLine));
+        angular_vel->addSeries("X process",     QPen(Qt::red,   2, Qt::SolidLine));
+        angular_vel->addSeries("Y setpoint",    QPen(Qt::green, 1, Qt::DashLine));
+        angular_vel->addSeries("Y process",     QPen(Qt::green, 2, Qt::SolidLine));
+        angular_vel->addSeries("Z setpoint",    QPen(Qt::blue,  1, Qt::DashLine));
+        angular_vel->addSeries("Z process",     QPen(Qt::blue,  2, Qt::SolidLine));
+
+        layout->addWidget(angular_vel, 2, 6, 2, 1);
     }
 
     connect(&usb, &USB::receive, this, &Window::receiveCallback);
@@ -288,6 +308,7 @@ void Window::receiveCallback(Transfer::FrameRX frame) {
             attitude->pause();
             throttle->pause();
             fins->pause();
+            angular_vel->pause();
         }
 
         throttle->append("throttle", 100*controller_data.throttle);
@@ -305,6 +326,13 @@ void Window::receiveCallback(Transfer::FrameRX frame) {
         attitude->append("roll process", rad2deg*controller_data.process_value.rpy[0]);
         attitude->append("pitch process", rad2deg*controller_data.process_value.rpy[1]);
         attitude->append("yaw process", rad2deg*controller_data.process_value.rpy[2]);
+
+        angular_vel->append("X setpoint", rad2deg*controller_data.setpoint.w[0]);
+        angular_vel->append("Y setpoint", rad2deg*controller_data.setpoint.w[1]);
+        angular_vel->append("Z setpoint", rad2deg*controller_data.setpoint.w[2]);
+        angular_vel->append("X process", rad2deg*controller_data.process_value.w[0]);
+        angular_vel->append("Y process", rad2deg*controller_data.process_value.w[1]);
+        angular_vel->append("Z process", rad2deg*controller_data.process_value.w[2]);
     }
 
     if(frame.id<=Transfer::ID::LOG_ERROR) {
