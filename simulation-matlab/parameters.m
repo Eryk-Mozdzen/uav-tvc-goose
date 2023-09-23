@@ -7,15 +7,15 @@ fins_max_pos = deg2rad(45);
 fins_max_vel = deg2rad(180);
 throttle_ramp = 0.333;
 
-K_t = 3.85756*1.2;
+K_t = 3.85756;
 K_w = 0.0000014188;
-K_tau = 0.04249*1.2;
+K_tau = 0.04249;
 
 A_fin = 0.004203;
 A_rot = pi*0.1^2;
 C_La = 2*pi;
 % C_l = 0.5*C_La*A_fin/A_rot;
-C_l = 0.25*1.75;
+C_l = 0.45;
 
 J_xx = 0.000834286;
 J_yy = 0.000826789;
@@ -100,13 +100,13 @@ G = [
 %% LQR regulator
 
 Q = diag([ ...
-    7.5;
-    7.5;
+    10;
+    10;
     1;
     1;
-    2;
-    5;
     3;
+    5;
+    1;
 
     1;
     1

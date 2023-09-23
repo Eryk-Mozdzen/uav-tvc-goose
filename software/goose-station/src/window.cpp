@@ -52,7 +52,7 @@ Window::Window(QWidget *parent) : QWidget(parent) {
     {
         QGroupBox *group = new QGroupBox("others");
 
-        others = new widgets::Form({"state", "ground pressure", "pressure", "distance", "motor velocity"}, true, group);
+        others = new widgets::Form({"state", "ground pressure", "pressure", "distance"}, true, group);
 
         layout->addWidget(group, 1, 0);
     }
@@ -117,6 +117,15 @@ Window::Window(QWidget *parent) : QWidget(parent) {
 
             if(gamepad.get(Gamepad::Button::CIRCLE_X)) {
                 transmit(Transfer::encode(comm::Command::ABORT, Transfer::ID::CONTROL_COMMAND));
+            }
+
+            if(gamepad.get(Gamepad::Button::CIRCLE_B)) {
+                altitude->resume();
+                attitude->resume();
+                throttle->resume();
+                fins->resume();
+                angular_vel->resume();
+                motor_vel->resume();
             }
         });
     }
@@ -189,7 +198,7 @@ Window::Window(QWidget *parent) : QWidget(parent) {
         altitude->addSeries("setpoint", QPen(Qt::black,   1, Qt::DashLine));
         altitude->addSeries("process", QPen(Qt::black,    2, Qt::SolidLine));
 
-        layout->addWidget(altitude, 0, 4, 2, 1);
+        layout->addWidget(altitude, 0, 6, 2, 1);
     }
 
     {
@@ -253,6 +262,7 @@ Window::Window(QWidget *parent) : QWidget(parent) {
             throttle->resume();
             fins->resume();
             angular_vel->resume();
+            motor_vel->resume();
         });
     }
 
@@ -273,6 +283,20 @@ Window::Window(QWidget *parent) : QWidget(parent) {
         angular_vel->addSeries("Z process",     QPen(Qt::blue,  2, Qt::SolidLine));
 
         layout->addWidget(angular_vel, 2, 6, 2, 1);
+    }
+
+    {
+        widgets::LiveChart::Config config;
+        config.title = "Motor Velocity";
+        config.yLabel = "[rad/s]";
+        config.yMin = 0;
+        config.yMax = 2000;
+        config.yFormat = "%4.0f";
+
+        motor_vel = new widgets::LiveChart(config, this);
+        motor_vel->addSeries("velocity", QPen(Qt::black,   2, Qt::SolidLine));
+
+        layout->addWidget(motor_vel, 0, 4, 2, 1);
     }
 
     connect(&usb, &USB::receive, this, &Window::receiveCallback);
@@ -309,6 +333,7 @@ void Window::receiveCallback(Transfer::FrameRX frame) {
             throttle->pause();
             fins->pause();
             angular_vel->pause();
+            motor_vel->pause();
         }
 
         throttle->append("throttle", 100*controller_data.throttle);
@@ -374,6 +399,6 @@ void Window::receiveCallback(Transfer::FrameRX frame) {
     if(frame.id==Transfer::ID::SENSOR_MOTOR_VELOCITY) {
         float velocity;
         frame.getPayload(velocity);
-        others->set(4, "%6.3f", velocity);
+        motor_vel->append("velocity", velocity);
     }
 }
