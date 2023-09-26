@@ -1,5 +1,6 @@
 #include "stm32f4xx_hal.h"
 
+extern TIM_HandleTypeDef htim10;
 extern TIM_HandleTypeDef htim11;
 extern PCD_HandleTypeDef hpcd_USB_OTG_FS;
 extern I2C_HandleTypeDef hi2c1;
@@ -7,6 +8,10 @@ extern DMA_HandleTypeDef hdma_i2c1_rx;
 extern UART_HandleTypeDef huart1;
 extern DMA_HandleTypeDef hdma_usart1_tx;
 extern DMA_HandleTypeDef hdma_usart1_rx;
+
+void TIM1_UP_TIM10_IRQHandler() {
+	HAL_TIM_IRQHandler(&htim10);
+}
 
 void TIM1_TRG_COM_TIM11_IRQHandler() {
 	HAL_TIM_IRQHandler(&htim11);
