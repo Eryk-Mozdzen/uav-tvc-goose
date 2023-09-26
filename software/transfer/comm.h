@@ -22,7 +22,7 @@ namespace comm {
 
 	struct Controller {
 		struct State {
-			float rp[2];
+			float rpy[3];
 			float w[3];
 			float z;
 			float vz;

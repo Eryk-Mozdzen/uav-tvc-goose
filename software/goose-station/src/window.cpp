@@ -96,8 +96,9 @@ Window::Window(QWidget *parent) : QWidget(parent) {
         connect(timer, &QTimer::timeout, [this]() {
             comm::Controller::State setpoint;
 
-            setpoint.rp[0] = -30.f*deg2rad*gamepad.get(Gamepad::Analog::LX);
-            setpoint.rp[1] = +30.f*deg2rad*gamepad.get(Gamepad::Analog::LY);
+            setpoint.rpy[0] = -30.f*deg2rad*gamepad.get(Gamepad::Analog::LX);
+            setpoint.rpy[1] = +30.f*deg2rad*gamepad.get(Gamepad::Analog::LY);
+            setpoint.rpy[2] = 0.f;
             setpoint.w[0] = 0.f;
             setpoint.w[1] = 0.f;
             setpoint.w[2] = -90.f*deg2rad*gamepad.get(Gamepad::Analog::RX);
@@ -204,15 +205,17 @@ Window::Window(QWidget *parent) : QWidget(parent) {
         widgets::LiveChart::Config config;
         config.title = "Attitude";
         config.yLabel = "[°]";
-        config.yMin = -90;
-        config.yMax = 90;
-        config.yFormat = "%2.0f";
+        config.yMin = -180;
+        config.yMax = 180;
+        config.yFormat = "%3.0f";
 
         attitude = new widgets::LiveChart(config, this);
         attitude->addSeries("roll setpoint", QPen(Qt::red,      1, Qt::DashLine));
         attitude->addSeries("roll process", QPen(Qt::red,       2, Qt::SolidLine));
         attitude->addSeries("pitch setpoint", QPen(Qt::green,   1, Qt::DashLine));
         attitude->addSeries("pitch process", QPen(Qt::green,    2, Qt::SolidLine));
+        attitude->addSeries("yaw setpoint", QPen(Qt::blue,      1, Qt::DashLine));
+        attitude->addSeries("yaw process", QPen(Qt::blue,       2, Qt::SolidLine));
 
         layout->addWidget(attitude, 2, 4, 2, 1);
     }
@@ -342,10 +345,12 @@ void Window::receiveCallback(Transfer::FrameRX frame) {
         altitude->append("setpoint", controller_data.setpoint.z);
         altitude->append("process", controller_data.process_value.z);
 
-        attitude->append("roll setpoint", rad2deg*controller_data.setpoint.rp[0]);
-        attitude->append("pitch setpoint", rad2deg*controller_data.setpoint.rp[1]);
-        attitude->append("roll process", rad2deg*controller_data.process_value.rp[0]);
-        attitude->append("pitch process", rad2deg*controller_data.process_value.rp[1]);
+        attitude->append("roll setpoint", rad2deg*controller_data.setpoint.rpy[0]);
+        attitude->append("pitch setpoint", rad2deg*controller_data.setpoint.rpy[1]);
+        attitude->append("yaw setpoint", rad2deg*controller_data.setpoint.rpy[2]);
+        attitude->append("roll process", rad2deg*controller_data.process_value.rpy[0]);
+        attitude->append("pitch process", rad2deg*controller_data.process_value.rpy[1]);
+        attitude->append("yaw process", rad2deg*controller_data.process_value.rpy[2]);
 
         angular_vel->append("X setpoint", rad2deg*controller_data.setpoint.w[0]);
         angular_vel->append("Y setpoint", rad2deg*controller_data.setpoint.w[1]);
