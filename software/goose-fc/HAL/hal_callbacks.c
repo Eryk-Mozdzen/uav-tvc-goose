@@ -58,9 +58,11 @@ void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin) {
 		} else {
 			dist_time = t - dist_start;
 
-			BaseType_t xHigherPriorityTaskWoken = pdFALSE;
-			vTaskNotifyGiveIndexedFromISR(dist_task, 1, &xHigherPriorityTaskWoken);
-			portYIELD_FROM_ISR(xHigherPriorityTaskWoken);
+			if(dist_time<25000) {
+				BaseType_t xHigherPriorityTaskWoken = pdFALSE;
+				vTaskNotifyGiveIndexedFromISR(dist_task, 1, &xHigherPriorityTaskWoken);
+				portYIELD_FROM_ISR(xHigherPriorityTaskWoken);
+			}
 		}
 
 	}
