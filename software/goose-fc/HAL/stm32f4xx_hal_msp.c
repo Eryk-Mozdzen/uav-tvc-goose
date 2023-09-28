@@ -170,6 +170,11 @@ void HAL_TIM_Base_MspInit(TIM_HandleTypeDef* htim_base) {
 		GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
 		GPIO_InitStruct.Alternate = GPIO_AF1_TIM2;
 		HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
+	} else if(htim_base->Instance==TIM10) {
+		__HAL_RCC_TIM10_CLK_ENABLE();
+
+		HAL_NVIC_SetPriority(TIM1_UP_TIM10_IRQn, 6, 0);
+		HAL_NVIC_EnableIRQ(TIM1_UP_TIM10_IRQn);
 	}
 }
 
@@ -178,5 +183,7 @@ void HAL_TIM_Base_MspDeInit(TIM_HandleTypeDef* htim_base) {
 		__HAL_RCC_TIM2_CLK_DISABLE();
 
     	HAL_GPIO_DeInit(GPIOA, GPIO_PIN_5);
+	} else if(htim_base->Instance==TIM10) {
+		__HAL_RCC_TIM10_CLK_DISABLE();
 	}
 }

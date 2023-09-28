@@ -39,14 +39,6 @@ add_executable(${TARGET}
 	"../third-party/stm32_mw_usb_device/Core/Src/usbd_ioreq.c"
 	"../third-party/stm32_mw_usb_device/Class/CDC/Src/usbd_cdc.c"
 
-	"../third-party/VL53L0X/core/src/vl53l0x_api_calibration.c"
-	"../third-party/VL53L0X/core/src/vl53l0x_api_core.c"
-	"../third-party/VL53L0X/core/src/vl53l0x_api_ranging.c"
-	"../third-party/VL53L0X/core/src/vl53l0x_api_strings.c"
-	"../third-party/VL53L0X/core/src/vl53l0x_api.c"
-	"../third-party/VL53L0X/platform/src/vl53l0x_platform_log.c"
-	"../third-party/VL53L0X/platform/src/vl53l0x_platform.c"
-
 	"../transfer/transfer.cpp"
 
 	"startup/system_stm32f4xx.c"
@@ -74,7 +66,7 @@ add_executable(${TARGET}
 	"src/sensors/bmp280.cpp"
 	"src/sensors/mpu6050.cpp"
 	"src/sensors/hmc5883l.cpp"
-	"src/sensors/vl53l0x.cpp"
+	"src/sensors/hcsr04.cpp"
 	"src/sensors/ina226.cpp"
 	"src/sensors/motor_velocity.cpp"
 	"src/communication/logger.cpp"
@@ -113,9 +105,6 @@ target_include_directories(${TARGET} PRIVATE
 
 	"../third-party/stm32_mw_usb_device/Core/Inc"
 	"../third-party/stm32_mw_usb_device/Class/CDC/Inc"
-
-	"../third-party/VL53L0X/core/inc"
-	"../third-party/VL53L0X/platform/inc"
 
 	"../third-party/FreeRTOScpp"
 
