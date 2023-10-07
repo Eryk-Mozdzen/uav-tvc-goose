@@ -102,7 +102,7 @@ Window::Window(QWidget *parent) : QWidget(parent) {
             setpoint.w[0] = 0.f;
             setpoint.w[1] = 0.f;
             setpoint.w[2] = -90.f*deg2rad*gamepad.get(Gamepad::Analog::RX);
-            setpoint.z = -gamepad.get(Gamepad::Analog::RY) + 1.f;
+            setpoint.z = -0.5f*gamepad.get(Gamepad::Analog::RY) + 0.5f;
             setpoint.vz = 0.f;
 
             transmit(Transfer::encode(setpoint, Transfer::ID::CONTROL_SETPOINT));
@@ -120,12 +120,7 @@ Window::Window(QWidget *parent) : QWidget(parent) {
             }
 
             if(gamepad.get(Gamepad::Button::CIRCLE_B)) {
-                altitude->resume();
-                attitude->resume();
-                throttle->resume();
-                fins->resume();
-                angular_vel->resume();
-                motor_vel->resume();
+                widgets::LiveChart::resume();
             }
         });
     }
@@ -257,12 +252,7 @@ Window::Window(QWidget *parent) : QWidget(parent) {
         layout->addWidget(resume, 0, 1);
 
         connect(resume, &QPushButton::clicked, [this]() {
-            altitude->resume();
-            attitude->resume();
-            throttle->resume();
-            fins->resume();
-            angular_vel->resume();
-            motor_vel->resume();
+            widgets::LiveChart::resume();
         });
     }
 
@@ -299,6 +289,22 @@ Window::Window(QWidget *parent) : QWidget(parent) {
         layout->addWidget(motor_vel, 0, 4, 2, 1);
     }
 
+    {
+        widgets::LiveChart::Config config;
+        config.title = "Linear Acceleration";
+        config.yLabel = "[m/s2]";
+        config.yMin = -20;
+        config.yMax = 20;
+        config.yFormat = "%2.0f";
+
+        linear_acc = new widgets::LiveChart(config, this);
+        linear_acc->addSeries("X", QPen(Qt::red,     2, Qt::SolidLine));
+        linear_acc->addSeries("Y", QPen(Qt::green,   2, Qt::SolidLine));
+        linear_acc->addSeries("Z", QPen(Qt::blue,    2, Qt::SolidLine));
+
+        layout->addWidget(linear_acc, 4, 3, 2, 1);
+    }
+
     connect(&usb, &USB::receive, this, &Window::receiveCallback);
     connect(&telnet, &Telnet::receive, this, &Window::receiveCallback);
     connect(this, &Window::transmit, &usb, &USB::transmit);
@@ -314,6 +320,10 @@ void Window::receiveCallback(Transfer::FrameRX frame) {
         power->set(4, "%1.2f", estimator_data.soc);
 
         others->set(1, "%6.0f", estimator_data.ground_pressure);
+
+        linear_acc->append("X", estimator_data.acceleration[0]);
+        linear_acc->append("Y", estimator_data.acceleration[1]);
+        linear_acc->append("Z", estimator_data.acceleration[2]);
     }
 
     if(frame.id==Transfer::ID::TELEMETRY_CONTROLLER) {
@@ -328,12 +338,7 @@ void Window::receiveCallback(Transfer::FrameRX frame) {
         }
 
         if(controller_data.state==comm::Controller::SMState::ABORT) {
-            altitude->pause();
-            attitude->pause();
-            throttle->pause();
-            fins->pause();
-            angular_vel->pause();
-            motor_vel->pause();
+            widgets::LiveChart::pause();
         }
 
         throttle->append("throttle", 100*controller_data.throttle);

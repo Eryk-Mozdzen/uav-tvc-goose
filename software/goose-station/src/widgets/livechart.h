@@ -9,16 +9,16 @@
 namespace widgets {
 
 class LiveChart : public QWidget {
-    const qint64 start;
-    bool paused;
+    static const qint64 start;
+    static bool paused;
+    static QVector<QtCharts::QLineSeries *> series;
 
     QTimer *timer;
     QtCharts::QChart *chart;
     QtCharts::QValueAxis *axisX;
     QtCharts::QValueAxis *axisY;
-    QVector<QtCharts::QLineSeries *> series;
 
-    float getTime() const;
+    static float getTime();
 
 public:
     struct Config {
@@ -33,8 +33,8 @@ public:
     void addSeries(const QString name, const QPen pen);
 
     void append(const QString name, const float value);
-    void resume();
-    void pause();
+    static void resume();
+    static void pause();
 };
 
 }

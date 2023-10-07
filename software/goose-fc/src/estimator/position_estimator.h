@@ -15,7 +15,7 @@ class PositionEstimator {
         Matrix<7, 7> f_tangent(Matrix<7, 1> x, Matrix<3, 1> u) const;
     };
 
-    struct LaserModel : EKF<7>::MeasurementModel<1> {
+    struct DistanceModel : EKF<7>::MeasurementModel<1> {
         using EKF<7>::MeasurementModel<1>::MeasurementModel;
 
         Matrix<1, 1> h(Matrix<7, 1> x) const;
@@ -31,7 +31,7 @@ class PositionEstimator {
 
     EKF<7> ekf;
     const MovementModel movement_model;
-    const LaserModel laser_model;
+    const DistanceModel distance_model;
     const BarometerModel barometer_model;
 
     Vector linear;

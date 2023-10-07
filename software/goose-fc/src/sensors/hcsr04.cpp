@@ -83,7 +83,7 @@ void HCSR04::task() {
 
 		const float dist = getDistance();
 
-		Transport::getInstance().sensor_queue.add(Transport::Sensors::LASER, dist, 0);
+		Transport::getInstance().sensor_queue.add(Transport::Sensors::ULTRASONIC, dist, 0);
 
 		telemetry.feed(dist);
 	}

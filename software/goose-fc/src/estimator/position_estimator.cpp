@@ -4,7 +4,7 @@
 PositionEstimator::PositionEstimator() :
         ekf{{0.f, 0.f, 0.f, 0.f, 0.f, 0.f, 101325.f}},
         movement_model{Matrix<7, 7>::identity()*0.01f},
-        laser_model{{0.1f}},
+        distance_model{{0.1f}},
         barometer_model{{100.f}} {
 
 }
@@ -51,7 +51,7 @@ Matrix<7, 7> PositionEstimator::MovementModel::f_tangent(Matrix<7, 1> x, Matrix<
     return A;
 }
 
-Matrix<1, 1> PositionEstimator::LaserModel::h(Matrix<7, 1> x) const {
+Matrix<1, 1> PositionEstimator::DistanceModel::h(Matrix<7, 1> x) const {
 
     constexpr Matrix<1, 7> C = {
         0, 0, 1, 0, 0, 0, 0
@@ -60,7 +60,7 @@ Matrix<1, 1> PositionEstimator::LaserModel::h(Matrix<7, 1> x) const {
     return C*x;
 }
 
-Matrix<1, 7> PositionEstimator::LaserModel::h_tangent(Matrix<7, 1> x) const {
+Matrix<1, 7> PositionEstimator::DistanceModel::h_tangent(Matrix<7, 1> x) const {
     (void)x;
 
     constexpr Matrix<1, 7> C = {
@@ -104,7 +104,7 @@ void PositionEstimator::feedDistance(const float dist) {
 
     const float alt = dist*cosf(roll)*cosf(pitch);
 
-    ekf.correct(laser_model, {alt});
+    ekf.correct(distance_model, {alt});
 }
 
 void PositionEstimator::feedPressure(const float press) {
@@ -112,7 +112,7 @@ void PositionEstimator::feedPressure(const float press) {
 }
 
 void PositionEstimator::feedAcceleration(const Vector &acc) {
-    constexpr Vector gravity = -Vector::Z()*9.81f;
+    constexpr Vector gravity = Vector::Z()*9.81f;
     const Matrix<3, 3> rot = attitude.getRotation();
 
 	linear = rot*acc - gravity;

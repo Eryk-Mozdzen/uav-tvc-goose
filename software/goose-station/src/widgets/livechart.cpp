@@ -6,10 +6,12 @@
 
 namespace widgets {
 
-LiveChart::LiveChart(const Config &config, QWidget *parent) : QWidget{parent},
-        start{QDateTime::currentMSecsSinceEpoch()},
-        paused{false} {
-    setFixedSize(450, 320);
+const qint64 LiveChart::start = QDateTime::currentMSecsSinceEpoch();
+bool LiveChart::paused = false;
+QVector<QtCharts::QLineSeries *> LiveChart::series;
+
+LiveChart::LiveChart(const Config &config, QWidget *parent) : QWidget{parent} {
+    setFixedSize(450, 300);
 
     chart = new QtCharts::QChart();
     chart->setTitle(config.title);
@@ -39,6 +41,10 @@ LiveChart::LiveChart(const Config &config, QWidget *parent) : QWidget{parent},
     timer->start();
 
     connect(timer, &QTimer::timeout, [this]() {
+        if(paused) {
+            return;
+        }
+
         const float t = getTime();
 
         axisX->setRange(t-10, t);
@@ -58,17 +64,13 @@ void LiveChart::addSeries(const QString name, const QPen pen) {
     series.append(s);
 }
 
-float LiveChart::getTime() const {
+float LiveChart::getTime() {
     return static_cast<float>(QDateTime::currentMSecsSinceEpoch() - start)/1000.f;
 }
 
 void LiveChart::append(const QString name, const float value) {
-    if(paused) {
-        return;
-    }
-
     for(QtCharts::QLineSeries *s : series) {
-        if(s->name()==name) {
+        if(s->name()==name && s->chart()==chart) {
             s->append(getTime(), value);
             return;
         }
@@ -76,7 +78,6 @@ void LiveChart::append(const QString name, const float value) {
 }
 
 void LiveChart::resume() {
-    timer->start();
     paused = false;
 
     for(QtCharts::QLineSeries *s : series) {
@@ -85,7 +86,6 @@ void LiveChart::resume() {
 }
 
 void LiveChart::pause() {
-    timer->stop();
     paused = true;
 }
 

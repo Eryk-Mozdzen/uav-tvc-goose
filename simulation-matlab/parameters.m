@@ -11,19 +11,19 @@ K_t = 3.85756;
 K_w = 0.0000014188;
 K_tau = 0.04249;
 
-A_fin = 0.004203;
-A_rot = pi*0.1^2;
-C_La = 2*pi;
+%A_fin = 0.004203;
+%A_rot = pi*0.1^2;
+%C_La = 2*pi;
 % C_l = 0.5*C_La*A_fin/A_rot;
-C_l = 0.45;
+C_l = 0.43;
 
-J_xx = 0.000834286;
-J_yy = 0.000826789;
-J_zz = 0.000192647;
+J_xx = 0.000927790;
+J_yy = 0.000918280;
+J_zz = 0.000199379;
 J_r = 0.000014703;
 
-m = 0.308;
-l = 0.04364 - 0.01325;
+m = 0.332;
+l = 0.04242 - 0.01325;
 r = 0.065;
 alpha_s = -deg2rad(9);
 
@@ -34,9 +34,9 @@ g = 9.81;
 measurement_freq = 100;
 measurement_dt = 1/measurement_freq;
 variance_acc = 0.01;
-variance_gyr = 0.01;
-variance_mag = 0.01;
-variance_dst = 0.01;
+variance_gyr = 0.1;
+variance_mag = 0.1;
+variance_dst = 0.1;
 
 %% operating point
 
@@ -100,17 +100,17 @@ G = [
 %% LQR regulator
 
 Q = diag([ ...
-    100;
-    100;
+    10;
+    10;
     1;
     1;
-    2;
+    5;
     5;
     1;
 
     10;
     10;
-    1;
+    2;
     1;
 ]);
 

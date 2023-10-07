@@ -71,7 +71,7 @@ Matrix<3, 1> AttitudeEstimator::AccelerometerModel::h(Matrix<7, 1> x) const {
         -2.f*q.w,  2.f*q.i,  2.f*q.j, -2.f*q.k, 0, 0, 0
     };
 
-    return C*x;
+    return -1.f*C*x;
 }
 
 Matrix<3, 7> AttitudeEstimator::AccelerometerModel::h_tangent(Matrix<7, 1> x) const {
@@ -83,7 +83,7 @@ Matrix<3, 7> AttitudeEstimator::AccelerometerModel::h_tangent(Matrix<7, 1> x) co
         -2.f*q.w,  2.f*q.i,  2.f*q.j, -2.f*q.k, 0, 0, 0
     };
 
-    return C;
+    return -1.f*C;
 }
 
 Matrix<3, 1> AttitudeEstimator::MagnetometerModel::h(const Matrix<7, 1> x) const {

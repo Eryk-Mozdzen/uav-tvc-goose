@@ -34,7 +34,7 @@ void StateEstimator::task() {
 	TickType_t time = xTaskGetTickCount();
 
 	while(1) {
-		xTaskDelayUntil(&time, 10);
+		xTaskDelayUntil(&time, 5);
 
 		Transport::Sensors type;
 		while(Transport::getInstance().sensor_queue.pop(type, 0)) {
@@ -61,7 +61,7 @@ void StateEstimator::task() {
 					Transport::getInstance().sensor_queue.getValue(press);
 					position_estimator.feedPressure(press);
 				} break;
-				case Transport::Sensors::LASER: {
+				case Transport::Sensors::ULTRASONIC: {
 					float dist;
 					Transport::getInstance().sensor_queue.getValue(dist);
 					position_estimator.feedDistance(dist);
