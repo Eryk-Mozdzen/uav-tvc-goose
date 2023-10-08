@@ -280,7 +280,7 @@ Window::Window(QWidget *parent) : QWidget(parent) {
         config.title = "Motor Velocity";
         config.yLabel = "[rad/s]";
         config.yMin = 0;
-        config.yMax = 2000;
+        config.yMax = 1200;
         config.yFormat = "%4.0f";
 
         motor_vel = new widgets::LiveChart(config, this);

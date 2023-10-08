@@ -3,7 +3,7 @@ clc
 
 %% phisical parameters
 
-fins_max_pos = deg2rad(45);
+fins_max_pos = deg2rad(15);
 fins_max_vel = deg2rad(180);
 throttle_ramp = 0.333;
 
@@ -25,7 +25,7 @@ J_r = 0.000014703;
 m = 0.332;
 l = 0.04242 - 0.01325;
 r = 0.065;
-alpha_s = -deg2rad(9);
+alpha_s = -deg2rad(5);
 
 g = 9.81;
 
@@ -34,9 +34,9 @@ g = 9.81;
 measurement_freq = 100;
 measurement_dt = 1/measurement_freq;
 variance_acc = 0.01;
-variance_gyr = 0.1;
-variance_mag = 0.1;
-variance_dst = 0.1;
+variance_gyr = 0.01;
+variance_mag = 0.01;
+variance_dst = 0.01;
 
 %% operating point
 
@@ -100,25 +100,25 @@ G = [
 %% LQR regulator
 
 Q = diag([ ...
+    100;
+    100;
     10;
     10;
-    1;
-    1;
-    5;
-    5;
+    10;
+    10;
     1;
 
+    50;
+    50;
+    20;
     10;
-    10;
-    2;
-    1;
 ]);
 
 R = diag([
-    500;
-    500;
-    500;
-    500;
+    600;
+    600;
+    600;
+    600;
     1000;
 ]);
 
