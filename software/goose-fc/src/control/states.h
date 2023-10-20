@@ -35,4 +35,11 @@ public:
     void execute() override;
 };
 
+class Manual : public sm::State<Context> {
+public:
+    void enter() override;
+    void execute() override;
+    void exit() override;
+};
+
 }

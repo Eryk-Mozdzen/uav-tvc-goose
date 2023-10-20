@@ -24,11 +24,14 @@ class Control : public TaskClassS<2048>, public Context {
 	events::Negation connect;
 	events::Negation stil;
 	events::Combination<3> readiness;
+	events::Watchdog no_cmd_manual;
+	events::Negation cmd_manual;
 
 	states::Abort abort;
 	states::Ready ready;
 	states::Active active;
 	states::Landing landing;
+	states::Manual manual;
 
 	sm::StateMachine<5, 4, Context> sm;
 
@@ -54,6 +57,8 @@ Control::Control() : TaskClassS{"control loop", TaskPrio_Mid},
 		connect{&disconnect, 3000},
 		stil{&movement, 3000},
 		readiness{&correct, &connect, &stil},
+		no_cmd_manual{3000},
+		cmd_manual{&no_cmd_manual, 3000},
 		sm{&abort, this},
 		telemetry_controller{"controller telememetry", Transfer::ID::TELEMETRY_CONTROLLER} {
 
@@ -71,6 +76,9 @@ Control::Control() : TaskClassS{"control loop", TaskPrio_Mid},
 	sm.transit(&landing, &abort, &limits_continous);
 	sm.transit(&landing, &abort, &cmd_abort);
 	sm.transit(&landing, &ready, &stil);
+
+	sm.transit(&ready, &manual, &cmd_manual);
+	sm.transit(&manual, &ready, &no_cmd_manual);
 }
 
 void Control::task() {
@@ -104,14 +112,8 @@ void Control::task() {
 			}
 
 			if(frame.id==Transfer::ID::CONTROL_MANUAL) {
-				comm::Manual manual;
-				if(frame.getPayload(manual)) {
-					Actuators::getInstance().setMotorThrottle(manual.throttle, Actuators::Mode::RAMP);
-					Actuators::getInstance().setFinAngle(Actuators::FIN1, manual.angles[0]);
-					Actuators::getInstance().setFinAngle(Actuators::FIN2, manual.angles[1]);
-					Actuators::getInstance().setFinAngle(Actuators::FIN3, manual.angles[2]);
-					Actuators::getInstance().setFinAngle(Actuators::FIN4, manual.angles[3]);
-				}
+				no_cmd_manual.reset();
+				frame.getPayload(control_manual);
 			}
 		}
 

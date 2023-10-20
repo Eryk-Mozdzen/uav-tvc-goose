@@ -129,31 +129,33 @@ Window::Window(QWidget *parent) : QWidget(parent) {
         QGroupBox *group = new QGroupBox("manual");
         QGridLayout *grid = new QGridLayout(group);
 
-        QCheckBox *manual_switch = new QCheckBox("Manual Mode");
+        QCheckBox *manual_switch = new QCheckBox("Active");
 
-        QSlider *manual[5];
+        QSlider *manual[4];
         manual[0] = new QSlider(Qt::Orientation::Vertical);
         manual[1] = new QSlider(Qt::Orientation::Vertical);
         manual[2] = new QSlider(Qt::Orientation::Vertical);
         manual[3] = new QSlider(Qt::Orientation::Vertical);
-        manual[4] = new QSlider(Qt::Orientation::Vertical);
 
-        manual[0]->setRange(-45, 45);
-        manual[1]->setRange(-45, 45);
-        manual[2]->setRange(-45, 45);
-        manual[3]->setRange(-45, 45);
-        manual[4]->setRange(0, 100);
+        manual[0]->setRange(-15, 15);
+        manual[1]->setRange(-15, 15);
+        manual[2]->setRange(-15, 15);
+        manual[3]->setRange(0, 100);
 
         QTimer *timer = new QTimer();
         timer->setInterval(50);
 
         connect(timer, &QTimer::timeout, [this, manual]() {
+            const float x = deg2rad*manual[0]->value();
+            const float y = deg2rad*manual[1]->value();
+            const float z = deg2rad*manual[2]->value();
+
             comm::Manual data;
-            data.angles[0] = deg2rad*manual[0]->value();
-            data.angles[1] = deg2rad*manual[1]->value();
-            data.angles[2] = deg2rad*manual[2]->value();
-            data.angles[3] = deg2rad*manual[3]->value();
-            data.throttle = manual[4]->value()/100.f;
+            data.angles[0] = - x - z;
+            data.angles[1] = - y - z;
+            data.angles[2] = + x - z;
+            data.angles[3] = + y - z;
+            data.throttle = manual[3]->value()/100.f;
 
             transmit(Transfer::encode(data, Transfer::ID::CONTROL_MANUAL));
         });
@@ -163,7 +165,6 @@ Window::Window(QWidget *parent) : QWidget(parent) {
             manual[1]->setValue(0);
             manual[2]->setValue(0);
             manual[3]->setValue(0);
-            manual[4]->setValue(0);
 
             if(timer->isActive()) {
                 timer->stop();
@@ -176,8 +177,7 @@ Window::Window(QWidget *parent) : QWidget(parent) {
         grid->addWidget(manual[1], 0, 1);
         grid->addWidget(manual[2], 0, 2);
         grid->addWidget(manual[3], 0, 3);
-        grid->addWidget(manual[4], 0, 4);
-        grid->addWidget(manual_switch, 1, 0, 4, 0);
+        grid->addWidget(manual_switch, 1, 0, 3, 0);
         layout->addWidget(group, 1, 1, 4, 1);
     }
 
@@ -233,8 +233,8 @@ Window::Window(QWidget *parent) : QWidget(parent) {
         widgets::LiveChart::Config config;
         config.title = "Thrust Vanes";
         config.yLabel = "[°]";
-        config.yMin = -30;
-        config.yMax = 30;
+        config.yMin = -20;
+        config.yMax = 20;
         config.yFormat = "%2.0f";
 
         fins = new widgets::LiveChart(config, this);
@@ -335,6 +335,7 @@ void Window::receiveCallback(Transfer::FrameRX frame) {
             case comm::Controller::SMState::READY:      others->set(0, "ready");     break;
             case comm::Controller::SMState::ACTIVE:     others->set(0, "active");    break;
             case comm::Controller::SMState::LANDING:    others->set(0, "landing");   break;
+            case comm::Controller::SMState::MANUAL:     others->set(0, "manual");   break;
         }
 
         if(controller_data.state==comm::Controller::SMState::ABORT) {

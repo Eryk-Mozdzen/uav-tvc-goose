@@ -32,7 +32,8 @@ namespace comm {
 			ABORT,
 			READY,
 			ACTIVE,
-			LANDING
+			LANDING,
+			MANUAL
 		};
 
 		State setpoint;

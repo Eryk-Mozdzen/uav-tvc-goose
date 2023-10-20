@@ -92,4 +92,34 @@ void Landing::execute() {
 	Actuators::getInstance().setMotorThrottle(u(4, 0), Actuators::Mode::RAMP);
 }
 
+void Manual::enter() {
+    context->current = comm::Controller::SMState::MANUAL;
+    Logger::getInstance().log(Logger::INFO, "sm: manual mode");
+
+    Actuators::getInstance().setFinAngle(Actuators::Fin::FIN1, 0);
+	Actuators::getInstance().setFinAngle(Actuators::Fin::FIN2, 0);
+	Actuators::getInstance().setFinAngle(Actuators::Fin::FIN3, 0);
+	Actuators::getInstance().setFinAngle(Actuators::Fin::FIN4, 0);
+	Actuators::getInstance().setMotorThrottle(0, Actuators::Mode::RAMP);
+}
+
+void Manual::execute() {
+    Actuators::getInstance().setMotorThrottle(context->control_manual.throttle, Actuators::Mode::RAMP);
+    Actuators::getInstance().setFinAngle(Actuators::FIN1, context->control_manual.angles[0]);
+    Actuators::getInstance().setFinAngle(Actuators::FIN2, context->control_manual.angles[1]);
+    Actuators::getInstance().setFinAngle(Actuators::FIN3, context->control_manual.angles[2]);
+    Actuators::getInstance().setFinAngle(Actuators::FIN4, context->control_manual.angles[3]);
+}
+
+void Manual::exit() {
+    context->current = comm::Controller::SMState::MANUAL;
+    Logger::getInstance().log(Logger::INFO, "sm: auto mode");
+
+    Actuators::getInstance().setFinAngle(Actuators::Fin::FIN1, 0);
+	Actuators::getInstance().setFinAngle(Actuators::Fin::FIN2, 0);
+	Actuators::getInstance().setFinAngle(Actuators::Fin::FIN3, 0);
+	Actuators::getInstance().setFinAngle(Actuators::Fin::FIN4, 0);
+	Actuators::getInstance().setMotorThrottle(0, Actuators::Mode::RAMP);
+}
+
 }
