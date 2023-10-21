@@ -17,6 +17,7 @@ Window::Window(QWidget *parent) : QWidget(parent), J{0, 6}, K{0, 1} {
     layout->addWidget(calibrated);
 
     connect(&usb, &USB::receive, this, &Window::callback);
+    connect(&telnet, &Telnet::receive, this, &Window::callback);
 }
 
 bool Window::is_far_enough(const Sample &test) const {

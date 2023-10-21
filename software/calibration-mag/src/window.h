@@ -4,6 +4,7 @@
 #include "usb.h"
 #include "matrix.h"
 #include "utils.h"
+#include "telnet.h"
 
 class Window : public QWidget {
     Q_OBJECT
@@ -13,6 +14,7 @@ class Window : public QWidget {
     Viewer *raw;
     Viewer *calibrated;
     USB usb;
+    Telnet telnet;
 
     QVector<Sample> samples;
     Matrix J;

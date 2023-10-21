@@ -10,6 +10,7 @@ set(CMAKE_AUTORCC ON)
 find_package(Qt5 COMPONENTS
 	Widgets
 	SerialPort
+	WebEngineWidgets
 REQUIRED)
 
 add_executable(${PROJECT_NAME}
@@ -19,6 +20,7 @@ add_executable(${PROJECT_NAME}
 	"src/window.cpp"
 	"src/viewer.cpp"
 	"src/matrix.cpp"
+	"src/telnet.cpp"
 )
 
 target_include_directories(${PROJECT_NAME} PRIVATE
@@ -35,4 +37,5 @@ target_compile_options(${PROJECT_NAME} PRIVATE
 target_link_libraries(${PROJECT_NAME}
 	Qt5::Widgets
 	Qt5::SerialPort
+	Qt5::WebEngineWidgets
 )
