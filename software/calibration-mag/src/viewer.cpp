@@ -2,7 +2,7 @@
 #include <cmath>
 #include <QPainter>
 
-Viewer::Viewer(const QVector<Sample> &s, QWidget *parent) : QWidget{parent}, samples{s} {
+Viewer::Viewer(const std::vector<Sample> &s, QWidget *parent) : QWidget{parent}, samples{s} {
 	setFixedSize(size, size);
 }
 

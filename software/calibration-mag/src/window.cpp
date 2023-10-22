@@ -16,12 +16,12 @@ Window::Window(QWidget *parent) : QWidget(parent), raw{samples, this}, calibrate
     connect(&telnet, &Telnet::receive, this, &Window::callback);
 }
 
-Eigen::VectorXd bestFitEllipsoid(const QVector<Sample> &samples) {
+Eigen::VectorXd bestFitEllipsoid(const std::vector<Sample> &samples) {
     Eigen::MatrixXd x(samples.size(), 1);
     Eigen::MatrixXd y(samples.size(), 1);
     Eigen::MatrixXd z(samples.size(), 1);
 
-    for(int i=0; i<samples.size(); i++) {
+    for(size_t i=0; i<samples.size(); i++) {
         x(i, 0) = samples[i].x;
         y(i, 0) = samples[i].y;
         z(i, 0) = samples[i].z;

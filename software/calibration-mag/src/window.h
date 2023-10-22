@@ -1,10 +1,11 @@
 #pragma once
 
+#include <vector>
+
 #include "viewer.h"
 #include "usb.h"
 #include "utils.h"
 #include "telnet.h"
-#include <QVector>
 
 class Window : public QWidget {
     Q_OBJECT
@@ -14,7 +15,7 @@ class Window : public QWidget {
     USB usb;
     Telnet telnet;
 
-    QVector<Sample> samples;
+    std::vector<Sample> samples;
 
 private slots:
     void callback(Transfer::FrameRX frame);
