@@ -4,15 +4,13 @@
 #include <iomanip>
 #include <Eigen/Dense>
 
-Window::Window(QWidget *parent) : QWidget(parent) {
-    raw = new Viewer(samples, this);
-    calibrated = new Viewer(samples, this);
+Window::Window(QWidget *parent) : QWidget(parent), raw{samples, this}, calibrated{samples, this} {
 
     QHBoxLayout *layout = new QHBoxLayout(this);
     layout->setContentsMargins(0, 0, 0, 0);
     layout->setSpacing(0);
-    layout->addWidget(raw);
-    layout->addWidget(calibrated);
+    layout->addWidget(&raw);
+    layout->addWidget(&calibrated);
 
     connect(&usb, &USB::receive, this, &Window::callback);
     connect(&telnet, &Telnet::receive, this, &Window::callback);
@@ -125,7 +123,7 @@ void Window::callback(Transfer::FrameRX frame) {
     std::cout << "};\n";
     std::cout << std::endl;
 
-    calibrated->set(params);
+    calibrated.set(params);
 
     update();
 }

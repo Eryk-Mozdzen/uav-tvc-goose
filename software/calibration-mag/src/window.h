@@ -9,8 +9,8 @@
 class Window : public QWidget {
     Q_OBJECT
 
-    Viewer *raw;
-    Viewer *calibrated;
+    Viewer raw;
+    Viewer calibrated;
     USB usb;
     Telnet telnet;
 

@@ -129,14 +129,14 @@ Vector HMC5883L::getMagneticField() const {
 	const Vector pre_calibrated = Vector(raw_z, raw_y, -raw_x)/gain;
 
 	constexpr Vector offset = {
-	    -0.0742f,
-	    -0.0918f,
-	    +0.0411f
+		-0.1329f,
+		-0.1190f,
+		-0.0273f
 	};
 	constexpr Matrix<3, 3> scale = {
-	    +2.2311f, -0.0157f, -0.0603f,
-	    -0.0157f, +2.7440f, +0.0599f,
-	    -0.0603f, +0.0599f, +2.1994f
+		+2.2295f, -0.0383f, -0.0917f,
+		-0.0383f, +2.6354f, +0.0430f,
+		-0.0917f, +0.0430f, +2.1890f
 	};
 
 	const Vector calibrated = scale*(pre_calibrated - offset);
