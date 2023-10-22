@@ -1,8 +1,5 @@
 #include "window.h"
 #include <QHBoxLayout>
-#include <QDebug>
-#include <cmath>
-#include <algorithm>
 #include <iostream>
 #include <iomanip>
 #include <Eigen/Dense>
@@ -19,6 +16,36 @@ Window::Window(QWidget *parent) : QWidget(parent) {
 
     connect(&usb, &USB::receive, this, &Window::callback);
     connect(&telnet, &Telnet::receive, this, &Window::callback);
+}
+
+Eigen::VectorXd bestFitEllipsoid(const QVector<Sample> &samples) {
+    Eigen::MatrixXd x(samples.size(), 1);
+    Eigen::MatrixXd y(samples.size(), 1);
+    Eigen::MatrixXd z(samples.size(), 1);
+
+    for(int i=0; i<samples.size(); i++) {
+        x(i, 0) = samples[i].x;
+        y(i, 0) = samples[i].y;
+        z(i, 0) = samples[i].z;
+    }
+
+    Eigen::MatrixXd J(samples.size(), 9);
+    Eigen::MatrixXd K(samples.size(), 1);
+    K.setOnes();
+
+    J <<    x.array().square(), y.array().square(), z.array().square(),
+            (x.array() * y.array()), (x.array() * z.array()), (y.array() * z.array()),
+            x, y, z;
+
+    const Eigen::MatrixXd JT = J.transpose();
+    const Eigen::MatrixXd JTJ = JT * J;
+    const Eigen::VectorXd ABC = JTJ.inverse() * JT * K;
+
+    Eigen::VectorXd poly(10);
+    poly.head(9) = ABC;
+    poly(9) = -1;
+
+    return poly;
 }
 
 Params polyToParams3D(const Eigen::VectorXd &vec) {
@@ -69,31 +96,10 @@ void Window::callback(Transfer::FrameRX frame) {
 
     samples.push_back(s);
 
-    Eigen::MatrixXd x(samples.size(), 1);
-    Eigen::MatrixXd y(samples.size(), 1);
-    Eigen::MatrixXd z(samples.size(), 1);
+    const Eigen::VectorXd poly = bestFitEllipsoid(samples);
 
-    for(int i=0; i<samples.size(); i++) {
-        x(i, 0) = samples[i].x;
-        y(i, 0) = samples[i].y;
-        z(i, 0) = samples[i].z;
-    }
-
-    Eigen::MatrixXd J(samples.size(), 9);
-    Eigen::MatrixXd K(samples.size(), 1);
-    K.setOnes();
-
-    J <<    x.array().square(), y.array().square(), z.array().square(),
-            (x.array() * y.array()), (x.array() * z.array()), (y.array() * z.array()),
-            x, y, z;
-
-    const Eigen::MatrixXd JT = J.transpose();
-    const Eigen::MatrixXd JTJ = JT * J;
-    const Eigen::VectorXd ABC = JTJ.inverse() * JT * K;
-
-    Eigen::VectorXd poly(10);
-    poly.head(9) = ABC;
-    poly(9) = -1;
+    //std::cout << std::setprecision(4) << std::showpos << std::fixed;
+    //std::cout << "Ellipse: " << poly.transpose() << std::endl;
 
     const Params params = polyToParams3D(poly);
 
