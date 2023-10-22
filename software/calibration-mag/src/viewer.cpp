@@ -1,6 +1,7 @@
-#include "viewer.h"
 #include <cmath>
 #include <QPainter>
+
+#include "viewer.h"
 
 Viewer::Viewer(const std::vector<Sample> &s, QWidget *parent) : QWidget{parent}, samples{s} {
 	setFixedSize(size, size);

@@ -1,12 +1,12 @@
 #pragma once
 
 #include <vector>
-
 #include <QWidget>
+
 #include "utils.h"
 
 class Viewer : public QWidget {
-	static constexpr int point = 4;
+	static constexpr int point = 3;
 	static constexpr int size = 500;
 
 	const std::vector<Sample> &samples;
