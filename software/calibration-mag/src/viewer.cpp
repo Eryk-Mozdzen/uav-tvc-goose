@@ -8,7 +8,6 @@ Viewer::Viewer(const QVector<Sample> &s, QWidget *parent) : QWidget{parent}, sam
 
 void Viewer::set(const Params &p) {
 	params = p;
-	update();
 }
 
 void Viewer::paintEvent(QPaintEvent *event) {
@@ -16,9 +15,11 @@ void Viewer::paintEvent(QPaintEvent *event) {
 
 	float max = -1.f;
 	for(const Sample &sample : samples) {
-		max = std::max(max, std::abs((sample.x - params.offset[0])/params.scale[0]));
-		max = std::max(max, std::abs((sample.y - params.offset[1])/params.scale[1]));
-		max = std::max(max, std::abs((sample.z - params.offset[2])/params.scale[2]));
+		const Sample conv = params*sample;
+
+		max = std::max(max, std::abs((conv.x)));
+		max = std::max(max, std::abs((conv.y)));
+		max = std::max(max, std::abs((conv.z)));
 	}
 	const float window_scale = 0.4f*size/max;
 
@@ -27,9 +28,11 @@ void Viewer::paintEvent(QPaintEvent *event) {
 	painter.translate(rect().center());
 
 	for(const Sample &sample : samples) {
-		const float x = window_scale*(sample.x - params.offset[0])/params.scale[0];
-		const float y = window_scale*(sample.y - params.offset[1])/params.scale[1];
-		const float z = window_scale*(sample.z - params.offset[2])/params.scale[2];
+		const Sample conv = params*sample;
+
+		const float x = window_scale*conv.x;
+		const float y = window_scale*conv.y;
+		const float z = window_scale*conv.z;
 
 		painter.setBrush(Qt::red);
 		painter.drawEllipse(x, y, point, point);
