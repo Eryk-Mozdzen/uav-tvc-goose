@@ -7,6 +7,7 @@ set(CMAKE_AUTOUIC ON)
 set(CMAKE_AUTOMOC ON)
 set(CMAKE_AUTORCC ON)
 
+find_package(Eigen3 REQUIRED)
 find_package(Qt5 COMPONENTS
 	Widgets
 	SerialPort
@@ -19,7 +20,6 @@ add_executable(${PROJECT_NAME}
 	"src/usb.cpp"
 	"src/window.cpp"
 	"src/viewer.cpp"
-	"src/matrix.cpp"
 	"src/telnet.cpp"
 )
 
@@ -35,6 +35,7 @@ target_compile_options(${PROJECT_NAME} PRIVATE
 )
 
 target_link_libraries(${PROJECT_NAME}
+	Eigen3::Eigen
 	Qt5::Widgets
 	Qt5::SerialPort
 	Qt5::WebEngineWidgets
