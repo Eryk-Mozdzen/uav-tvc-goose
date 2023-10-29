@@ -44,7 +44,7 @@ Window::Window(QWidget *parent) : QWidget(parent) {
     {
         QGroupBox *group = new QGroupBox("power monitor");
 
-        power = new widgets::Form({"shunt voltage", "bus voltage", "current", "power", "battery"}, true, group);
+        power = new widgets::Form({"voltage", "current"}, true, group);
 
         layout->addWidget(group, 3, 0);
     }
@@ -65,11 +65,13 @@ Window::Window(QWidget *parent) : QWidget(parent) {
         QPushButton *cmd_land = new QPushButton("Land", this);
         QPushButton *cmd_abort = new QPushButton("Abort", this);
         QPushButton *cmd_reset = new QPushButton("Reset", this);
+        QPushButton *resume = new QPushButton("Resume", this);
 
         grid->addWidget(cmd_start, 0, 0);
         grid->addWidget(cmd_land, 1, 0);
         grid->addWidget(cmd_abort, 2, 0);
-        grid->addWidget(cmd_reset, 4, 0);
+        grid->addWidget(cmd_reset, 3, 0);
+        grid->addWidget(resume, 4, 0);
 
         layout->addWidget(group, 2, 0);
 
@@ -122,6 +124,10 @@ Window::Window(QWidget *parent) : QWidget(parent) {
             if(gamepad.get(Gamepad::Button::CIRCLE_B)) {
                 widgets::LiveChart::resume();
             }
+        });
+
+        connect(resume, &QPushButton::clicked, [this]() {
+            widgets::LiveChart::resume();
         });
     }
 
@@ -178,7 +184,7 @@ Window::Window(QWidget *parent) : QWidget(parent) {
         grid->addWidget(manual[2], 0, 2);
         grid->addWidget(manual[3], 0, 3);
         grid->addWidget(manual_switch, 1, 0, 3, 0);
-        layout->addWidget(group, 1, 1, 4, 1);
+        layout->addWidget(group, 0, 1, 4, 1);
     }
 
     {
@@ -247,16 +253,6 @@ Window::Window(QWidget *parent) : QWidget(parent) {
     }
 
     {
-        QPushButton *resume = new QPushButton("Resume", this);
-
-        layout->addWidget(resume, 0, 1);
-
-        connect(resume, &QPushButton::clicked, [this]() {
-            widgets::LiveChart::resume();
-        });
-    }
-
-    {
         widgets::LiveChart::Config config;
         config.title = "Angular Velocity";
         config.yLabel = "[°/s]";
@@ -289,22 +285,6 @@ Window::Window(QWidget *parent) : QWidget(parent) {
         layout->addWidget(motor_vel, 0, 4, 2, 1);
     }
 
-    {
-        widgets::LiveChart::Config config;
-        config.title = "Linear Acceleration";
-        config.yLabel = "[m/s2]";
-        config.yMin = -20;
-        config.yMax = 20;
-        config.yFormat = "%2.0f";
-
-        linear_acc = new widgets::LiveChart(config, this);
-        linear_acc->addSeries("X", QPen(Qt::red,     2, Qt::SolidLine));
-        linear_acc->addSeries("Y", QPen(Qt::green,   2, Qt::SolidLine));
-        linear_acc->addSeries("Z", QPen(Qt::blue,    2, Qt::SolidLine));
-
-        layout->addWidget(linear_acc, 4, 3, 2, 1);
-    }
-
     connect(&usb, &USB::receive, this, &Window::receiveCallback);
     connect(&telnet, &Telnet::receive, this, &Window::receiveCallback);
     connect(this, &Window::transmit, &usb, &USB::transmit);
@@ -317,13 +297,7 @@ void Window::receiveCallback(Transfer::FrameRX frame) {
         comm::Estimator estimator_data;
         frame.getPayload(estimator_data);
 
-        power->set(4, "%1.2f", estimator_data.soc);
-
         others->set(1, "%6.0f", estimator_data.ground_pressure);
-
-        linear_acc->append("X", estimator_data.acceleration[0]);
-        linear_acc->append("Y", estimator_data.acceleration[1]);
-        linear_acc->append("Z", estimator_data.acceleration[2]);
     }
 
     if(frame.id==Transfer::ID::TELEMETRY_CONTROLLER) {
@@ -384,10 +358,8 @@ void Window::receiveCallback(Transfer::FrameRX frame) {
         comm::Power monitor;
         frame.getPayload(monitor);
 
-        power->set(0, "%2.6f", monitor.shunt);
-        power->set(1, "%2.2f", monitor.bus);
-        power->set(2, "%2.2f", monitor.current);
-        power->set(3, "%2.2f", monitor.power);
+        power->set(0, "%2.2f", monitor.bus);
+        power->set(1, "%2.2f", monitor.current);
     }
 
     if(frame.id==Transfer::ID::SENSOR_PRESSURE) {
