@@ -4,10 +4,12 @@
 #include <QSlider>
 #include <QGroupBox>
 #include <QLineEdit>
+#include <QTimer>
+#include <QDebug>
 
 #include "window.h"
 
-Window::Window(QWidget *parent) : QWidget{parent}, swipe_state{false} {
+Window::Window(QWidget *parent) : QWidget{parent}, position{Position::ZERO} {
 
     setFixedWidth(1000);
 
@@ -32,7 +34,7 @@ Window::Window(QWidget *parent) : QWidget{parent}, swipe_state{false} {
             displays[i]->setMaximumWidth(100);
 
             connect(sliders[i], &QSlider::valueChanged, [sliders, displays, i](int value) {
-                displays[i]->setText(QString::asprintf("%d",  sliders[i]->maximum() - value));
+                displays[i]->setText(QString::asprintf("%d", sliders[i]->maximum() - value));
             });
         }
 
@@ -89,34 +91,51 @@ Window::Window(QWidget *parent) : QWidget{parent}, swipe_state{false} {
         layout->addWidget(group, 1, 0, 2, 0);
 
         connect(swipe, &QPushButton::clicked, [this, sliders]() {
-            int values[4];
-
-            if(swipe_state) {
-                values[0] = sliders[0]->value();
-                values[1] = sliders[1]->value();
-                values[2] = sliders[2]->value();
-                values[3] = sliders[3]->value();
+            if(position==Position::MIN) {
+                position = Position::MAX;
             } else {
-                values[0] = sliders[4]->maximum() - sliders[4]->value();
-                values[1] = sliders[5]->maximum() - sliders[5]->value();
-                values[2] = sliders[6]->maximum() - sliders[6]->value();
-                values[3] = sliders[7]->maximum() - sliders[7]->value();
+                position = Position::MIN;
             }
-
-            // send
-
-            swipe_state = !swipe_state;
         });
 
-        connect(zero, &QPushButton::clicked, [sliders]() {
-            int values[4];
-
-            values[0] = (sliders[0]->value() + sliders[4]->maximum() - sliders[4]->value())/2;
-            values[1] = (sliders[1]->value() + sliders[5]->maximum() - sliders[5]->value())/2;
-            values[2] = (sliders[2]->value() + sliders[6]->maximum() - sliders[6]->value())/2;
-            values[3] = (sliders[3]->value() + sliders[7]->maximum() - sliders[7]->value())/2;
-
-            // send
+        connect(zero, &QPushButton::clicked, [this, sliders]() {
+            position = Position::ZERO;
         });
     }
+
+    connect(this, &Window::transmit, &usb, &USB::transmit);
+    connect(this, &Window::transmit, &telnet, &Telnet::transmit);
+
+    QTimer *timer = new QTimer(this);
+    connect(timer, &QTimer::timeout, [this, sliders]() {
+
+        comm::Manual data;
+        data.type = comm::Manual::Type::CALIBRATION;
+        data.throttle = 0;
+
+        switch(position) {
+            case Position::MIN: {
+                data.angles[0] = sliders[4]->maximum() - sliders[4]->value();
+                data.angles[1] = sliders[5]->maximum() - sliders[5]->value();
+                data.angles[2] = sliders[6]->maximum() - sliders[6]->value();
+                data.angles[3] = sliders[7]->maximum() - sliders[7]->value();
+            } break;
+            case Position::ZERO: {
+                data.angles[0] = (sliders[0]->value() + sliders[4]->maximum() - sliders[4]->value())/2;
+                data.angles[1] = (sliders[1]->value() + sliders[5]->maximum() - sliders[5]->value())/2;
+                data.angles[2] = (sliders[2]->value() + sliders[6]->maximum() - sliders[6]->value())/2;
+                data.angles[3] = (sliders[3]->value() + sliders[7]->maximum() - sliders[7]->value())/2;
+            } break;
+            case Position::MAX: {
+                data.angles[0] = sliders[0]->value();
+                data.angles[1] = sliders[1]->value();
+                data.angles[2] = sliders[2]->value();
+                data.angles[3] = sliders[3]->value();
+            } break;
+        }
+
+        qDebug() << data.angles[0] << data.angles[1] << data.angles[2] << data.angles[3];
+        transmit(Transfer::encode(data, Transfer::ID::CONTROL_MANUAL));
+    });
+    timer->start(50);
 }

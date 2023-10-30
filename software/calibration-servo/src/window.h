@@ -11,7 +11,16 @@ class Window : public QWidget {
     USB usb;
     Telnet telnet;
 
-    bool swipe_state;
+    enum Position {
+        MIN,
+        ZERO,
+        MAX
+    };
+
+    Position position;
+
+signals:
+    void transmit(const Transfer::FrameTX &frame);
 
 public:
     Window(QWidget *parent = nullptr);

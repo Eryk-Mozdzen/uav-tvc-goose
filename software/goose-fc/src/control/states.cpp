@@ -104,11 +104,19 @@ void Manual::enter() {
 }
 
 void Manual::execute() {
-    Actuators::getInstance().setMotorThrottle(context->control_manual.throttle, Actuators::Mode::RAMP);
-    Actuators::getInstance().setFinAngle(Actuators::FIN1, context->control_manual.angles[0]);
-    Actuators::getInstance().setFinAngle(Actuators::FIN2, context->control_manual.angles[1]);
-    Actuators::getInstance().setFinAngle(Actuators::FIN3, context->control_manual.angles[2]);
-    Actuators::getInstance().setFinAngle(Actuators::FIN4, context->control_manual.angles[3]);
+
+    if(context->control_manual.type==comm::Manual::Type::NORMAL) {
+        Actuators::getInstance().setMotorThrottle(context->control_manual.throttle, Actuators::Mode::RAMP);
+        Actuators::getInstance().setFinAngle(Actuators::FIN1, context->control_manual.angles[0]);
+        Actuators::getInstance().setFinAngle(Actuators::FIN2, context->control_manual.angles[1]);
+        Actuators::getInstance().setFinAngle(Actuators::FIN3, context->control_manual.angles[2]);
+        Actuators::getInstance().setFinAngle(Actuators::FIN4, context->control_manual.angles[3]);
+    } else {
+        Actuators::getInstance().setFinCompare(Actuators::FIN1, context->control_manual.angles[0]);
+        Actuators::getInstance().setFinCompare(Actuators::FIN2, context->control_manual.angles[1]);
+        Actuators::getInstance().setFinCompare(Actuators::FIN3, context->control_manual.angles[2]);
+        Actuators::getInstance().setFinCompare(Actuators::FIN4, context->control_manual.angles[3]);
+    }
 }
 
 void Manual::exit() {

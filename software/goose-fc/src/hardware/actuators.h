@@ -11,21 +11,26 @@ class Actuators {
     static constexpr float deg2rad = pi/180.f;
 
     struct Servo {
-        static constexpr uint16_t min_compare = 500;
-        static constexpr uint16_t max_compare = 2400;
-        static constexpr uint16_t center_compare = min_compare + max_compare/2;
-        static constexpr uint16_t radius_compare = (max_compare - min_compare)/2;
         static constexpr float max = 15.f*deg2rad;
 
         uint32_t channel;
-        float offset;
+        uint16_t min_compare;
+        uint16_t max_compare;
+
+        inline uint16_t getCenter() const {
+            return (max_compare + min_compare)/2;
+        }
+
+        inline uint16_t getRadius() const {
+            return (max_compare - min_compare)/2;
+        }
     };
 
     static constexpr Servo servos[4] = {
-        {TIM_CHANNEL_1, 13},
-        {TIM_CHANNEL_2, 2},
-        {TIM_CHANNEL_3, 11},
-        {TIM_CHANNEL_4, 4}
+        {TIM_CHANNEL_1, 1000, 2000},
+        {TIM_CHANNEL_2, 1000, 2000},
+        {TIM_CHANNEL_3, 1000, 2000},
+        {TIM_CHANNEL_4, 1000, 2000}
     };
 
     struct ESC {
@@ -59,7 +64,8 @@ public:
 
     void init();
 
-    void setFinAngle(const Fin fin, float alpha);
+    void setFinCompare(const Fin fin, const uint32_t compare);
+    void setFinAngle(const Fin fin, float angle);
     void setMotorThrottle(float throttle, const Mode mode);
 
     float getFinAngle(const Fin fin) const;

@@ -79,12 +79,18 @@ void Actuators::init() {
     HAL_TIM_PWM_Start(&htim1_esc, TIM_CHANNEL_3);
 }
 
+void Actuators::setFinCompare(const Fin fin, const uint32_t compare) {
+	__HAL_TIM_SET_COMPARE(&htim3_servo, servos[fin].channel, compare);
+}
+
 void Actuators::setFinAngle(const Fin fin, float alpha) {
 	alpha = alpha>Servo::max ? Servo::max : alpha<-Servo::max ? -Servo::max : alpha;
 
-	alpha +=deg2rad*servos[fin].offset;
+	const float center = servos[fin].getCenter();
+	const float radius = servos[fin].getRadius();
+	const uint16_t compare = center + radius*alpha/(0.5f*pi);
 
-    __HAL_TIM_SET_COMPARE(&htim3_servo, servos[fin].channel, Servo::center_compare + Servo::radius_compare*alpha/(0.5f*pi));
+    __HAL_TIM_SET_COMPARE(&htim3_servo, servos[fin].channel, compare);
 }
 
 void Actuators::setMotorThrottle(float throttle, const Mode mode) {
@@ -108,10 +114,11 @@ void Actuators::setMotorThrottle(float throttle, const Mode mode) {
 
 float Actuators::getFinAngle(const Fin fin) const {
     const float compare = __HAL_TIM_GET_COMPARE(&htim3_servo, servos[fin].channel);
+	const float center = servos[fin].getCenter();
+	const float radius = servos[fin].getRadius();
+	const float angle = (compare - center)/radius*0.5f*pi;
 
-    const float raw = (compare - ((float)Servo::center_compare))/((float)Servo::radius_compare)*0.5f*pi;
-
-	return raw - deg2rad*servos[fin].offset;
+    return angle;
 }
 
 float Actuators::getMotorThrottle() const {
