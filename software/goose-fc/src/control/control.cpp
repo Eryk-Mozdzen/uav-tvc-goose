@@ -113,7 +113,9 @@ void Control::task() {
 
 			if(frame.id==Transfer::ID::CONTROL_MANUAL) {
 				no_cmd_manual.reset();
-				frame.getPayload(control_manual);
+				if(frame.getPayload(control_manual)) {
+					disconnect.reset();
+				}
 			}
 		}
 

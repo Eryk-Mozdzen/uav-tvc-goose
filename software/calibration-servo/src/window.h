@@ -13,11 +13,15 @@ class Window : public QWidget {
 
     enum Position {
         MIN,
-        ZERO,
-        MAX
+        MAX,
+        ZERO
     };
 
     Position position;
+    bool direction;
+
+private slots:
+    void callback(Transfer::FrameRX frame);
 
 signals:
     void transmit(const Transfer::FrameTX &frame);

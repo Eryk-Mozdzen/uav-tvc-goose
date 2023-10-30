@@ -14,23 +14,16 @@ class Actuators {
         static constexpr float max = 15.f*deg2rad;
 
         uint32_t channel;
-        uint16_t min_compare;
-        uint16_t max_compare;
-
-        inline uint16_t getCenter() const {
-            return (max_compare + min_compare)/2;
-        }
-
-        inline uint16_t getRadius() const {
-            return (max_compare - min_compare)/2;
-        }
+        float compare_lower;
+        float compare_center;
+        float compare_upper;
     };
 
     static constexpr Servo servos[4] = {
-        {TIM_CHANNEL_1, 1000, 2000},
-        {TIM_CHANNEL_2, 1000, 2000},
-        {TIM_CHANNEL_3, 1000, 2000},
-        {TIM_CHANNEL_4, 1000, 2000}
+        {TIM_CHANNEL_1, 513, 1535, 2537},
+        {TIM_CHANNEL_2, 530, 1344, 2232},
+        {TIM_CHANNEL_3, 554, 1453, 2452},
+        {TIM_CHANNEL_4, 560, 1508, 2427}
     };
 
     struct ESC {
@@ -42,6 +35,16 @@ class Actuators {
     TIM_HandleTypeDef htim1_esc;
 
     Ramp throttle_ramp;
+
+    template<typename T>
+    static inline T clamp(const T value, const T lower, const T upper) {
+        return value>upper ? upper : value<lower ? lower : value;
+    }
+
+    template<typename T>
+    static inline T interpolate(const T in, const T in_lower, const T in_upper, const T out_lower, const T out_upper) {
+        return (((out_upper - out_lower)*(in - in_lower))/(in_upper - in_lower)) + out_lower;
+    }
 
     Actuators();
 
