@@ -44,6 +44,13 @@ namespace comm {
 	};
 
 	struct Manual {
+
+		enum Type : uint32_t {
+			NORMAL,
+			CALIBRATION
+		};
+
+		Type type;
 		float throttle;
 		float angles[4];
 	};

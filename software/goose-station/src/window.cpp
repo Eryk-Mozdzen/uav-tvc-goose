@@ -157,6 +157,7 @@ Window::Window(QWidget *parent) : QWidget(parent) {
             const float z = deg2rad*manual[2]->value();
 
             comm::Manual data;
+            data.type = comm::Manual::Type::NORMAL;
             data.angles[0] = - x - z;
             data.angles[1] = - y - z;
             data.angles[2] = + x - z;
