@@ -88,14 +88,15 @@ K, _, _ = control.lqr(A, B, Q, R, N, integral_action=G)
 def write_int(file, num, name):
 	file.write('''constexpr int {0} = {1};\n'''.format(name, num))
 
-def write_matrix(file, matrix, name):
+def write_matrix(file, matrix, name, format='{: .4f}'):
 	file.write('''constexpr Matrix<{0}, {1}> {2} = {{\n'''.format(matrix.shape[0], matrix.shape[1], name))
 	for row in matrix:
-		row = ['{:+.4f}'.format(val) for val in row]
+		row = [format.format(val) for val in row]
 		file.write('    ' + ', '.join(map(str, row)) + ',\n')
 	file.write('};\n\n')
 
 with open('src/control/controller_params.h', 'w') as file:
+	file.write('// auto-generated file\n\n')
 	file.write('#pragma once\n\n')
 	file.write('#include <matrix.h>\n\n')
 	file.write('namespace controller {\n\n')
@@ -106,6 +107,6 @@ with open('src/control/controller_params.h', 'w') as file:
 	file.write('\n')
 	write_matrix(file, operating_point, 'operating_point')
 	write_matrix(file, K, 'K')
-	write_matrix(file, G, 'G')
+	write_matrix(file, G, 'G', format='{:.0f}')
 
 	file.write('}\n')
