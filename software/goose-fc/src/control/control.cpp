@@ -57,7 +57,7 @@ Control::Control() : TaskClassS{"control loop", TaskPrio_Mid},
 		connect{&disconnect, 3000},
 		stil{&movement, 3000},
 		readiness{&correct, &connect, &stil},
-		no_cmd_manual{3000},
+		no_cmd_manual{1000},
 		cmd_manual{&no_cmd_manual, 3000},
 		sm{&abort, this},
 		telemetry_controller{"controller telememetry", Transfer::ID::TELEMETRY_CONTROLLER} {
@@ -96,13 +96,6 @@ void Control::task() {
 				cmd_start.check(frame);
 				cmd_land.check(frame);
 				cmd_abort.check(frame);
-
-				comm::Command command;
-				if(frame.getPayload(command)) {
-					if(command==comm::Command::RESET) {
-						NVIC_SystemReset();
-					}
-				}
 			}
 
 			if(frame.id==Transfer::ID::CONTROL_SETPOINT) {
@@ -120,16 +113,7 @@ void Control::task() {
 		}
 
 		while(Transport::getInstance().state_queue.pop(process_value, 0)) {
-			Controller::getInstance().setProcessValue({
-				process_value.rpy[0],
-				process_value.rpy[1],
-				//process_value.rpy[2],
-				process_value.w[0],
-				process_value.w[1],
-				process_value.w[2],
-				process_value.z,
-				process_value.vz
-			});
+			control_feedback = Controller::getInstance().calculate(process_value);
 		}
 
 		telemetry_controller.feed(getTelemetry());
@@ -139,21 +123,9 @@ void Control::task() {
 }
 
 comm::Controller Control::getTelemetry() {
-	const Matrix<7, 1> controller_sp_raw = Controller::getInstance().getSetpoint();
-	comm::Controller::State controller_sp;
-	controller_sp.rpy[0] = controller_sp_raw(0, 0);
-	controller_sp.rpy[1] = controller_sp_raw(1, 0);
-	//controller_sp.rpy[2] = controller_sp_raw(2, 0);
-	controller_sp.rpy[2] = 0;
-	controller_sp.w[0] = controller_sp_raw(2, 0);
-	controller_sp.w[1] = controller_sp_raw(3, 0);
-	controller_sp.w[2] = controller_sp_raw(4, 0);
-	controller_sp.z = controller_sp_raw(5, 0);
-	controller_sp.vz = controller_sp_raw(6, 0);
-
 	comm::Controller controller_data;
-	controller_data.setpoint = controller_sp;
-	controller_data.process_value = process_value;
+	controller_data.setpoint = Controller::getInstance().getSetpoint();
+	controller_data.process_value = Controller::getInstance().getProcessValue();
 	controller_data.angles[0] = Actuators::getInstance().getFinAngle(Actuators::Fin::FIN1);
 	controller_data.angles[1] = Actuators::getInstance().getFinAngle(Actuators::Fin::FIN2);
 	controller_data.angles[2] = Actuators::getInstance().getFinAngle(Actuators::Fin::FIN3);

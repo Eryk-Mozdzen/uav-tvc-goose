@@ -31,3 +31,4 @@
 **/build
 **/a.out
 !simulation-params/*.csv
+software/goose-fc/src/control/controller_params.h

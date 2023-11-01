@@ -1,53 +1,29 @@
 #pragma once
 
 #include "matrix.h"
+#include "controller_params.h"
+#include "comm.h"
 
 class Controller {
-    static constexpr float dt = 0.01f;
-    static constexpr int X_NUM = 7;
-    static constexpr int U_NUM = 5;
-    static constexpr int G_NUM = 4;
+    static constexpr float dt = 0.005f;
 
-    static constexpr Matrix<U_NUM, 1> operating_point = {
-   -0.0113,
-   -0.0113,
-   -0.0113,
-   -0.0113,
-    0.8443,
-    };
-
-    static constexpr Matrix<G_NUM, X_NUM> G = {
-        1, 0, 0, 0, 0, 0, 0,
-        0, 1, 0, 0, 0, 0, 0,
-        0, 0, 0, 0, 1, 0, 0,
-        0, 0, 0, 0, 0, 1, 0
-    };
-
-    static constexpr Matrix<U_NUM, X_NUM+G_NUM> K = {
-   -0.2703,    0.2672,   -0.1082,   -0.0000,   -0.0653,   -0.0000,   -0.0000,   -0.1452,    0.1435,   -0.0913,   -0.0000,
-   -0.2672,   -0.2702,    0.0000,   -0.1080,   -0.0653,   -0.0000,   -0.0000,   -0.1435,   -0.1452,   -0.0913,   -0.0000,
-    0.2703,   -0.2672,    0.1082,   -0.0000,   -0.0653,    0.0000,    0.0000,    0.1452,   -0.1435,   -0.0913,    0.0000,
-    0.2672,    0.2702,   -0.0000,    0.1080,   -0.0653,    0.0000,    0.0000,    0.1435,    0.1452,   -0.0913,    0.0000,
-   -0.0000,   -0.0000,   -0.0000,    0.0000,   -0.0000,    0.2229,    0.1984,   -0.0000,   -0.0000,   -0.0000,    0.1000,
-    };
-
-    Matrix<G_NUM, 1> error_integral;
-    Matrix<X_NUM, 1> setpoint;
-    Matrix<X_NUM, 1> process_value;
+    Matrix<controller::dimG, 1> error_integral;
+    Matrix<controller::dimX, 1> setpoint;
+    Matrix<controller::dimX, 1> process_value;
 
     Controller();
+    static comm::Controller::State matrix2state(const Matrix<controller::dimX, 1> &matrix);
+    static Matrix<controller::dimX, 1> state2matrix(const comm::Controller::State &state);
 
 public:
     Controller(Controller &) = delete;
 	void operator=(const Controller &) = delete;
+    static Controller & getInstance();
 
-    void setSetpoint(const Matrix<X_NUM, 1> sp);
-    void setProcessValue(const Matrix<X_NUM, 1> pv);
-    void resetIntegral();
-    Matrix<U_NUM, 1> calculate();
+    void reset();
+    Matrix<controller::dimU, 1> calculate(const comm::Controller::State &pv);
 
-    Matrix<X_NUM, 1> getSetpoint() const;
-    Matrix<X_NUM, 1> getProcessValue() const;
-
-    static Controller& getInstance();
+    void setSetpoint(const comm::Controller::State &sp);
+    const comm::Controller::State getSetpoint() const;
+    const comm::Controller::State getProcessValue() const;
 };
