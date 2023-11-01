@@ -52,7 +52,7 @@ Window::Window(QWidget *parent) : QWidget(parent) {
     {
         QGroupBox *group = new QGroupBox("others");
 
-        others = new widgets::Form({"state", "ground pressure", "pressure", "distance"}, true, group);
+        others = new widgets::Form({"state", "ground", "pressure", "distance", "velocity"}, true, group);
 
         layout->addWidget(group, 1, 0);
     }
@@ -200,7 +200,7 @@ Window::Window(QWidget *parent) : QWidget(parent) {
         altitude->addSeries("setpoint", QPen(Qt::black,   1, Qt::DashLine));
         altitude->addSeries("process", QPen(Qt::black,    2, Qt::SolidLine));
 
-        layout->addWidget(altitude, 0, 6, 2, 1);
+        layout->addWidget(altitude, 0, 4, 2, 1);
     }
 
     {
@@ -274,16 +274,16 @@ Window::Window(QWidget *parent) : QWidget(parent) {
 
     {
         widgets::LiveChart::Config config;
-        config.title = "Motor Velocity";
-        config.yLabel = "[rad/s]";
-        config.yMin = 0;
-        config.yMax = 1200;
-        config.yFormat = "%4.0f";
+        config.title = "Vertical Velocity";
+        config.yLabel = "[m/s]";
+        config.yMin = -2;
+        config.yMax = 2;
+        config.yFormat = "%1.0f";
 
-        motor_vel = new widgets::LiveChart(config, this);
-        motor_vel->addSeries("velocity", QPen(Qt::black,   2, Qt::SolidLine));
+        vertical_vel = new widgets::LiveChart(config, this);
+        vertical_vel->addSeries("velocity", QPen(Qt::black,   2, Qt::SolidLine));
 
-        layout->addWidget(motor_vel, 0, 4, 2, 1);
+        layout->addWidget(vertical_vel, 0, 6, 2, 1);
     }
 
     connect(&usb, &USB::receive, this, &Window::receiveCallback);
@@ -299,6 +299,7 @@ void Window::receiveCallback(Transfer::FrameRX frame) {
         frame.getPayload(estimator_data);
 
         others->set(1, "%6.0f", estimator_data.ground_pressure);
+        vertical_vel->append("velocity", estimator_data.velocity[2]);
     }
 
     if(frame.id==Transfer::ID::TELEMETRY_CONTROLLER) {
@@ -378,6 +379,6 @@ void Window::receiveCallback(Transfer::FrameRX frame) {
     if(frame.id==Transfer::ID::SENSOR_MOTOR_VELOCITY) {
         float velocity;
         frame.getPayload(velocity);
-        motor_vel->append("velocity", velocity);
+        others->set(4, "%6.0f", velocity);
     }
 }
