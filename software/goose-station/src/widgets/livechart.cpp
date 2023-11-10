@@ -48,6 +48,16 @@ LiveChart::LiveChart(const Config &config, QWidget *parent) : QWidget{parent} {
         const float t = getTime();
 
         axisX->setRange(t-10, t);
+
+        for(QtCharts::QLineSeries *s : series) {
+            if(s->chart()==chart) {
+                for(const QPointF &p : s->points()) {
+                    if(p.x()<t-10) {
+                        s->remove(p);
+                    }
+                }
+            }
+        }
     });
 }
 
