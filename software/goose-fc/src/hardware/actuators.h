@@ -20,10 +20,10 @@ class Actuators {
     };
 
     static constexpr Servo servos[4] = {
-        {TIM_CHANNEL_1, 513, 1535, 2537},
-        {TIM_CHANNEL_2, 530, 1344, 2232},
-        {TIM_CHANNEL_3, 554, 1453, 2452},
-        {TIM_CHANNEL_4, 560, 1508, 2427}
+        {TIM_CHANNEL_1, 524, 1498, 2501},
+        {TIM_CHANNEL_2, 548, 1498, 2421},
+        {TIM_CHANNEL_3, 548, 1431, 2446},
+        {TIM_CHANNEL_4, 518, 1340, 2245}
     };
 
     struct ESC {
