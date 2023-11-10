@@ -55,7 +55,7 @@ bool Watchdog::triggered() {
 }
 
 void Watchdog::action() {
-    Logger::getInstance().log(Logger::DEBUG, "ev: Watchdog timeout");
+    //Logger::getInstance().log(Logger::DEBUG, "ev: Watchdog timeout");
 }
 
 
@@ -116,7 +116,7 @@ void Negation::reset() {
 }
 
 void Negation::action() {
-    Logger::getInstance().log(Logger::DEBUG, "ev: Negation occure");
+    //Logger::getInstance().log(Logger::DEBUG, "ev: Negation occure");
 }
 
 bool Limits::triggered() {

@@ -64,14 +64,12 @@ Window::Window(QWidget *parent) : QWidget(parent) {
         QPushButton *cmd_start = new QPushButton("Start", this);
         QPushButton *cmd_land = new QPushButton("Land", this);
         QPushButton *cmd_abort = new QPushButton("Abort", this);
-        QPushButton *cmd_reset = new QPushButton("Reset", this);
         QPushButton *resume = new QPushButton("Resume", this);
 
         grid->addWidget(cmd_start, 0, 0);
         grid->addWidget(cmd_land, 1, 0);
         grid->addWidget(cmd_abort, 2, 0);
-        grid->addWidget(cmd_reset, 3, 0);
-        grid->addWidget(resume, 4, 0);
+        grid->addWidget(resume, 3, 0);
 
         layout->addWidget(group, 2, 0);
 
@@ -89,10 +87,6 @@ Window::Window(QWidget *parent) : QWidget(parent) {
 
         connect(cmd_abort, &QPushButton::clicked, [this]() {
             transmit(Transfer::encode(comm::Command::ABORT, Transfer::ID::CONTROL_COMMAND));
-        });
-
-        connect(cmd_reset, &QPushButton::clicked, [this]() {
-            transmit(Transfer::encode(comm::Command::RESET, Transfer::ID::CONTROL_COMMAND));
         });
 
         connect(timer, &QTimer::timeout, [this]() {
@@ -216,7 +210,6 @@ Window::Window(QWidget *parent) : QWidget(parent) {
         attitude->addSeries("roll process", QPen(Qt::red,       2, Qt::SolidLine));
         attitude->addSeries("pitch setpoint", QPen(Qt::green,   1, Qt::DashLine));
         attitude->addSeries("pitch process", QPen(Qt::green,    2, Qt::SolidLine));
-        attitude->addSeries("yaw setpoint", QPen(Qt::blue,      1, Qt::DashLine));
         attitude->addSeries("yaw process", QPen(Qt::blue,       2, Qt::SolidLine));
 
         layout->addWidget(attitude, 2, 4, 2, 1);
@@ -329,7 +322,6 @@ void Window::receiveCallback(Transfer::FrameRX frame) {
 
         attitude->append("roll setpoint", rad2deg*controller_data.setpoint.rpy[0]);
         attitude->append("pitch setpoint", rad2deg*controller_data.setpoint.rpy[1]);
-        attitude->append("yaw setpoint", rad2deg*controller_data.setpoint.rpy[2]);
         attitude->append("roll process", rad2deg*controller_data.process_value.rpy[0]);
         attitude->append("pitch process", rad2deg*controller_data.process_value.rpy[1]);
         attitude->append("yaw process", rad2deg*controller_data.process_value.rpy[2]);

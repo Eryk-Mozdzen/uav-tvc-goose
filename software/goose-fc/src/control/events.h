@@ -83,7 +83,7 @@ public:
     }
 
     void action() override {
-        Logger::getInstance().log(Logger::DEBUG, "ev: Combination occure");
+        //Logger::getInstance().log(Logger::DEBUG, "ev: Combination occure");
     }
 };
 

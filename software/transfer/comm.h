@@ -7,8 +7,7 @@ namespace comm {
     enum Command : uint8_t {
 		START,
 		LAND,
-		ABORT,
-		RESET
+		ABORT
 	};
 
 	struct Estimator {
@@ -26,6 +25,19 @@ namespace comm {
 			float w[3];
 			float z;
 			float vz;
+
+			static State zero() {
+				State state;
+				state.rpy[0] = 0;
+				state.rpy[1] = 0;
+				state.rpy[2] = 0;
+				state.w[0] = 0;
+				state.w[1] = 0;
+				state.w[2] = 0;
+				state.z = 0;
+				state.vz = 0;
+				return state;
+			}
 		};
 
 		enum SMState : uint32_t {
