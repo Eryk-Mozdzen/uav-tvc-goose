@@ -125,7 +125,7 @@ void Control::task() {
 comm::Controller Control::getTelemetry() {
 	comm::Controller controller_data;
 	controller_data.setpoint = Controller::getInstance().getSetpoint();
-	controller_data.process_value = Controller::getInstance().getProcessValue();
+	controller_data.process_value = process_value;
 	controller_data.angles[0] = Actuators::getInstance().getFinAngle(Actuators::Fin::FIN1);
 	controller_data.angles[1] = Actuators::getInstance().getFinAngle(Actuators::Fin::FIN2);
 	controller_data.angles[2] = Actuators::getInstance().getFinAngle(Actuators::Fin::FIN3);

@@ -210,7 +210,6 @@ Window::Window(QWidget *parent) : QWidget(parent) {
         attitude->addSeries("roll process", QPen(Qt::red,       2, Qt::SolidLine));
         attitude->addSeries("pitch setpoint", QPen(Qt::green,   1, Qt::DashLine));
         attitude->addSeries("pitch process", QPen(Qt::green,    2, Qt::SolidLine));
-        attitude->addSeries("yaw setpoint", QPen(Qt::blue,      1, Qt::DashLine));
         attitude->addSeries("yaw process", QPen(Qt::blue,       2, Qt::SolidLine));
 
         layout->addWidget(attitude, 2, 4, 2, 1);
@@ -323,7 +322,6 @@ void Window::receiveCallback(Transfer::FrameRX frame) {
 
         attitude->append("roll setpoint", rad2deg*controller_data.setpoint.rpy[0]);
         attitude->append("pitch setpoint", rad2deg*controller_data.setpoint.rpy[1]);
-        attitude->append("yaw setpoint", rad2deg*controller_data.setpoint.rpy[2]);
         attitude->append("roll process", rad2deg*controller_data.process_value.rpy[0]);
         attitude->append("pitch process", rad2deg*controller_data.process_value.rpy[1]);
         attitude->append("yaw process", rad2deg*controller_data.process_value.rpy[2]);
