@@ -21,7 +21,7 @@ Axis::Axis(const char name, QWidget *parent) : QWidget{parent} {
 
 	line_sensor->setReadOnly(true);
 	line_sensor->setReadOnly(true);
-	line_sensor->setPlaceholderText("max positive");
+	line_sensor->setPlaceholderText("realtime value");
 	line_sensor->setAlignment(Qt::AlignHCenter);
 	line_pos->setReadOnly(true);
 	line_pos->setPlaceholderText("max positive");
