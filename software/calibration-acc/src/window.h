@@ -14,6 +14,7 @@ class Window : public QWidget {
     Sample current;
     Sample samples[6];
     QLineEdit *current_line[3];
+    QLineEdit *corrected_line[6][3];
 
     USB usb;
     Telnet telnet;
