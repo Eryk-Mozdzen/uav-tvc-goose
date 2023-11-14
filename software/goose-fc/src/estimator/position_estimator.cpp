@@ -112,7 +112,7 @@ void PositionEstimator::feedPressure(const float press) {
 }
 
 void PositionEstimator::feedAcceleration(const Vector &acc) {
-    constexpr Vector gravity = Vector::Z()*9.81f;
+    constexpr Vector gravity = Vector::Z()*9.80665f;
     const Matrix<3, 3> rot = attitude.getRotation();
 
 	linear = rot*acc - gravity;
