@@ -1,39 +1,12 @@
 #include <iostream>
 #include <iomanip>
 
-#include <Eigen/Dense>
 #include <QGridLayout>
 #include <QPushButton>
-#include <QLineEdit>
 #include <QGroupBox>
 
 #include "window.h"
 #include "utils.h"
-
-void leastSquares(const Sample *s, Eigen::Matrix3d &scale, Eigen::Vector3d &offset) {
-    constexpr double g = 9.80665;
-
-    Eigen::MatrixXd X(6, 4);
-    X << s[0].x, s[0].y, s[0].z, 1,
-         s[1].x, s[1].y, s[1].z, 1,
-         s[2].x, s[2].y, s[2].z, 1,
-         s[3].x, s[3].y, s[3].z, 1,
-         s[4].x, s[4].y, s[4].z, 1,
-         s[5].x, s[5].y, s[5].z, 1;
-
-    Eigen::MatrixXd b(6, 3);
-    b <<  g,  0,  0,
-          0,  g,  0,
-          0,  0,  g,
-         -g,  0,  0,
-          0, -g,  0,
-          0,  0, -g;
-
-    const Eigen::MatrixXd coeff = (X.transpose() * X).inverse() * X.transpose() * b;
-
-    scale = coeff.topRows(3).transpose();
-    offset = coeff.row(3);
-}
 
 Window::Window(QWidget *parent) : QWidget(parent) {
     QGridLayout *grid = new QGridLayout(this);
@@ -95,7 +68,7 @@ Window::Window(QWidget *parent) : QWidget(parent) {
                 Eigen::Matrix3d scale;
                 Eigen::Vector3d offset;
 
-                leastSquares(samples, scale, offset);
+                leastSquares(scale, offset);
 
                 std::cout << std::setprecision(4) << std::showpos << std::fixed << std::setw(10);
                 std::cout << "constexpr Vector offset = {\n";
@@ -146,6 +119,27 @@ Window::Window(QWidget *parent) : QWidget(parent) {
 
     connect(&usb, &USB::receive, this, &Window::callback);
     connect(&telnet, &Telnet::receive, this, &Window::callback);
+}
+
+void Window::leastSquares(Eigen::Matrix3d &scale, Eigen::Vector3d &offset) const {
+    const Sample *s = samples;
+
+    Eigen::MatrixXd X(6, 6);
+    X << s[0].x, 0,      0,      1, 0, 0,
+         0,      s[1].y, 0,      0, 1, 0,
+         0,      0,      s[2].z, 0, 0, 1,
+         s[3].x, 0,      0,      1, 0, 0,
+         0,      s[4].y, 0,      0, 1, 0,
+         0,      0,      s[5].z, 0, 0, 1;
+
+    Eigen::VectorXd b(6);
+    b << g, g, g, -g, -g, -g;
+
+    const Eigen::VectorXd coeff = (X.transpose() * X).inverse() * X.transpose() * b;
+
+    scale.setZero();
+    scale.diagonal() << coeff(0), coeff(1), coeff(2);
+    offset << coeff(3), coeff(4), coeff(5);
 }
 
 void Window::callback(Transfer::FrameRX frame) {

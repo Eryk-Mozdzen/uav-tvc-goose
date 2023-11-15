@@ -326,14 +326,14 @@ Vector MPU6050::getAcceleration() const {
 	const Vector pre_calibrated = Vector(raw_z, raw_x, raw_y)*g_to_ms2/gain;
 
 	constexpr Vector offset = {
-		+0.5977f,
-		-0.1565f,
-		-0.0028f
+		+0.5728f,
+		-0.1684f,
+		+0.0232f
 	};
 	constexpr Matrix<3, 3> scale = {
-		+0.9875f, +0.0018f, +0.0189f,
-		+0.0159f, +0.9905f, +0.0196f,
-		-0.0147f, -0.0059f, +0.9935f
+		+0.9907f, +0.0000f, +0.0000f,
+		+0.0000f, +0.9907f, +0.0000f,
+		+0.0000f, +0.0000f, +0.9947f
 	};
 
 	const Vector calibrated = scale*pre_calibrated + offset;

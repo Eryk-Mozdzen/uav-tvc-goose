@@ -1,5 +1,6 @@
 #pragma once
 
+#include <Eigen/Dense>
 #include <QWidget>
 #include <QLineEdit>
 
@@ -11,6 +12,8 @@
 class Window : public QWidget {
     Q_OBJECT
 
+    static constexpr double g = 9.80665;
+
     Sample current;
     Sample samples[6];
     QLineEdit *current_line[3];
@@ -18,6 +21,8 @@ class Window : public QWidget {
 
     USB usb;
     Telnet telnet;
+
+    void leastSquares(Eigen::Matrix3d &scale, Eigen::Vector3d &offset) const;
 
 private slots:
     void callback(Transfer::FrameRX frame);
