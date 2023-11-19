@@ -143,7 +143,7 @@ Window::Window(QWidget *parent) : QWidget(parent) {
         manual[3]->setRange(0, 100);
 
         QTimer *timer = new QTimer();
-        timer->setInterval(50);
+        timer->setInterval(20);
 
         connect(timer, &QTimer::timeout, [this, manual]() {
             const float x = deg2rad*manual[0]->value();
@@ -161,16 +161,16 @@ Window::Window(QWidget *parent) : QWidget(parent) {
             transmit(Transfer::encode(data, Transfer::ID::CONTROL_MANUAL));
         });
 
-        connect(manual_switch, &QPushButton::clicked, [timer, manual]() {
+        connect(manual_switch, &QCheckBox::stateChanged, [timer, manual](int state) {
             manual[0]->setValue(0);
             manual[1]->setValue(0);
             manual[2]->setValue(0);
             manual[3]->setValue(0);
 
-            if(timer->isActive()) {
-                timer->stop();
-            } else {
+            if(state) {
                 timer->start();
+            } else {
+                timer->stop();
             }
         });
 

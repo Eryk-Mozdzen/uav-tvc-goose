@@ -92,23 +92,24 @@ void Control::task() {
 
 		Transfer::FrameRX frame;
 		while(Transport::getInstance().frame_rx_queue.pop(frame, 0)) {
-			if(frame.id==Transfer::ID::CONTROL_COMMAND) {
-				cmd_start.check(frame);
-				cmd_land.check(frame);
-				cmd_abort.check(frame);
-			}
+			disconnect.reset();
 
-			if(frame.id==Transfer::ID::CONTROL_SETPOINT) {
-				if(frame.getPayload(setpoint)) {
-					disconnect.reset();
-				}
-			}
+			switch(frame.id) {
+				case Transfer::ID::CONTROL_COMMAND: {
+					cmd_start.check(frame);
+					cmd_land.check(frame);
+					cmd_abort.check(frame);
+				} break;
+				case Transfer::ID::CONTROL_SETPOINT: {
+					frame.getPayload(setpoint);
+				} break;
+				case Transfer::ID::CONTROL_MANUAL: {
+					frame.getPayload(control_manual);
+					no_cmd_manual.reset();
+				} break;
+				default: {
 
-			if(frame.id==Transfer::ID::CONTROL_MANUAL) {
-				no_cmd_manual.reset();
-				if(frame.getPayload(control_manual)) {
-					disconnect.reset();
-				}
+				} break;
 			}
 		}
 

@@ -1,6 +1,7 @@
 #pragma once
 
 #include <QTcpSocket>
+
 #include "transfer.h"
 
 class Telnet : public QObject {
@@ -8,11 +9,10 @@ class Telnet : public QObject {
 
 private:
     static constexpr int port = 23;
-    QTcpSocket *socket = nullptr;
+    QTcpSocket socket;
     Transfer transfer;
 
 private slots:
-    void error(QAbstractSocket::SocketError error);
     void read();
 
 public slots:
