@@ -65,11 +65,13 @@ Window::Window(QWidget *parent) : QWidget(parent) {
         QPushButton *cmd_land = new QPushButton("Land", this);
         QPushButton *cmd_abort = new QPushButton("Abort", this);
         QPushButton *resume = new QPushButton("Resume", this);
+        QPushButton *save = new QPushButton("Save", this);
 
         grid->addWidget(cmd_start, 0, 0);
         grid->addWidget(cmd_land, 1, 0);
         grid->addWidget(cmd_abort, 2, 0);
         grid->addWidget(resume, 3, 0);
+        grid->addWidget(save, 4, 0);
 
         layout->addWidget(group, 2, 0);
 
@@ -122,6 +124,10 @@ Window::Window(QWidget *parent) : QWidget(parent) {
 
         connect(resume, &QPushButton::clicked, [this]() {
             widgets::LiveChart::resume();
+        });
+
+        connect(save, &QPushButton::clicked, [this]() {
+            widgets::LiveChart::save();
         });
     }
 

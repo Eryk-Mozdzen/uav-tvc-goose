@@ -35,6 +35,7 @@ public:
     void append(const QString name, const float value);
     static void resume();
     static void pause();
+    static void save();
 };
 
 }

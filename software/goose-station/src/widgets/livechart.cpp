@@ -3,6 +3,7 @@
 #include <QDebug>
 #include <QChartView>
 #include <QLegend>
+#include <QFileDialog>
 
 namespace widgets {
 
@@ -97,6 +98,35 @@ void LiveChart::resume() {
 
 void LiveChart::pause() {
     paused = true;
+}
+
+void LiveChart::save() {
+    pause();
+
+    QString basename = "livechart_" + QDateTime::currentDateTime().toString("yyyy-MM-dd_HH:mm:ss");
+    basename = QFileDialog::getSaveFileName(nullptr, "DialogTitle", basename).replace(" ", "_");
+
+    QDir().mkdir(basename);
+
+    for(QtCharts::QLineSeries *s : series) {
+        const QString name =  s->chart()->title().replace(" ", "_") + "_" + s->name().replace(" ", "_");
+
+        QFile file(basename + "/" + name + ".csv");
+
+        if(!file.open(QFile::WriteOnly | QFile::Text)) {
+            qDebug() << "error during file save for" << name;
+            continue;
+        }
+
+        QTextStream output(&file);
+
+        output << "time," << name << "\n";
+        for(const QPointF &point : s->points()) {
+            output << point.x() << "," << point.y() << "\n";
+        }
+
+        file.close();
+    }
 }
 
 }
