@@ -146,7 +146,7 @@ Window::Window(QWidget *parent) : QWidget(parent) {
         manual[0]->setRange(-15, 15);
         manual[1]->setRange(-15, 15);
         manual[2]->setRange(-15, 15);
-        manual[3]->setRange(0, 100);
+        manual[3]->setRange(0, 20);
 
         QTimer *timer = new QTimer();
         timer->setInterval(20);
@@ -162,7 +162,7 @@ Window::Window(QWidget *parent) : QWidget(parent) {
             data.angles[1] = - y - z;
             data.angles[2] = + x - z;
             data.angles[3] = + y - z;
-            data.throttle = manual[3]->value()/100.f;
+            data.throttle = manual[3]->value()/20.f;
 
             transmit(Transfer::encode(data, Transfer::ID::CONTROL_MANUAL));
         });

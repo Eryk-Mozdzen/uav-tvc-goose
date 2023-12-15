@@ -14,6 +14,10 @@ void Telnet::changeAddress(const QString ip) {
 }
 
 void Telnet::transmit(const Transfer::FrameTX &frame) {
+    if(socket.state()!=QAbstractSocket::ConnectedState) {
+        return;
+    }
+
 	socket.write(reinterpret_cast<const char *>(frame.buffer), frame.length);
     socket.flush();
     socket.waitForBytesWritten(1000);

@@ -53,14 +53,14 @@ if len(velocity_samples)>0:
 	thrust = [m[0]/1000*g for m in velocity_samples]
 	velocity = [m[1] for m in velocity_samples]
 
-	Kt = curve_fit(lambda x, a: a*x**2, velocity, thrust)[0][0]
+	Kw = curve_fit(lambda x, a: a*x**2, velocity, thrust)[0][0]
 
-	print(f'F(w) = {Kt:3.10f} w^2')
+	print(f'F(w) = {Kw:3.10f} w^2')
 
 	if len(sys.argv)>1:
 		mass = float(sys.argv[1])
 
-		w0 = np.sqrt(mass*g/Kt)
+		w0 = np.sqrt(mass*g/Kw)
 
 		print(f'w_0 = {w0:5.3f} rad/s')
 
@@ -69,7 +69,7 @@ if len(velocity_samples)>0:
 	plt.scatter(velocity, thrust, color="black")
 
 	X = np.linspace(min(velocity), max(velocity), 100)
-	plt.plot(X, [Kt*x**2 for x in X], color="red", label="best fit")
+	plt.plot(X, [Kw*x**2 for x in X], color="red", label="best fit")
 
 	plt.xlabel("velocity [rad/s]")
 	plt.ylabel("thrust [N]")
