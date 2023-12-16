@@ -4,8 +4,8 @@ import os
 from datetime import datetime
 from scipy.constants import g, pi
 
-K_t = 3.85756
-K_w = 0.0000014188
+K_t = 3.51359
+K_w = 0.0000031336
 K_tau = 0.04249
 
 def fin_coefficient(R_rot, A_fin):
@@ -17,19 +17,19 @@ A_fin = 0.004203
 R_rot = 0.1
 C_l = fin_coefficient(R_rot, A_fin)
 
-J_xx = 0.000976062
-J_yy = 0.000966837
-J_zz = 0.000207248
-J_r = 0.000014703
+J_xx = 0.000988742
+J_yy = 0.000981663
+J_zz = 0.000217661
+J_r = 0.000013658
 
-m = 0.330
-l = 0.04071 + 0.01225
+m = 0.332
+l = 0.0377 + 0.01225
 r = 0.0665
 alpha_s = np.radians(-5)
 
 alpha_0 = -K_tau/(4*r*C_l*K_t) - alpha_s
 throttle_0 = m*g/K_t
-w_t0 = 1000 #np.sqrt(m*g/K_w)
+w_t0 = np.sqrt(m*g/K_w)
 F_t0 = K_t*throttle_0
 
 operating_point = np.array([
