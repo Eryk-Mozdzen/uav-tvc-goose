@@ -1,6 +1,7 @@
 import numpy as np
 import matplotlib.pyplot as plt
 from scipy.optimize import curve_fit
+from scipy.constants import g
 import csv
 
 def read_csv(file, columns):
@@ -16,22 +17,29 @@ def read_csv(file, columns):
 
 	return data
 
-g = 9.81
 arm = 0.2
 
 samples = read_csv('rotor_torque_data.csv', ['Throttle', 'Load'])
 
+# for m in samples:
+# 	print(f'({m[0]/100:4.2f}, {m[1]/1000*g*arm:7.5f})')
+
 throttle = [m[0]/100 for m in samples]
 torque = [m[1]/1000*g*arm for m in samples]
 
-K = curve_fit(lambda x, a: a*x, throttle, torque)[0][0]
+plt.scatter(throttle, torque, color="blue")
 
-print(f'M(u) = {K:3.5f} u')
+throttle = [m[0]/100 for m in samples if m[1]>0]
+torque = [m[1]/1000*g*arm for m in samples if m[1]>0]
+
+K, M0 = curve_fit(lambda x, a, b: a*x - b, throttle, torque)[0]
+
+print(f'M(u) = {K:3.5f} u - {M0:3.5f}')
 
 plt.scatter(throttle, torque, color="black")
 
-X = np.linspace(min(throttle), max(throttle), 100)
-plt.plot(X, K*X, color="red", label="best fit")
+X = np.linspace(0, 1, 10)
+plt.plot(X, K*X - M0, color="red", label="best fit")
 
 plt.xlabel("throttle [~]")
 plt.ylabel("torque [Nm]")

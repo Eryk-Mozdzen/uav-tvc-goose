@@ -1,6 +1,7 @@
 import numpy as np
 import matplotlib.pyplot as plt
 from scipy.optimize import curve_fit
+from scipy.constants import g
 import sys
 import csv
 
@@ -17,9 +18,10 @@ def read_csv(file, columns):
 
 	return data
 
-g = 9.81
-
 thrust_samples = read_csv('rotor_thrust_data.csv', ['Throttle', 'Thrust'])
+
+#for m in thrust_samples:
+#  	print(f'({m[0]/100:4.2f}, {m[1]/1000*g:5.3f})')
 
 if len(thrust_samples)>0:
 	throttle = [m[0]/100 for m in thrust_samples]
@@ -48,6 +50,9 @@ if len(thrust_samples)>0:
 	plt.legend()
 
 velocity_samples = read_csv('rotor_thrust_data.csv', ['Thrust', 'Velocity'])
+
+#for m in velocity_samples:
+#  	print(f'({m[1]:4.0f}, {m[0]/1000*g:5.3f})')
 
 if len(velocity_samples)>0:
 	thrust = [m[0]/1000*g for m in velocity_samples]
