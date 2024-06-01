@@ -1,0 +1,13 @@
+(kicad_sch
+	(version 20231120)
+	(generator "eeschema")
+	(generator_version "8.0")
+	(uuid "582f4844-1759-41ec-899d-4e7834c8d8b4")
+	(paper "A4")
+	(title_block
+		(title "UAV TVC Goose Flight Controller")
+		(date "2024-06-02")
+		(rev "V2.1")
+	)
+	(lib_symbols)
+)

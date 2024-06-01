@@ -1,0 +1,132 @@
+(kicad_sch
+	(version 20231120)
+	(generator "eeschema")
+	(generator_version "8.0")
+	(uuid "52d2474d-2865-43c6-846b-d5f8a367c5f4")
+	(paper "A4")
+	(title_block
+		(title "UAV TVC Goose Flight Controller")
+		(date "2024-06-02")
+		(rev "V2.1")
+	)
+	(lib_symbols)
+	(sheet
+		(at 115.57 57.15)
+		(size 31.75 62.23)
+		(fields_autoplaced yes)
+		(stroke
+			(width 0.1524)
+			(type solid)
+		)
+		(fill
+			(color 0 0 0 0.0000)
+		)
+		(uuid "33ee6dd5-762c-4c0c-85b1-322db5527c00")
+		(property "Sheetname" "microcontroller"
+			(at 115.57 56.4384 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left bottom)
+			)
+		)
+		(property "Sheetfile" "microcontroller.kicad_sch"
+			(at 115.57 119.9646 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left top)
+			)
+		)
+		(instances
+			(project "flight-controller"
+				(path "/52d2474d-2865-43c6-846b-d5f8a367c5f4"
+					(page "3")
+				)
+			)
+		)
+	)
+	(sheet
+		(at 153.67 57.15)
+		(size 31.75 62.23)
+		(fields_autoplaced yes)
+		(stroke
+			(width 0.1524)
+			(type solid)
+		)
+		(fill
+			(color 0 0 0 0.0000)
+		)
+		(uuid "422eb0b5-2ec1-41a7-81d9-981a304088f5")
+		(property "Sheetname" "sensors"
+			(at 153.67 56.4384 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left bottom)
+			)
+		)
+		(property "Sheetfile" "sensors.kicad_sch"
+			(at 153.67 119.9646 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left top)
+			)
+		)
+		(instances
+			(project "flight-controller"
+				(path "/52d2474d-2865-43c6-846b-d5f8a367c5f4"
+					(page "4")
+				)
+			)
+		)
+	)
+	(sheet
+		(at 77.47 57.15)
+		(size 31.75 62.23)
+		(fields_autoplaced yes)
+		(stroke
+			(width 0.1524)
+			(type solid)
+		)
+		(fill
+			(color 0 0 0 0.0000)
+		)
+		(uuid "fe40f7d2-7686-4d32-90d9-42c3b8d4fba5")
+		(property "Sheetname" "power"
+			(at 77.47 56.4384 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left bottom)
+			)
+		)
+		(property "Sheetfile" "power.kicad_sch"
+			(at 77.47 119.9646 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left top)
+			)
+		)
+		(instances
+			(project "flight-controller"
+				(path "/52d2474d-2865-43c6-846b-d5f8a367c5f4"
+					(page "2")
+				)
+			)
+		)
+	)
+	(sheet_instances
+		(path "/"
+			(page "1")
+		)
+	)
+)

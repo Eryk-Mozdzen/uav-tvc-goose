@@ -1,22 +1,19 @@
 
 # kicad
-**/*-backups
-**/*.kicad_prl
-**/fp-info-cache
-**/fp-lib-table
-**/sym-lib-table
-**/#auto_saved_files#
-**/_autosave-*
-**/*.csv
-**/*.xml
-**/gerber
-**/*.gbr
-**/*.gbrjob
-**/*.drl
-**/*.zip
-**/*.step
+*.lck
+*.bak
+*-backups
+*.kicad_prl
+fp-info-cache
+_autosave-*
 
-# software
-**/build
+# stm32cubeide
+.metadata
+.settings
+Debug
+Release
+
+# vscode
 .vscode
+build
 !software/identification/*.csv
