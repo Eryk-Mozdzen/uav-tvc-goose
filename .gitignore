@@ -1,14 +1,4 @@
 
-# matlab
-**/slprj
-**/*.slxc
-**/*.slx.*
-**/*.bak
-**/*_anim_1.tif
-**/*_cgxe.mexa64
-**/*.thumbnail.png
-**/*.asv
-
 # kicad
 **/*-backups
 **/*.kicad_prl
@@ -27,8 +17,6 @@
 **/*.step
 
 # software
-**/.vscode
 **/build
-**/a.out
-!simulation-params/*.csv
-software/goose-fc/src/control/controller_params.h
+.vscode
+!software/identification/*.csv
