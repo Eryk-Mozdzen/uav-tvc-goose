@@ -1,91 +1,55 @@
-#include <QApplication>
 #include <drake/systems/framework/diagram_builder.h>
+#include <drake/systems/analysis/simulator.h>
+#include <drake/systems/primitives/vector_log_sink.h>
+#include <drake/systems/primitives/multiplexer.h>
+#include <fstream>
 
-#include "Simulator.h"
-#include "Square.h"
 #include "Circle.h"
 #include "Lemniscate.h"
-#include "Manual.h"
-#include "Simple2.h"
 #include "Simple3.h"
 #include "Plant.h"
-#include "VisualClient.h"
-#include "GraphXY.h"
-#include "Chart.h"
 
-int main(int argc, char **argv) {
-	QApplication app(argc, argv);
-
+int main() {
 	drake::systems::DiagramBuilder<double> builder;
 
-	//auto generator = builder.AddSystem<Square>(4, 0.5, 20);
 	//auto generator = builder.AddSystem<Circle>(0, 0, 2, 6);
 	auto generator = builder.AddSystem<Lemniscate>(2, 7);
-	//auto generator = builder.AddSystem<Manual>();
-	//auto controller = builder.AddSystem<Simple2>();
 	auto controller = builder.AddSystem<Simple3>();
-	//auto controller = builder.AddSystem<Simple1c>();
 	auto plant = builder.AddSystem<Plant>();
-	auto client = builder.AddSystem<VisualClient>();
-	auto actuators_rotor = builder.AddSystem<Chart>("rotor", "velocity [rad/s]", "%4.0f", 0, 2000);
-	auto actuators_vanes = builder.AddSystem<Chart>("vanes", "angle [deg]", "%+3.0f", -10, 10);
-	auto state_attitude = builder.AddSystem<Chart>("attitude", "angle [deg]", "%+3.0f", -90, 90);
-	auto state_z = builder.AddSystem<Chart>("altitude", "altitude [m]", "%+4.1f", 0, 2);
-	auto trajectory_xy = builder.AddSystem<GraphXY>("trajectory XY", "%+2.0f", 4);
-
-	trajectory_xy->AddSeries("desired", Eigen::Matrix<double, 2, 20>({
-		{1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
-		{0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0}
-	}), Qt::black, Qt::DashLine, 1);
-	trajectory_xy->AddSeries("current", Eigen::Matrix<double, 2, 12>({
-		{1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
-		{0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0}
-	}), Qt::red, Qt::SolidLine, 2);
-	actuators_rotor->AddSeries("rotor", Eigen::Matrix<double, 1, 5>({
-		{1, 0, 0, 0, 0}
-	}), Qt::black, Qt::SolidLine, 2);
-	actuators_vanes->AddSeries("vanes", Eigen::Matrix<double, 4, 5>({
-		{0, 1, 0, 0, 0},
-		{0, 0, 1, 0, 0},
-		{0, 0, 0, 1, 0},
-		{0, 0, 0, 0, 1}
-	})*57.2957);
-	state_attitude->AddSeries("desired", Eigen::Matrix<double, 3, 12>({
-		{1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
-		{0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
-		{0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0}
-	})*57.2957, Qt::black, Qt::DashLine, 1);
-	state_attitude->AddSeries("current", Eigen::Matrix<double, 3, 12>({
-		{0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0},
-		{0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0},
-		{0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0}
-	})*57.2957);
-	state_z->AddSeries("desired", Eigen::Matrix<double, 1, 20>({
-		{0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0}
-	}), Qt::black, Qt::DashLine, 1);
-	state_z->AddSeries("current", Eigen::Matrix<double, 1, 12>({
-		{0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0}
-	}), Qt::red, Qt::SolidLine, 2);
+	auto mux = builder.AddSystem<drake::systems::Multiplexer>(std::vector{2*6, 4*5, 4*3, 5});
+	auto sink = builder.AddSystem<drake::systems::VectorLogSink>(mux->get_output_port().size());
 
 	builder.Connect(generator->get_output_port(), controller->get_trajectory_input_port());
-	builder.Connect(generator->get_output_port(), trajectory_xy->GetInputPort("desired"));
-	builder.Connect(generator->get_output_port(), state_z->GetInputPort("desired"));
+	builder.Connect(generator->get_output_port(), mux->get_input_port(1));
 	builder.Connect(controller->get_control_output_port(), plant->get_input_port());
-	builder.Connect(controller->get_control_output_port(), actuators_rotor->GetInputPort("rotor"));
-	builder.Connect(controller->get_control_output_port(), actuators_vanes->GetInputPort("vanes"));
-	builder.Connect(controller->GetOutputPort("reference"), state_attitude->GetInputPort("desired"));
+	builder.Connect(controller->get_control_output_port(), mux->get_input_port(3));
+	builder.Connect(controller->GetOutputPort("reference"), mux->get_input_port(2));
 	builder.Connect(plant->get_output_port(), controller->get_state_input_port());
-	builder.Connect(plant->get_output_port(), state_attitude->GetInputPort("current"));
-	builder.Connect(plant->get_output_port(), state_z->GetInputPort("current"));
-	builder.Connect(plant->get_output_port(), trajectory_xy->GetInputPort("current"));
-	builder.Connect(plant->get_output_port(), client->get_input_port());
+	builder.Connect(plant->get_output_port(), mux->get_input_port(0));
+	builder.Connect(mux->get_output_port(), sink->get_input_port());
 
 	auto diagram = builder.Build();
 
-	Simulator simulator(*diagram);
-	simulator.set_target_realtime_rate(1);
+	drake::systems::Simulator simulator(*diagram);
 	simulator.Initialize();
-	simulator.StartAdvance();
+	simulator.AdvanceTo(30);
 
-	return app.exec();
+	auto log = sink->FindLog(simulator.get_context());
+	const Eigen::MatrixXd data = log.data().transpose();
+	const Eigen::VectorXd time = log.sample_times();
+
+	//Eigen::MatrixXd logs(data.rows(), data.cols() + 1);
+    //logs.block(0, 1, data.rows(), data.cols()) = data;
+    //logs.col(0) = time;
+
+	const Eigen::MatrixXd logs = time | data;
+
+	std::ofstream file("output.csv");
+	file << "t,";
+	file << "x,y,z,phi,theta,psi,x1,y1,z1,phi1,theta1,psi1,";
+	file << "xd,yd,zd,psid,xd1,yd1,zd1,psid1,xd2,yd2,zd2,psid2,xd3,yd3,zd3,psid3,xd4,yd4,zd4,psid4,";
+	file << "phid,thetad,psid,Ftd,phid1,thetad1,psid1,Ftd1,phid2,thetad2,psid2,Ftd2,";
+	file << "w,a1,a2,a3,a4";
+	file << "\n";
+    file << logs.format(Eigen::IOFormat(Eigen::StreamPrecision, Eigen::DontAlignCols, ","));
 }
