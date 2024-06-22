@@ -29,19 +29,19 @@ VisualClient::VisualClient() {
     write("create com.cs7 empty transform rpy 0 0 270 translation 0 0 -0.055\n");
     write("create com.cs8 empty transform rpy 0 0 315 translation 0 0 -0.055\n");
 
-    write("create com.body       model transform                 translation 0    0     -0.05  material color 0   0   255 path " + path + "/body.stl\n");
-    write("create com.body.rotor model transform                 translation 0    0      0.101 material color 255 0   0   path " + path + "/rotor.stl\n");
-    write("create com.cs1.fin1   model transform                 translation 0.03 0.006  0     material color 0   255 255 path " + path + "/fin.stl\n");
-    write("create com.cs2.fin2   model transform rotation -5 0 0 translation 0.03 0.006  0     material color 0   255 255 path " + path + "/fin.stl\n");
-    write("create com.cs3.fin3   model transform                 translation 0.03 0.006  0     material color 0   255 255 path " + path + "/fin.stl\n");
-    write("create com.cs4.fin4   model transform rotation -5 0 0 translation 0.03 0.006  0     material color 0   255 255 path " + path + "/fin.stl\n");
-    write("create com.cs5.fin5   model transform                 translation 0.03 0.006  0     material color 0   255 255 path " + path + "/fin.stl\n");
-    write("create com.cs6.fin6   model transform rotation -5 0 0 translation 0.03 0.006  0     material color 0   255 255 path " + path + "/fin.stl\n");
-    write("create com.cs7.fin7   model transform                 translation 0.03 0.006  0     material color 0   255 255 path " + path + "/fin.stl\n");
-    write("create com.cs8.fin8   model transform rotation -5 0 0 translation 0.03 0.006  0     material color 0   255 255 path " + path + "/fin.stl\n");
+    write("create com.body       model transform                 translation 0    0     -0.05  material color 0   0   255 geometry " + path + "/body.stl\n");
+    write("create com.body.rotor model transform                 translation 0    0      0.101 material color 255 0   0   geometry " + path + "/rotor.stl\n");
+    write("create com.cs1.fin1   model transform                 translation 0.03 0.006  0     material color 0   255 255 geometry " + path + "/fin.stl\n");
+    write("create com.cs2.fin2   model transform rotation -5 0 0 translation 0.03 0.006  0     material color 0   255 255 geometry " + path + "/fin.stl\n");
+    write("create com.cs3.fin3   model transform                 translation 0.03 0.006  0     material color 0   255 255 geometry " + path + "/fin.stl\n");
+    write("create com.cs4.fin4   model transform rotation -5 0 0 translation 0.03 0.006  0     material color 0   255 255 geometry " + path + "/fin.stl\n");
+    write("create com.cs5.fin5   model transform                 translation 0.03 0.006  0     material color 0   255 255 geometry " + path + "/fin.stl\n");
+    write("create com.cs6.fin6   model transform rotation -5 0 0 translation 0.03 0.006  0     material color 0   255 255 geometry " + path + "/fin.stl\n");
+    write("create com.cs7.fin7   model transform                 translation 0.03 0.006  0     material color 0   255 255 geometry " + path + "/fin.stl\n");
+    write("create com.cs8.fin8   model transform rotation -5 0 0 translation 0.03 0.006  0     material color 0   255 255 geometry " + path + "/fin.stl\n");
 
-    write("create column1 cylinder transform rpy 90 0 0 translation  2 0 1 scale 0.1 2 0.1 material color 255 127 0\n");
-    write("create column2 cylinder transform rpy 90 0 0 translation -2 0 1 scale 0.1 2 0.1 material color 255 127 0\n");
+    write("create column1 cylinder transform rpy 90 0 0 translation  2 0 1 material color 255 127 0 geometry 0.1 2 0.1\n");
+    write("create column2 cylinder transform rpy 90 0 0 translation -2 0 1 material color 255 127 0 geometry 0.1 2 0.1\n");
 
     QObject::connect(&timer, &QTimer::timeout, [this]() {
         while(queue->size()>0) {

@@ -5,6 +5,8 @@
 class Plant : public drake::systems::LeafSystem<double> {
     static constexpr int dimQ = 6;
 
+    static const Eigen::Matrix3d J;
+    static const Eigen::Matrix3d L;
     static double current_w;
 
     using Q = Eigen::Vector<double, dimQ>;
@@ -14,8 +16,6 @@ class Plant : public drake::systems::LeafSystem<double> {
 
     static Eigen::Matrix3d R(const Q &q);
     static Eigen::Matrix3d W(const Q &q);
-    static Eigen::Matrix3d dR(const Q &q, const Q &dq);
-    static Eigen::Matrix3d dW(const Q &q, const Q &dq);
 
 public:
     Plant();

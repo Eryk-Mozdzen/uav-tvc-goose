@@ -31,6 +31,6 @@ class Chart : public QMainWindow, public drake::systems::LeafSystem<double> {
 public:
     Chart(const QString title, const QString yLabel, const QString yFormat, const float yMin, const float yMax);
 
-    void AddSeries(const QString name, const Eigen::VectorXd selector, const QColor color, const Qt::PenStyle style, const int width);
     void AddSeries(const QString name, const Eigen::MatrixXd selector);
+    void AddSeries(const QString name, const Eigen::MatrixXd selector, const QColor color, const Qt::PenStyle style, const int width);
 };

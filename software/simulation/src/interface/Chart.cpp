@@ -51,21 +51,6 @@ Chart::Chart(const QString title, const QString yLabel, const QString yFormat, c
     DeclarePeriodicPublishEvent(period, 0, &Chart::update);
 }
 
-void Chart::AddSeries(const QString name, const Eigen::VectorXd selector, const QColor color, const Qt::PenStyle style, const int width) {
-    Series s;
-    s.series = new QtCharts::QLineSeries();
-    s.queue = std::make_unique<SharedQueue<Eigen::Vector2d>>();
-    chart->addSeries(s.series);
-    s.series->setPen(QPen(color, width, style));
-    s.series->attachAxis(axisX);
-    s.series->attachAxis(axisY);
-
-    s.selector = selector;
-    s.port = DeclareVectorInputPort(name.toStdString(), selector.size()).get_index();
-
-    series.push_back(std::move(s));
-}
-
 void Chart::AddSeries(const QString name, const Eigen::MatrixXd selector) {
     const int num = selector.rows();
     const drake::systems::InputPortIndex port = DeclareVectorInputPort(name.toStdString(), selector.cols()).get_index();
@@ -84,6 +69,27 @@ void Chart::AddSeries(const QString name, const Eigen::MatrixXd selector) {
         s.queue = std::make_unique<SharedQueue<Eigen::Vector2d>>();
         chart->addSeries(s.series);
         s.series->setPen(QPen(colors.at(i), 2));
+        s.series->attachAxis(axisX);
+        s.series->attachAxis(axisY);
+
+        s.selector = selector.row(i);
+        s.port = port;
+
+        series.push_back(std::move(s));
+    }
+}
+
+
+void Chart::AddSeries(const QString name, const Eigen::MatrixXd selector, const QColor color, const Qt::PenStyle style, const int width) {
+    const int num = selector.rows();
+    const drake::systems::InputPortIndex port = DeclareVectorInputPort(name.toStdString(), selector.cols()).get_index();
+
+    for(int i=0; i<num; i++) {
+        Series s;
+        s.series = new QtCharts::QLineSeries(this);
+        s.queue = std::make_unique<SharedQueue<Eigen::Vector2d>>();
+        chart->addSeries(s.series);
+        s.series->setPen(QPen(color, width, style));
         s.series->attachAxis(axisX);
         s.series->attachAxis(axisY);
 

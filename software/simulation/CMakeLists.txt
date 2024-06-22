@@ -21,6 +21,7 @@ add_executable(${PROJECT_NAME}
 	"src/generators/Lemniscate.cpp"
 	"src/generators/Manual.cpp"
 	"src/controllers/Simple2.cpp"
+	"src/controllers/Simple3.cpp"
 	"src/plant/Plant.cpp"
 	"src/interface/VisualClient.cpp"
 	"src/interface/GraphXY.cpp"

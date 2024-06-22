@@ -10,7 +10,7 @@ class Circle : public TrajectoryGenerator {
 	const double R;
 	const double w;
 
-	Eigen::VectorX<double> value(const double &time) const;
+	Eigen::VectorX<double> value(const double &t) const;
 
 public:
 	Circle(const double x, const double y, const double R, const double T);
