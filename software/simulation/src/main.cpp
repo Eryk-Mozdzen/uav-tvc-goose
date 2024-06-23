@@ -38,11 +38,9 @@ int main() {
 	const Eigen::MatrixXd data = log.data().transpose();
 	const Eigen::VectorXd time = log.sample_times();
 
-	//Eigen::MatrixXd logs(data.rows(), data.cols() + 1);
-    //logs.block(0, 1, data.rows(), data.cols()) = data;
-    //logs.col(0) = time;
-
-	const Eigen::MatrixXd logs = time | data;
+	Eigen::MatrixXd logs(data.rows(), data.cols() + 1);
+    logs.block(0, 1, data.rows(), data.cols()) = data;
+    logs.col(0) = time;
 
 	std::ofstream file("output.csv");
 	file << "t,";
