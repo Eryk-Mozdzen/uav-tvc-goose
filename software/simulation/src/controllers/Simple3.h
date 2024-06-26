@@ -5,7 +5,6 @@
 #include "Controller.h"
 
 class Simple3 : public drake::systems::Diagram<double> {
-public:
     class OrientationController : public Controller {
         static constexpr double Kp = 650;
         static constexpr double Kd = 51;
@@ -26,6 +25,7 @@ public:
         PositionController();
     };
 
+public:
     Simple3();
 
     const drake::systems::InputPort<double> & get_state_input_port() const;

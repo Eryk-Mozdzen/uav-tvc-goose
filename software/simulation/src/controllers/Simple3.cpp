@@ -46,24 +46,31 @@ Eigen::VectorX<double> Simple3::PositionController::calculate(const Eigen::Vecto
     const double psi = trajectory(3);
     const double psi1 = trajectory(7);
     const double psi2 = trajectory(11);
+    //const double psi3 = trajectory(15);
 
     const Eigen::Matrix3d R {
-        { std::cos(psi), std::sin(psi), 0},
-        {-std::sin(psi), std::cos(psi), 0},
+        {std::cos(-psi), -std::sin(-psi), 0},
+        {std::sin(-psi),  std::cos(-psi), 0},
         {0, 0, 1}
     };
 
     const Eigen::Matrix3d Rp {
-        {-std::sin(psi),  std::cos(psi), 0},
-        {-std::cos(psi), -std::sin(psi), 0},
+        {-std::sin(-psi)*-1, -std::cos(-psi)*-1, 0},
+        { std::cos(-psi)*-1, -std::sin(-psi)*-1, 0},
         {0, 0, 0}
     };
 
     const Eigen::Matrix3d Rpp {
-        {-std::cos(psi), -std::sin(psi), 0},
-        { std::sin(psi), -std::cos(psi), 0},
+        {-std::cos(-psi)*-1*-1,  std::sin(-psi)*-1*-1, 0},
+        {-std::sin(-psi)*-1*-1, -std::cos(-psi)*-1*-1, 0},
         {0, 0, 0}
     };
+
+    /*const Eigen::Matrix3d Rppp {
+        { std::sin(-psi)*-1*-1*-1, std::cos(-psi)*-1*-1*-1, 0},
+        {-std::cos(-psi)*-1*-1*-1, std::sin(-psi)*-1*-1*-1, 0},
+        {0, 0, 0}
+    };*/
 
     const Eigen::Vector3d e  = y  - q;
     const Eigen::Vector3d e1 = y1 - q1;
@@ -72,7 +79,23 @@ Eigen::VectorX<double> Simple3::PositionController::calculate(const Eigen::Vecto
 
     const Eigen::Vector3d v  = R*(y2 + Kd*e1 + Kp*e);
     const Eigen::Vector3d v1 = R*(y3 + Kd*e2 + Kp*e1) + Rp*psi1*(y2 + Kd*e1 + Kp*e);
-    const Eigen::Vector3d v2 = R*(y4 + Kd*e3 + Kp*e2) + 2*Rp*psi1*(y3 + Kd*e2 + Kp*e1) + Rp*psi2*(y2 + Kd*e1 + Kp*e) + Rpp*pow(psi1, 2)*(y2 + Kd*e1 + Kp*e);
+    const Eigen::Vector3d v2 = R*(y4 + Kd*e3 + Kp*e2) + 2*Rp*psi1*(y3 + Kd*e2 + Kp*e1) + Rp*psi2*(y2 + Kd*e1 + Kp*e) + Rpp*psi1*psi1*(y2 + Kd*e1 + Kp*e);
+
+    /*const Eigen::Vector3d e  = R*(y - q);
+    const Eigen::Vector3d e1 = R*(y1 - q1) + Rp*psi1*(y - q);
+    const Eigen::Vector3d v  = R*y2 + Kd*e1 + Kp*e;
+    
+    const Eigen::Vector3d q2 = R.inverse()*v;
+    const Eigen::Vector3d e2 = R*(y2 - q2) + Rp*psi1*(y1 - q1) + Rp*psi1*(y1 - q1) + Rp*psi2*(y - q) + Rpp*psi1*psi1*(y - q);
+    const Eigen::Vector3d v1 = R*y3 + Kd*e2 + Kp*e1 + Rp*psi1*y2;
+
+    const Eigen::Vector3d q3 = R.inverse()*v1 - R.inverse()*R.inverse()*Rp*psi1*v;
+    const Eigen::Vector3d e3 = R*(y3 - q3) + Rp*psi1*(y2 - q2)
+    + Rp*psi1*(y2 - q2) + Rp*psi2*(y1 - q1) + Rpp*psi1*psi1*(y1 - q1)
+    + Rp*psi1*(y2 - q2) + Rp*psi2*(y1 - q1) + Rpp*psi1*psi1*(y1 - q1) 
+    + Rp*psi2*(y1 - q1) + Rp*psi3*(y - q) + Rpp*psi1*psi2*(y - q) 
+    + Rpp*psi1*psi1*(y1 - q1) + Rpp*psi1*psi2*(y - q) + Rpp*psi2*psi1*(y - q) + Rppp*psi1*psi1*psi1*(y - q);
+    const Eigen::Vector3d v2 = R*y4 + Kd*e3 + Kp*e2 + Rp*psi1*y3 + Rp*psi1*y3 + Rp*psi2*y2 + Rpp*psi1*psi1*y2;*/
 
     Eigen::Vector<double, 12> output;
 

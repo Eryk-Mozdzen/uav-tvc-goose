@@ -6,7 +6,7 @@ const Eigen::Matrix3d Plant::L = Eigen::DiagonalMatrix<double, 3>({Params::l, Pa
 double Plant::current_w = 1000;
 
 Plant::Plant() {
-    DeclareContinuousState(drake::systems::BasicVector<double>{2*sqrt(2), 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0});
+    DeclareContinuousState(drake::systems::BasicVector<double>{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0});
     DeclareVectorInputPort("control", 5);
     DeclareVectorOutputPort("state", 12, &Plant::EvalOutput, {this->all_state_ticket()});
 }

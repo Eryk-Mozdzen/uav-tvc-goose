@@ -32,7 +32,7 @@ Eigen::VectorX<double> Lemniscate::value(const double &t) const {
         a*pow(w, 3)*(-pow(sin(t*w), 6) + 43*pow(sin(t*w), 4) - 103*pow(sin(t*w), 2) + 45)*sin(t*w)/pow(pow(sin(t*w), 2) + 1, 4),
         2*a*pow(w, 3)*(6*pow(sin(t*w), 6) - 41*pow(sin(t*w), 4) + 44*pow(sin(t*w), 2) - 5)/pow(pow(sin(t*w), 2) + 1, 4),
         0,
-        0
+        pow(w, 3)*(154*pow(sin(t*w), 16) - 117*pow(sin(t*w), 14) - 351*pow(sin(t*w), 12) + 370*pow(sin(t*w), 10)*pow(cos(t*w), 6) + 228*pow(sin(t*w), 10) + 385*pow(sin(t*w), 8)*pow(cos(t*w), 8) + 404*pow(sin(t*w), 8)*pow(cos(t*w), 6) + 276*pow(sin(t*w), 8) + 239*pow(sin(t*w), 6)*pow(cos(t*w), 10) + 197*pow(sin(t*w), 6)*pow(cos(t*w), 8) - 16*pow(sin(t*w), 6)*pow(cos(t*w), 6) - 21*pow(sin(t*w), 6) + 82*pow(sin(t*w), 4)*pow(cos(t*w), 12) + 21*pow(sin(t*w), 4)*pow(cos(t*w), 10) - 75*pow(sin(t*w), 4)*pow(cos(t*w), 8) - 52*pow(sin(t*w), 4)*pow(cos(t*w), 6) + 17*pow(sin(t*w), 4) + 6*pow(sin(t*w), 2) - 12*pow(cos(t*w), 16) + 24*pow(cos(t*w), 14) + 9*pow(cos(t*w), 12) - 11*pow(cos(t*w), 10) - 17*pow(cos(t*w), 8) - 2*pow(cos(t*w), 6))*cos(t*w)/pow(pow(sin(t*w), 2) + 1, 6)
     };
 
     trajectory.segment(16, 4) = Eigen::Vector<double, 4>{
