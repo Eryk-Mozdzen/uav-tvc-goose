@@ -1,28 +1,27 @@
 #pragma once
 
+#include <drake/systems/framework/leaf_system.h>
 #include <drake/systems/framework/diagram.h>
 
-#include "Controller.h"
-
 class Simple3 : public drake::systems::Diagram<double> {
-    class OrientationController : public Controller {
-        static constexpr double Kp = 650;
-        static constexpr double Kd = 51;
-
-        Eigen::VectorX<double> calculate(const Eigen::VectorX<double> &state, const Eigen::VectorX<double> &trajectory) const;
-
-    public:
-        OrientationController();
-    };
-
-    class PositionController : public Controller {
+    class PositionController : public drake::systems::LeafSystem<double> {
         static constexpr double Kp = 6;
         static constexpr double Kd = 5;
 
-        Eigen::VectorX<double> calculate(const Eigen::VectorX<double> &state, const Eigen::VectorX<double> &trajectory) const;
+        void eval(const drake::systems::Context<double> &context, drake::systems::BasicVector<double> *output) const;
 
     public:
         PositionController();
+    };
+
+    class OrientationController : public drake::systems::LeafSystem<double> {
+        static constexpr double Kp = 650;
+        static constexpr double Kd = 51;
+
+        void eval(const drake::systems::Context<double> &context, drake::systems::BasicVector<double> *output) const;
+
+    public:
+        OrientationController();
     };
 
 public:

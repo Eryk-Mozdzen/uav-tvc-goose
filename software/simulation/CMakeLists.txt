@@ -7,7 +7,6 @@ find_package(drake REQUIRED)
 add_executable(${PROJECT_NAME}
 	"src/main.cpp"
 	"src/base/TrajectoryGenerator.cpp"
-	"src/base/Controller.cpp"
 	"src/generators/Circle.cpp"
 	"src/generators/Lemniscate.cpp"
 	"src/controllers/Simple3.cpp"
