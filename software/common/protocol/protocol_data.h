@@ -30,6 +30,7 @@ typedef struct {
     float rangefinder;
     float barometer;
     float gps[2];
+    uint32_t load;
     union {
         struct {
             uint8_t magnetometer : 1;
@@ -38,7 +39,8 @@ typedef struct {
             uint8_t rangefinder : 1;
             uint8_t barometer : 1;
             uint8_t gps : 1;
-            uint8_t unused : 2;
+            uint8_t load : 1;
+            uint8_t unused : 1;
         } valid;
         uint8_t valid_all;
     };
