@@ -1,85 +1,29 @@
 import numpy as np
 import matplotlib.pyplot as plt
-from scipy.optimize import curve_fit
-from scipy.constants import g
-import sys
-import csv
+import pandas as pd
+import scipy.optimize
+import scipy.constants
 
-def read_csv(file, columns):
-	data = []
+file = pd.read_csv('thrust_data.csv')
 
-	with open(file, newline='') as csvfile:
-		reader = csv.DictReader(csvfile)
+throttle = file['throttle'].values
+load = file['load'].values
 
-		for row in reader:
-			if all(row[field] for field in columns):
-				values = [float(row[field]) for field in columns]
-				data.append(values)
+thrust = [(l - load[0])*scipy.constants.g for l in load]
 
-	return data
+[K, m], _ = scipy.optimize.curve_fit(lambda x, K, m: K*x**m, throttle[1:], thrust[1:])
 
-thrust_samples = read_csv('rotor_thrust_data.csv', ['Throttle', 'Thrust'])
+print(f'F(u) = {K:3.3f} u ^ {m:3.3f}')
 
-#for m in thrust_samples:
-#  	print(f'({m[0]/100:4.2f}, {m[1]/1000*g:5.3f})')
+plt.scatter(100*throttle, thrust, label='samples', color='black', s=10)
 
-if len(thrust_samples)>0:
-	throttle = [m[0]/100 for m in thrust_samples]
-	thrust = [m[1]/1000*g for m in thrust_samples]
+u = np.linspace(min(throttle), max(throttle), 100)
+plt.plot(100*u, K*u**m, label='best fit', color='red')
 
-	K = curve_fit(lambda x, a: a*x, throttle, thrust)[0][0]
-
-	print(f'F(u) = {K:3.5f} u')
-
-	if len(sys.argv)>1:
-		mass = float(sys.argv[1])
-
-		u0 = mass*g/K
-
-		print(f'u_0 = {u0:1.3f}')
-
-	plt.scatter(throttle, thrust, color="black")
-
-	X = np.linspace(min(throttle), max(throttle), 100)
-	plt.plot(X, K*X, color="red", label="best fit")
-
-	plt.xlabel("throttle [~]")
-	plt.ylabel("thrust [N]")
-	plt.title("throttle vs. thrust")
-	plt.grid(True)
-	plt.legend()
-
-velocity_samples = read_csv('rotor_thrust_data.csv', ['Thrust', 'Velocity'])
-
-#for m in velocity_samples:
-#  	print(f'({m[1]:4.0f}, {m[0]/1000*g:5.3f})')
-
-if len(velocity_samples)>0:
-	thrust = [m[0]/1000*g for m in velocity_samples]
-	velocity = [m[1] for m in velocity_samples]
-
-	Kw = curve_fit(lambda x, a: a*x**2, velocity, thrust)[0][0]
-
-	print(f'F(w) = {Kw:3.10f} w^2')
-
-	if len(sys.argv)>1:
-		mass = float(sys.argv[1])
-
-		w0 = np.sqrt(mass*g/Kw)
-
-		print(f'w_0 = {w0:5.3f} rad/s')
-
-	plt.figure()
-
-	plt.scatter(velocity, thrust, color="black")
-
-	X = np.linspace(min(velocity), max(velocity), 100)
-	plt.plot(X, [Kw*x**2 for x in X], color="red", label="best fit")
-
-	plt.xlabel("velocity [rad/s]")
-	plt.ylabel("thrust [N]")
-	plt.title("velocity vs. thrust")
-	plt.grid(True)
-	plt.legend()
+plt.xlabel('throttle [%]')
+plt.ylabel('thrust [N]')
+plt.title('thrust vs. throttle')
+plt.grid()
+plt.legend()
 
 plt.show()

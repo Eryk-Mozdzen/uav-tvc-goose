@@ -64,15 +64,15 @@ Window::Window(QWidget *parent) : QWidget{parent} {
         sample_line->setValidator(new QDoubleValidator(0, 10, 1));
 
         connect(start_line, &QLineEdit::returnPressed, [&]() {
-            start = start_line->text().toDouble();
+            start = start_line->text().toDouble()/100;
         });
 
         connect(stop_line, &QLineEdit::returnPressed, [&]() {
-            stop = stop_line->text().toDouble();
+            stop = stop_line->text().toDouble()/100;
         });
 
         connect(step_line, &QLineEdit::returnPressed, [&]() {
-            step = step_line->text().toDouble();
+            step = step_line->text().toDouble()/100;
         });
 
         connect(wait_line, &QLineEdit::returnPressed, [&]() {
@@ -153,9 +153,9 @@ Window::Window(QWidget *parent) : QWidget{parent} {
     }
 
     connect(&timer_step, &QTimer::timeout, [&]() {
-        data_text->append(QString::asprintf("%.2f,%f", throttle, avg_load));
+        data_text->append(QString::asprintf("%.2f,%.4f", throttle, avg_load));
 
-        if(throttle>=stop) {
+        if(throttle>stop) {
             setThrottle(0);
             timer_step.stop();
             timer_zero.stop();
@@ -177,6 +177,15 @@ Window::Window(QWidget *parent) : QWidget{parent} {
         timer_zero.setInterval(1000*(wait_time + sample_time));
         timer_zero.start();
     });
+
+    QTimer *timer = new QTimer(this);
+    connect(timer, &QTimer::timeout, [&]() {
+        protocol_message_t message;
+        message.id = PROTOCOL_ID_LOG;
+        message.size = 0;
+        transmit(message);
+    });
+    timer->start(100);
 }
 
 void Window::receive(const protocol_message_t &frame) {
