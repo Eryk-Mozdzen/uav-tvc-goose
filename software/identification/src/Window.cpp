@@ -8,6 +8,7 @@
 #include <QLabel>
 #include <QFileDialog>
 #include <QTimer>
+#include <QDoubleValidator>
 
 #include "Window.h"
 
@@ -50,11 +51,37 @@ Window::Window(QWidget *parent) : QWidget{parent} {
         QGroupBox *group = new QGroupBox("experiment settings");
         QFormLayout *formLayout = new QFormLayout(group);
 
-        QLineEdit *start_line = new QLineEdit(QString::asprintf("%.0f", 100*start));
-        QLineEdit *stop_line = new QLineEdit(QString::asprintf("%.0f", 100*stop));
-        QLineEdit *step_line = new QLineEdit(QString::asprintf("%.0f", 100*step));
-        QLineEdit *wait_line = new QLineEdit(QString::asprintf("%.0f", wait_time));
-        QLineEdit *sample_line = new QLineEdit(QString::asprintf("%.0f", sample_time));
+        start_line = new QLineEdit(QString::asprintf("%.0f", 100*start));
+        stop_line = new QLineEdit(QString::asprintf("%.0f", 100*stop));
+        step_line = new QLineEdit(QString::asprintf("%.0f", 100*step));
+        wait_line = new QLineEdit(QString::asprintf("%.0f", wait_time));
+        sample_line = new QLineEdit(QString::asprintf("%.0f", sample_time));
+
+        start_line->setValidator(new QDoubleValidator(0, 100, 0));
+        stop_line->setValidator(new QDoubleValidator(0, 100, 0));
+        step_line->setValidator(new QDoubleValidator(0, 100, 0));
+        wait_line->setValidator(new QDoubleValidator(0, 10, 1));
+        sample_line->setValidator(new QDoubleValidator(0, 10, 1));
+
+        connect(start_line, &QLineEdit::returnPressed, [&]() {
+            start = start_line->text().toDouble();
+        });
+
+        connect(stop_line, &QLineEdit::returnPressed, [&]() {
+            stop = stop_line->text().toDouble();
+        });
+
+        connect(step_line, &QLineEdit::returnPressed, [&]() {
+            step = step_line->text().toDouble();
+        });
+
+        connect(wait_line, &QLineEdit::returnPressed, [&]() {
+            wait_time = wait_line->text().toDouble();
+        });
+
+        connect(sample_line, &QLineEdit::returnPressed, [&]() {
+            sample_time = sample_line->text().toDouble();
+        });
 
         formLayout->addRow(new QLabel("throttle start [%]"), start_line);
         formLayout->addRow(new QLabel("throttle stop [%]"), stop_line);

@@ -33,6 +33,11 @@ class Window : public QWidget {
     QTextEdit *data_text;
     QTimer timer_step;
     QTimer timer_zero;
+    QLineEdit *start_line;
+    QLineEdit *stop_line;
+    QLineEdit *step_line;
+    QLineEdit *wait_line;
+    QLineEdit *sample_line;
 
     void setThrottle(const double value);
 
