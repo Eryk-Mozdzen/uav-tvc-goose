@@ -59,6 +59,64 @@ void Error_Handler(void);
 /* USER CODE END EFP */
 
 /* Private defines -----------------------------------------------------------*/
+#define PWR_INT_Pin GPIO_PIN_13
+#define PWR_INT_GPIO_Port GPIOC
+#define MAG_SCL_Pin GPIO_PIN_0
+#define MAG_SCL_GPIO_Port GPIOC
+#define MAG_SDA_Pin GPIO_PIN_1
+#define MAG_SDA_GPIO_Port GPIOC
+#define MAG_INT_Pin GPIO_PIN_2
+#define MAG_INT_GPIO_Port GPIOC
+#define HALL_Pin GPIO_PIN_0
+#define HALL_GPIO_Port GPIOA
+#define FLOW_CS_Pin GPIO_PIN_4
+#define FLOW_CS_GPIO_Port GPIOA
+#define FLOW_SCK_Pin GPIO_PIN_5
+#define FLOW_SCK_GPIO_Port GPIOA
+#define FLOW_MISO_Pin GPIO_PIN_6
+#define FLOW_MISO_GPIO_Port GPIOA
+#define FLOW_MOSI_Pin GPIO_PIN_7
+#define FLOW_MOSI_GPIO_Port GPIOA
+#define FLOW_INT_Pin GPIO_PIN_4
+#define FLOW_INT_GPIO_Port GPIOC
+#define LED_R_Pin GPIO_PIN_0
+#define LED_R_GPIO_Port GPIOB
+#define LED_G_Pin GPIO_PIN_1
+#define LED_G_GPIO_Port GPIOB
+#define LED_B_Pin GPIO_PIN_2
+#define LED_B_GPIO_Port GPIOB
+#define RANGE_TRIG_Pin GPIO_PIN_6
+#define RANGE_TRIG_GPIO_Port GPIOC
+#define RANGE_ECHO_Pin GPIO_PIN_7
+#define RANGE_ECHO_GPIO_Port GPIOC
+#define ESC_Pin GPIO_PIN_9
+#define ESC_GPIO_Port GPIOC
+#define SERVO1_Pin GPIO_PIN_8
+#define SERVO1_GPIO_Port GPIOA
+#define SERVO2_Pin GPIO_PIN_9
+#define SERVO2_GPIO_Port GPIOA
+#define SERVO3_Pin GPIO_PIN_10
+#define SERVO3_GPIO_Port GPIOA
+#define SERVO4_Pin GPIO_PIN_11
+#define SERVO4_GPIO_Port GPIOA
+#define GPS_TX_Pin GPIO_PIN_10
+#define GPS_TX_GPIO_Port GPIOC
+#define GPS_RX_Pin GPIO_PIN_11
+#define GPS_RX_GPIO_Port GPIOC
+#define ESP_TX_Pin GPIO_PIN_12
+#define ESP_TX_GPIO_Port GPIOC
+#define ESP_RX_Pin GPIO_PIN_2
+#define ESP_RX_GPIO_Port GPIOD
+#define IMU_INT_Pin GPIO_PIN_5
+#define IMU_INT_GPIO_Port GPIOB
+#define IMU_SCL_Pin GPIO_PIN_6
+#define IMU_SCL_GPIO_Port GPIOB
+#define IMU_SDA_Pin GPIO_PIN_7
+#define IMU_SDA_GPIO_Port GPIOB
+#define MISC_SCL_Pin GPIO_PIN_8
+#define MISC_SCL_GPIO_Port GPIOB
+#define MISC_SDA_Pin GPIO_PIN_9
+#define MISC_SDA_GPIO_Port GPIOB
 
 /* USER CODE BEGIN Private defines */
 

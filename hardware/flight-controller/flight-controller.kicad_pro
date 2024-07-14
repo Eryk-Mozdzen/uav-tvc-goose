@@ -287,6 +287,7 @@
   },
   "schematic": {
     "annotate_start_num": 0,
+    "bom_export_filename": "",
     "bom_fmt_presets": [],
     "bom_fmt_settings": {
       "field_delimiter": ",",
@@ -399,6 +400,10 @@
     [
       "422eb0b5-2ec1-41a7-81d9-981a304088f5",
       "sensors"
+    ],
+    [
+      "7451473b-1d28-4b3a-ab5b-1eec74e24125",
+      "actuators"
     ]
   ],
   "text_variables": {}
