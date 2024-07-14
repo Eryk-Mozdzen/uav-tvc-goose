@@ -1,50 +1,31 @@
 import numpy as np
 import matplotlib.pyplot as plt
-from scipy.optimize import curve_fit
-from scipy.constants import g
-import csv
+import pandas as pd
+import scipy.optimize
+import scipy.constants
 
-def read_csv(file, columns):
-	data = []
+arm = 0.03
 
-	with open(file, newline='') as csvfile:
-		reader = csv.DictReader(csvfile)
+file = pd.read_csv('torque_data.csv')
 
-		for row in reader:
-			if all(row[field] for field in columns):
-				values = [float(row[field]) for field in columns]
-				data.append(values)
+throttle = file['throttle'].values
+load = file['load'].values
 
-	return data
+torque = [(l - min(load))*scipy.constants.g*arm for l in load]
 
-arm = 0.2
+plt.scatter(100*throttle, torque, label='samples', color='black', s=10)
 
-samples = read_csv('rotor_torque_data.csv', ['Throttle', 'Load'])
+[K, m], _ = scipy.optimize.curve_fit(lambda x, K, m: K*x**m, throttle, torque,  bounds=(0, np.inf))
 
-# for m in samples:
-# 	print(f'({m[0]/100:4.2f}, {m[1]/1000*g*arm:7.5f})')
+print(f'M(u) = {K:3.3f} u ^ {m:3.3f}')
 
-throttle = [m[0]/100 for m in samples]
-torque = [m[1]/1000*g*arm for m in samples]
+u = np.linspace(min(throttle), max(throttle), 100)
+plt.plot(100*u, K*u**m, label='best fit', color='red')
 
-plt.scatter(throttle, torque, color="blue")
-
-throttle = [m[0]/100 for m in samples if m[1]>0]
-torque = [m[1]/1000*g*arm for m in samples if m[1]>0]
-
-K, M0 = curve_fit(lambda x, a, b: a*x - b, throttle, torque)[0]
-
-print(f'M(u) = {K:3.5f} u - {M0:3.5f}')
-
-plt.scatter(throttle, torque, color="black")
-
-X = np.linspace(0, 1, 10)
-plt.plot(X, K*X - M0, color="red", label="best fit")
-
-plt.xlabel("throttle [~]")
-plt.ylabel("torque [Nm]")
-plt.title("throttle vs. torque")
-plt.grid(True)
+plt.xlabel('throttle [%]')
+plt.ylabel('torque [Nm]')
+plt.title('torque vs. throttle')
+plt.grid()
 plt.legend()
 
 plt.show()
