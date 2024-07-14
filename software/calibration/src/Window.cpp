@@ -13,6 +13,7 @@
 #include "Accelerometer.h"
 #include "Gyroscope.h"
 #include "Servos.h"
+#include "Load.h"
 
 std::ostream & operator<<(std::ostream &stream, const protocol_calibration_t &calibration) {
     stream << std::setprecision(3) << std::fixed << std::showpos;
@@ -41,6 +42,12 @@ std::ostream & operator<<(std::ostream &stream, const protocol_calibration_t &ca
     stream << std::setw(8) << calibration.servos[3] << std::setw(8) << calibration.servos[4]  << std::setw(8) << calibration.servos[5]  << "\n";
     stream << std::setw(8) << calibration.servos[6] << std::setw(8) << calibration.servos[7]  << std::setw(8) << calibration.servos[8]  << "\n";
     stream << std::setw(8) << calibration.servos[9] << std::setw(8) << calibration.servos[10] << std::setw(8) << calibration.servos[11] << "\n";
+    stream << "\n";
+
+    stream << "load cell\n";
+    stream << std::setw(12) << calibration.load[0] << "\n";
+    stream << std::setw(12) << calibration.load[1] << "\n";
+    stream << "\n";
 
     return stream;
 }
@@ -50,6 +57,7 @@ Window::Window(QWidget *parent) : QWidget{parent}, current{nullptr} {
     interfaces.push_back(new Accelerometer());
     interfaces.push_back(new Gyroscope());
     interfaces.push_back(new Servos(this));
+    interfaces.push_back(new Load());
 
     QGridLayout *grid = new QGridLayout(this);
 

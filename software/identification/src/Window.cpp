@@ -8,6 +8,7 @@
 #include <QLabel>
 #include <QFileDialog>
 #include <QTimer>
+#include <QIntValidator>
 #include <QDoubleValidator>
 
 #include "Window.h"
@@ -16,63 +17,33 @@ Window::Window(QWidget *parent) : QWidget{parent} {
     QGridLayout *grid = new QGridLayout(this);
 
     {
-        QGroupBox *group = new QGroupBox("load cell calibration");
-        QGridLayout *layout  = new QGridLayout(group);
+        QGroupBox *group = new QGroupBox("settings");
+        QFormLayout *layout = new QFormLayout(group);
 
-        min_line = new QLineEdit(QString::asprintf("%.0f", min));
-        max_line = new QLineEdit(QString::asprintf("%.0f", max));
-        min_line->setReadOnly(true);
-        max_line->setReadOnly(true);
+        group->setSizePolicy(QSizePolicy::Minimum, QSizePolicy::Minimum);
 
-        QPushButton *min_button = new QPushButton("update");
-        QPushButton *max_button = new QPushButton("update");
+        start_line = new QLineEdit(QString::asprintf("%d", start));
+        stop_line = new QLineEdit(QString::asprintf("%d", stop));
+        steps_line = new QLineEdit(QString::asprintf("%d", steps));
+        wait_line = new QLineEdit(QString::asprintf("%.1f", wait_time));
+        sample_line = new QLineEdit(QString::asprintf("%.1f", sample_time));
 
-        connect(min_button, &QPushButton::clicked, [&]() {
-            min_line->setText(QString::asprintf("%.0f", raw));
-            min = raw;
-        });
-
-        connect(max_button, &QPushButton::clicked, [&]() {
-            max_line->setText(QString::asprintf("%.0f", raw));
-            max = raw;
-        });
-
-        layout->addWidget(new QLabel("reference (0 kg)"), 0, 0);
-        layout->addWidget(new QLabel("reference (1 kg)"), 1, 0);
-        layout->addWidget(min_line, 0, 1);
-        layout->addWidget(max_line, 1, 1);
-        layout->addWidget(min_button, 0, 2);
-        layout->addWidget(max_button, 1, 2);
-
-        grid->addWidget(group, 0, 0);
-    }
-
-    {
-        QGroupBox *group = new QGroupBox("experiment settings");
-        QFormLayout *formLayout = new QFormLayout(group);
-
-        start_line = new QLineEdit(QString::asprintf("%.0f", 100*start));
-        stop_line = new QLineEdit(QString::asprintf("%.0f", 100*stop));
-        step_line = new QLineEdit(QString::asprintf("%.0f", 100*step));
-        wait_line = new QLineEdit(QString::asprintf("%.0f", wait_time));
-        sample_line = new QLineEdit(QString::asprintf("%.0f", sample_time));
-
-        start_line->setValidator(new QDoubleValidator(0, 100, 0));
-        stop_line->setValidator(new QDoubleValidator(0, 100, 0));
-        step_line->setValidator(new QDoubleValidator(0, 100, 0));
+        start_line->setValidator(new QIntValidator(0, 100));
+        stop_line->setValidator(new QIntValidator(0, 100));
+        steps_line->setValidator(new QIntValidator(1, 100));
         wait_line->setValidator(new QDoubleValidator(0, 10, 1));
         sample_line->setValidator(new QDoubleValidator(0, 10, 1));
 
         connect(start_line, &QLineEdit::returnPressed, [&]() {
-            start = start_line->text().toDouble()/100;
+            start = start_line->text().toDouble();
         });
 
         connect(stop_line, &QLineEdit::returnPressed, [&]() {
-            stop = stop_line->text().toDouble()/100;
+            stop = stop_line->text().toDouble();
         });
 
-        connect(step_line, &QLineEdit::returnPressed, [&]() {
-            step = step_line->text().toDouble()/100;
+        connect(steps_line, &QLineEdit::returnPressed, [&]() {
+            steps = steps_line->text().toDouble();
         });
 
         connect(wait_line, &QLineEdit::returnPressed, [&]() {
@@ -83,33 +54,34 @@ Window::Window(QWidget *parent) : QWidget{parent} {
             sample_time = sample_line->text().toDouble();
         });
 
-        formLayout->addRow(new QLabel("throttle start [%]"), start_line);
-        formLayout->addRow(new QLabel("throttle stop [%]"), stop_line);
-        formLayout->addRow(new QLabel("throttle step [%]"), step_line);
-        formLayout->addRow(new QLabel("wait time [s]"), wait_line);
-        formLayout->addRow(new QLabel("sample time [s]"), sample_line);
+        layout->addRow("throttle start [%]", start_line);
+        layout->addRow("throttle stop [%]", stop_line);
+        layout->addRow("number of steps", steps_line);
+        layout->addRow("wait time [s]", wait_line);
+        layout->addRow("sample time [s]", sample_line);
 
-        grid->addWidget(group, 1, 0);
+        grid->addWidget(group, 0, 0);
     }
 
     {
         QGroupBox *group = new QGroupBox("experiment");
         QGridLayout *layout  = new QGridLayout(group);
 
+        group->setSizePolicy(QSizePolicy::MinimumExpanding, QSizePolicy::MinimumExpanding);
+
         load_label = new QLabel("--- g");
-        raw_label = new QLabel("---");
 
         QFont font;
         font.setWeight(QFont::Weight::Bold);
         font.setPointSize(20);
         load_label->setFont(font);
         load_label->setAlignment(Qt::AlignHCenter);
-        raw_label->setAlignment(Qt::AlignHCenter);
 
         QPushButton *start_button = new QPushButton("start");
         QPushButton *stop_button = new QPushButton("stop");
         QPushButton *save_button = new QPushButton("save");
         data_text = new QTextEdit();
+        data_text->setReadOnly(true);
 
         connect(start_button, &QPushButton::clicked, [&]() {
             timer_step.stop();
@@ -119,7 +91,8 @@ Window::Window(QWidget *parent) : QWidget{parent} {
             timer_step.setInterval(1000*(wait_time + sample_time));
             timer_zero.setInterval(1000*wait_time);
 
-            throttle = start;
+            step = 0;
+            data_text->clear();
             data_text->append("throttle,load");
 
             timer_step.start();
@@ -143,26 +116,28 @@ Window::Window(QWidget *parent) : QWidget{parent} {
         });
 
         layout->addWidget(load_label, 0, 0, 1, 2);
-        layout->addWidget(raw_label, 1, 0, 1, 2);
-        layout->addWidget(start_button, 2, 0);
-        layout->addWidget(stop_button, 2, 1);
-        layout->addWidget(data_text, 3, 0, 1, 2);
-        layout->addWidget(save_button, 4, 0, 1, 2);
+        layout->addWidget(start_button, 1, 0);
+        layout->addWidget(stop_button, 1, 1);
+        layout->addWidget(data_text, 2, 0, 1, 2);
+        layout->addWidget(save_button, 3, 0, 1, 2);
 
-        grid->addWidget(group, 0, 1, 2, 1);
+        grid->addWidget(group, 0, 1);
     }
 
     connect(&timer_step, &QTimer::timeout, [&]() {
-        data_text->append(QString::asprintf("%.2f,%.4f", throttle, avg_load));
+        const double s = (((double)stop) - ((double)start))/((double)steps);
+        const double throttle = step*s + start;
 
-        if(throttle>stop) {
+        data_text->append(QString::asprintf("%.3f,%.4f", throttle/100, avg_load));
+
+        if(step>=steps) {
             setThrottle(0);
             timer_step.stop();
             timer_zero.stop();
             return;
         }
 
-        throttle +=step;
+        step++;
         setThrottle(throttle);
 
         timer_step.setSingleShot(true);
@@ -178,6 +153,7 @@ Window::Window(QWidget *parent) : QWidget{parent} {
         timer_zero.start();
     });
 
+    // remove this
     QTimer *timer = new QTimer(this);
     connect(timer, &QTimer::timeout, [&]() {
         protocol_message_t message;
@@ -193,23 +169,22 @@ void Window::receive(const protocol_message_t &frame) {
         protocol_readings_t *readings = reinterpret_cast<protocol_readings_t *>(frame.payload);
 
         if(readings->valid.load) {
-            raw = readings->load;
-            load = (raw - min)/(max - min);
+            const double w1 = static_cast<double>(avg_num)/static_cast<double>(avg_num + 1);
+            const double w2 = 1./static_cast<double>(avg_num + 1);
 
-            avg_load = (avg_num/(avg_num + 1))*avg_load + (1/(avg_num + 1))*load;
+            avg_load = w1*avg_load + w2*readings->calibrated.load;
             avg_num++;
 
-            load_label->setText(QString::asprintf("%5.3f kg", load));
-            raw_label->setText(QString::asprintf("%.0f", raw));
+            load_label->setText(QString::asprintf("%5.3f kg", readings->calibrated.load));
         }
     }
 }
 
-void Window::setThrottle(const double value) {
-    const double constrained = (value>1) ? 1 : (value<0) ? 0 : value;
+void Window::setThrottle(const int value) {
+    const int constrained = (value>100) ? 100 : (value<0) ? 0 : value;
 
     protocol_control_t control;
-    control.motor = 1000*constrained + 1000;
+    control.motor = 10*constrained + 1000;
 
     protocol_message_t message;
     message.payload =&control;

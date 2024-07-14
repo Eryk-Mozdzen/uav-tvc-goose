@@ -21,16 +21,17 @@ typedef struct {
         float magnetometer[3];
         float accelerometer[3];
         float gyroscope[3];
+        uint32_t load;
     } raw;
     struct {
         float magnetometer[3];
         float accelerometer[3];
         float gyroscope[3];
+        float load;
     } calibrated;
     float rangefinder;
     float barometer;
     float gps[2];
-    uint32_t load;
     union {
         struct {
             uint8_t magnetometer : 1;
@@ -59,6 +60,7 @@ typedef struct {
     float accelerometer[12];
     float gyroscope[3];
     uint16_t servos[12];
+    uint32_t load[2];
 } protocol_calibration_t;
 
 typedef struct {

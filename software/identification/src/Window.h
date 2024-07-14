@@ -12,34 +12,27 @@
 class Window : public QWidget {
     Q_OBJECT
 
-    double raw;
-    double load;
     double avg_load;
-    double avg_num = 0;
-    double throttle;
+    int avg_num = 0;
+    int step;
 
-    double min = 8500000;
-    double max = 9500000;
-    double start = 0;
-    double stop = 1;
-    double step = 0.05;
+    int start = 0;
+    int stop = 100;
+    int steps = 20;
     double wait_time = 1;
     double sample_time = 3;
 
-    QLineEdit *min_line;
-    QLineEdit *max_line;
     QLabel *load_label;
-    QLabel *raw_label;
     QTextEdit *data_text;
     QTimer timer_step;
     QTimer timer_zero;
     QLineEdit *start_line;
     QLineEdit *stop_line;
-    QLineEdit *step_line;
+    QLineEdit *steps_line;
     QLineEdit *wait_line;
     QLineEdit *sample_line;
 
-    void setThrottle(const double value);
+    void setThrottle(const int value);
 
 signals:
     void transmit(const protocol_message_t &frame);
