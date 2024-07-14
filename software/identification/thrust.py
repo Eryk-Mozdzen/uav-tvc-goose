@@ -9,9 +9,9 @@ file = pd.read_csv('thrust_data.csv')
 throttle = file['throttle'].values
 load = file['load'].values
 
-thrust = [(l - load[0])*scipy.constants.g for l in load]
+thrust = [(l - min(load))*scipy.constants.g for l in load]
 
-[K, m], _ = scipy.optimize.curve_fit(lambda x, K, m: K*x**m, throttle[1:], thrust[1:])
+[K, m], _ = scipy.optimize.curve_fit(lambda x, K, m: K*x**m, throttle, thrust,  bounds=(0, np.inf))
 
 print(f'F(u) = {K:3.3f} u ^ {m:3.3f}')
 

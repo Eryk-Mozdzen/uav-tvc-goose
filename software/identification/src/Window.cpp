@@ -92,6 +92,7 @@ Window::Window(QWidget *parent) : QWidget{parent} {
             timer_zero.setInterval(1000*wait_time);
 
             step = 0;
+            setThrottle(start);
             data_text->clear();
             data_text->append("throttle,load");
 
