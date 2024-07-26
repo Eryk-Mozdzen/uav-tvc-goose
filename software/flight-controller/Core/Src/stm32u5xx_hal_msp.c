@@ -406,12 +406,12 @@ void HAL_TIM_Base_MspInit(TIM_HandleTypeDef* htim_base)
     /**TIM2 GPIO Configuration
     PA0     ------> TIM2_ETR
     */
-    GPIO_InitStruct.Pin = HALL_Pin;
+    GPIO_InitStruct.Pin = TACHO_Pin;
     GPIO_InitStruct.Mode = GPIO_MODE_AF_PP;
     GPIO_InitStruct.Pull = GPIO_NOPULL;
     GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
     GPIO_InitStruct.Alternate = GPIO_AF14_TIM2;
-    HAL_GPIO_Init(HALL_GPIO_Port, &GPIO_InitStruct);
+    HAL_GPIO_Init(TACHO_GPIO_Port, &GPIO_InitStruct);
 
   /* USER CODE BEGIN TIM2_MspInit 1 */
 
@@ -554,7 +554,7 @@ void HAL_TIM_Base_MspDeInit(TIM_HandleTypeDef* htim_base)
     /**TIM2 GPIO Configuration
     PA0     ------> TIM2_ETR
     */
-    HAL_GPIO_DeInit(HALL_GPIO_Port, HALL_Pin);
+    HAL_GPIO_DeInit(TACHO_GPIO_Port, TACHO_Pin);
 
   /* USER CODE BEGIN TIM2_MspDeInit 1 */
 

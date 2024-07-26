@@ -59,16 +59,20 @@ void Error_Handler(void);
 /* USER CODE END EFP */
 
 /* Private defines -----------------------------------------------------------*/
-#define PWR_INT_Pin GPIO_PIN_13
-#define PWR_INT_GPIO_Port GPIOC
+#define LOAD_RATE_Pin GPIO_PIN_13
+#define LOAD_RATE_GPIO_Port GPIOC
+#define LOAD_DOUT_Pin GPIO_PIN_14
+#define LOAD_DOUT_GPIO_Port GPIOC
+#define LOAD_SCK_Pin GPIO_PIN_15
+#define LOAD_SCK_GPIO_Port GPIOC
 #define MAG_SCL_Pin GPIO_PIN_0
 #define MAG_SCL_GPIO_Port GPIOC
 #define MAG_SDA_Pin GPIO_PIN_1
 #define MAG_SDA_GPIO_Port GPIOC
 #define MAG_INT_Pin GPIO_PIN_2
 #define MAG_INT_GPIO_Port GPIOC
-#define HALL_Pin GPIO_PIN_0
-#define HALL_GPIO_Port GPIOA
+#define TACHO_Pin GPIO_PIN_0
+#define TACHO_GPIO_Port GPIOA
 #define FLOW_CS_Pin GPIO_PIN_4
 #define FLOW_CS_GPIO_Port GPIOA
 #define FLOW_SCK_Pin GPIO_PIN_5
@@ -85,10 +89,12 @@ void Error_Handler(void);
 #define LED_G_GPIO_Port GPIOB
 #define LED_B_Pin GPIO_PIN_2
 #define LED_B_GPIO_Port GPIOB
+#define RANGE_ECHO_Pin GPIO_PIN_15
+#define RANGE_ECHO_GPIO_Port GPIOB
 #define RANGE_TRIG_Pin GPIO_PIN_6
 #define RANGE_TRIG_GPIO_Port GPIOC
-#define RANGE_ECHO_Pin GPIO_PIN_7
-#define RANGE_ECHO_GPIO_Port GPIOC
+#define PWR_INT_Pin GPIO_PIN_7
+#define PWR_INT_GPIO_Port GPIOC
 #define ESC_Pin GPIO_PIN_9
 #define ESC_GPIO_Port GPIOC
 #define SERVO1_Pin GPIO_PIN_8
