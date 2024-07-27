@@ -1949,6 +1949,24 @@
 						)
 					)
 				)
+				(pin power_in line
+					(at 2.54 -10.16 90)
+					(length 2.54)
+					(name "EP"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+					(number "9"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+				)
 			)
 		)
 		(symbol "power:+3.3V"
@@ -2487,6 +2505,12 @@
 		(uuid "7fb688be-5714-4272-af5e-5c2bc3ffaa02")
 	)
 	(junction
+		(at 55.88 142.24)
+		(diameter 0)
+		(color 0 0 0 0)
+		(uuid "8bd06319-19c0-4c29-bd3c-f59e7d74a04c")
+	)
+	(junction
 		(at 179.07 64.77)
 		(diameter 0)
 		(color 0 0 0 0)
@@ -2658,6 +2682,16 @@
 	)
 	(wire
 		(pts
+			(xy 55.88 142.24) (xy 55.88 140.97)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "266ef8ec-146f-4f86-90f0-dde901f7643f")
+	)
+	(wire
+		(pts
 			(xy 36.83 114.3) (xy 41.91 114.3)
 		)
 		(stroke
@@ -2705,6 +2739,16 @@
 			(type default)
 		)
 		(uuid "2aedabad-883c-4aaa-a1b0-58be6e9d01c3")
+	)
+	(wire
+		(pts
+			(xy 55.88 143.51) (xy 55.88 142.24)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "31a35b97-d47f-40db-a32c-bca4a7b38746")
 	)
 	(wire
 		(pts
@@ -2978,6 +3022,16 @@
 	)
 	(wire
 		(pts
+			(xy 55.88 142.24) (xy 58.42 142.24)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "8e151b32-2337-4a33-ac7b-96fcae25efc6")
+	)
+	(wire
+		(pts
 			(xy 74.93 106.68) (xy 74.93 114.3)
 		)
 		(stroke
@@ -3165,6 +3219,16 @@
 			(type default)
 		)
 		(uuid "c3b940ea-232d-47dc-aa18-5b4ec45168ba")
+	)
+	(wire
+		(pts
+			(xy 58.42 142.24) (xy 58.42 140.97)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "c453fe56-786d-4b77-b058-8bc763c56019")
 	)
 	(wire
 		(pts
@@ -3834,7 +3898,7 @@
 	)
 	(symbol
 		(lib_id "power:GND")
-		(at 55.88 140.97 0)
+		(at 55.88 143.51 0)
 		(unit 1)
 		(exclude_from_sim no)
 		(in_bom yes)
@@ -3843,7 +3907,7 @@
 		(fields_autoplaced yes)
 		(uuid "0d6f5b77-efdd-495c-926a-7c0825e997fb")
 		(property "Reference" "#PWR018"
-			(at 55.88 147.32 0)
+			(at 55.88 149.86 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -3852,7 +3916,7 @@
 			)
 		)
 		(property "Value" "GND"
-			(at 55.88 146.05 0)
+			(at 55.88 148.59 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -3860,7 +3924,7 @@
 			)
 		)
 		(property "Footprint" ""
-			(at 55.88 140.97 0)
+			(at 55.88 143.51 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -3869,7 +3933,7 @@
 			)
 		)
 		(property "Datasheet" ""
-			(at 55.88 140.97 0)
+			(at 55.88 143.51 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -3878,7 +3942,7 @@
 			)
 		)
 		(property "Description" "Power symbol creates a global label with name \"GND\" , ground"
-			(at 55.88 140.97 0)
+			(at 55.88 143.51 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -3925,7 +3989,7 @@
 				(justify left)
 			)
 		)
-		(property "Footprint" "Package_SO:SOIC-8-1EP_3.9x4.9mm_P1.27mm_EP2.62x3.51mm_ThermalVias"
+		(property "Footprint" "goose:mp1584"
 			(at 55.372 71.374 0)
 			(effects
 				(font
@@ -3975,6 +4039,9 @@
 		)
 		(pin "7"
 			(uuid "c0297e12-9ad7-4a1a-8619-69231ca5987b")
+		)
+		(pin "9"
+			(uuid "39d6d032-5cff-414c-88c1-7a8d405c18de")
 		)
 		(instances
 			(project "flight-controller"

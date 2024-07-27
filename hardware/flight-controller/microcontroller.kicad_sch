@@ -6893,7 +6893,7 @@
 				(justify left)
 			)
 		)
-		(property "Footprint" "RF_Module:ESP-12E"
+		(property "Footprint" "goose:esp12e"
 			(at 229.87 82.55 0)
 			(effects
 				(font
