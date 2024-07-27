@@ -3096,6 +3096,10 @@
 		(uuid "d2e0ee79-1d4a-4e05-b3f3-861a4d130d73")
 	)
 	(no_connect
+		(at 77.47 154.94)
+		(uuid "d3dd6418-90c9-4a97-85dc-f329904b5574")
+	)
+	(no_connect
 		(at 110.49 127)
 		(uuid "dba4ac63-9c01-4d02-889a-1e9f9e29ffb8")
 	)
@@ -4283,16 +4287,6 @@
 	)
 	(wire
 		(pts
-			(xy 74.93 154.94) (xy 77.47 154.94)
-		)
-		(stroke
-			(width 0)
-			(type default)
-		)
-		(uuid "cb89d0bd-03ec-4eca-b793-17f3a4f3330b")
-	)
-	(wire
-		(pts
 			(xy 138.43 142.24) (xy 138.43 143.51)
 		)
 		(stroke
@@ -5212,28 +5206,6 @@
 			)
 		)
 	)
-	(global_label "SERVO4"
-		(shape input)
-		(at 113.03 116.84 0)
-		(fields_autoplaced yes)
-		(effects
-			(font
-				(size 1.27 1.27)
-			)
-			(justify left)
-		)
-		(uuid "6d9f2b63-5119-46e2-ae3b-87a9c91a5135")
-		(property "Intersheetrefs" "${INTERSHEET_REFS}"
-			(at 123.2723 116.84 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(justify left)
-				(hide yes)
-			)
-		)
-	)
 	(global_label "SPARE_I2C_SCL"
 		(shape input)
 		(at 113.03 162.56 0)
@@ -5366,6 +5338,28 @@
 			)
 		)
 	)
+	(global_label "ESC"
+		(shape input)
+		(at 113.03 116.84 0)
+		(fields_autoplaced yes)
+		(effects
+			(font
+				(size 1.27 1.27)
+			)
+			(justify left)
+		)
+		(uuid "b12a6911-8929-4313-bacc-673bdcfd8808")
+		(property "Intersheetrefs" "${INTERSHEET_REFS}"
+			(at 119.6437 116.84 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left)
+				(hide yes)
+			)
+		)
+	)
 	(global_label "FLOW_SCK"
 		(shape input)
 		(at 113.03 101.6 0)
@@ -5472,28 +5466,6 @@
 					(size 1.27 1.27)
 				)
 				(justify left)
-				(hide yes)
-			)
-		)
-	)
-	(global_label "ESC"
-		(shape input)
-		(at 74.93 154.94 180)
-		(fields_autoplaced yes)
-		(effects
-			(font
-				(size 1.27 1.27)
-			)
-			(justify right)
-		)
-		(uuid "c569e44b-260c-4b8f-83b2-d48fde6d91b3")
-		(property "Intersheetrefs" "${INTERSHEET_REFS}"
-			(at 68.3163 154.94 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(justify right)
 				(hide yes)
 			)
 		)
@@ -6338,7 +6310,7 @@
 				(justify left)
 			)
 		)
-		(property "Footprint" ""
+		(property "Footprint" "Capacitor_SMD:C_0603_1608Metric"
 			(at 120.3452 52.07 0)
 			(effects
 				(font
@@ -6682,7 +6654,7 @@
 				(hide yes)
 			)
 		)
-		(property "Footprint" "Connector_PinHeader_2.54mm:PinHeader_1x05_P2.54mm_Vertical"
+		(property "Footprint" "goose:header_1x5_not_used"
 			(at 187.96 97.79 0)
 			(effects
 				(font
@@ -6893,7 +6865,7 @@
 				(justify left)
 			)
 		)
-		(property "Footprint" "goose:esp12e"
+		(property "Footprint" "goose:ESP-12E"
 			(at 229.87 82.55 0)
 			(effects
 				(font
@@ -8449,7 +8421,7 @@
 				(justify left)
 			)
 		)
-		(property "Footprint" ""
+		(property "Footprint" "Capacitor_SMD:C_0603_1608Metric"
 			(at 40.3352 52.07 0)
 			(effects
 				(font
@@ -8928,7 +8900,7 @@
 				(justify left)
 			)
 		)
-		(property "Footprint" ""
+		(property "Footprint" "Capacitor_SMD:C_0603_1608Metric"
 			(at 65.7352 102.87 0)
 			(effects
 				(font
@@ -9599,7 +9571,7 @@
 				(justify left)
 			)
 		)
-		(property "Footprint" "goose:stm32u535ret6"
+		(property "Footprint" "goose:STM32U535RET6"
 			(at 93.98 127 0)
 			(effects
 				(font

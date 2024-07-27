@@ -1,4 +1,4 @@
-(footprint "mp1584"
+(footprint "MP1584"
 	(version 20240108)
 	(generator "pcbnew")
 	(generator_version "8.0")
@@ -15,7 +15,7 @@
 			)
 		)
 	)
-	(property "Value" "mp1584"
+	(property "Value" "MP1584"
 		(at 0 -6.8 0)
 		(unlocked yes)
 		(layer "F.Fab")

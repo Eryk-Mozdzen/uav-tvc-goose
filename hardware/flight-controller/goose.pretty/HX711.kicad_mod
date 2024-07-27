@@ -1,4 +1,4 @@
-(footprint "hx711"
+(footprint "HX711"
 	(version 20240108)
 	(generator "pcbnew")
 	(generator_version "8.0")
@@ -15,7 +15,7 @@
 			)
 		)
 	)
-	(property "Value" "hx711"
+	(property "Value" "HX711"
 		(at 0 -10.25 0)
 		(unlocked yes)
 		(layer "F.Fab")

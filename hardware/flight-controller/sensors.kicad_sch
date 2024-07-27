@@ -2309,16 +2309,6 @@
 	)
 	(wire
 		(pts
-			(xy 43.18 132.08) (xy 45.72 132.08)
-		)
-		(stroke
-			(width 0)
-			(type default)
-		)
-		(uuid "0ee03d4d-c652-406f-8ff7-cc8c0959c2f8")
-	)
-	(wire
-		(pts
 			(xy 83.82 34.29) (xy 90.17 34.29)
 		)
 		(stroke
@@ -2836,16 +2826,6 @@
 			(type default)
 		)
 		(uuid "6f7f1e62-a812-4409-8a3e-291080c4fbc0")
-	)
-	(wire
-		(pts
-			(xy 45.72 132.08) (xy 45.72 137.16)
-		)
-		(stroke
-			(width 0)
-			(type default)
-		)
-		(uuid "720a7cef-9420-4013-8284-592cbdf16444")
 	)
 	(wire
 		(pts
@@ -3747,28 +3727,6 @@
 			)
 		)
 	)
-	(global_label "LOAD_EN"
-		(shape input)
-		(at 43.18 132.08 180)
-		(fields_autoplaced yes)
-		(effects
-			(font
-				(size 1.27 1.27)
-			)
-			(justify right)
-		)
-		(uuid "2a2a33c5-383d-4b82-8713-aafc5fe48e4a")
-		(property "Intersheetrefs" "${INTERSHEET_REFS}"
-			(at 32.0305 132.08 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(justify right)
-				(hide yes)
-			)
-		)
-	)
 	(global_label "IMU_INT"
 		(shape input)
 		(at 85.09 53.34 0)
@@ -4255,71 +4213,6 @@
 			(project ""
 				(path "/52d2474d-2865-43c6-846b-d5f8a367c5f4/422eb0b5-2ec1-41a7-81d9-981a304088f5"
 					(reference "R27")
-					(unit 1)
-				)
-			)
-		)
-	)
-	(symbol
-		(lib_id "power:GND")
-		(at 45.72 137.16 0)
-		(unit 1)
-		(exclude_from_sim no)
-		(in_bom yes)
-		(on_board yes)
-		(dnp no)
-		(uuid "0dc78c53-cab8-48ff-84f8-dad609d80eab")
-		(property "Reference" "#PWR077"
-			(at 45.72 143.51 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(hide yes)
-			)
-		)
-		(property "Value" "GND"
-			(at 45.72 142.24 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-			)
-		)
-		(property "Footprint" ""
-			(at 45.72 137.16 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(hide yes)
-			)
-		)
-		(property "Datasheet" ""
-			(at 45.72 137.16 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(hide yes)
-			)
-		)
-		(property "Description" "Power symbol creates a global label with name \"GND\" , ground"
-			(at 45.72 137.16 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(hide yes)
-			)
-		)
-		(pin "1"
-			(uuid "193a26a2-ef46-4b49-8c05-e4711cb73cdd")
-		)
-		(instances
-			(project "flight-controller"
-				(path "/52d2474d-2865-43c6-846b-d5f8a367c5f4/422eb0b5-2ec1-41a7-81d9-981a304088f5"
-					(reference "#PWR077")
 					(unit 1)
 				)
 			)
@@ -5877,7 +5770,7 @@
 				(justify left)
 			)
 		)
-		(property "Footprint" ""
+		(property "Footprint" "Capacitor_SMD:C_0603_1608Metric"
 			(at 65.7352 137.16 0)
 			(effects
 				(font
@@ -6691,7 +6584,7 @@
 				(justify left)
 			)
 		)
-		(property "Footprint" "goose:hx711"
+		(property "Footprint" "goose:HX711"
 			(at 121.92 137.16 0)
 			(effects
 				(font
@@ -7144,7 +7037,7 @@
 				(justify right)
 			)
 		)
-		(property "Footprint" ""
+		(property "Footprint" "Capacitor_SMD:C_0603_1608Metric"
 			(at 133.0452 76.2 0)
 			(effects
 				(font
@@ -7280,7 +7173,7 @@
 				(justify left)
 			)
 		)
-		(property "Footprint" "Package_TO_SOT_SMD:SOT-23"
+		(property "Footprint" "goose:SOT-23"
 			(at 76.2 124.46 0)
 			(effects
 				(font
@@ -7887,7 +7780,7 @@
 				(justify left)
 			)
 		)
-		(property "Footprint" ""
+		(property "Footprint" "Capacitor_SMD:C_0603_1608Metric"
 			(at 136.1948 114.3 0)
 			(effects
 				(font
