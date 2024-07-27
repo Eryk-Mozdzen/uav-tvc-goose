@@ -7695,7 +7695,7 @@
 				)
 			)
 		)
-		(property "Value" "8 MHz"
+		(property "Value" "8MHz"
 			(at 36.83 116.84 0)
 			(effects
 				(font
@@ -7703,7 +7703,7 @@
 				)
 			)
 		)
-		(property "Footprint" "Crystal:Crystal_SMD_5032-2Pin_5.0x3.2mm"
+		(property "Footprint" "goose:oscillator_5032_2"
 			(at 36.83 121.92 0)
 			(effects
 				(font
@@ -9599,7 +9599,7 @@
 				(justify left)
 			)
 		)
-		(property "Footprint" "Package_QFP:LQFP-64_10x10mm_P0.5mm"
+		(property "Footprint" "goose:stm32u535ret6"
 			(at 93.98 127 0)
 			(effects
 				(font

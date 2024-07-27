@@ -5308,7 +5308,7 @@
 				(justify left)
 			)
 		)
-		(property "Footprint" ""
+		(property "Footprint" "Diode_SMD:D_MELF"
 			(at 74.93 119.38 0)
 			(effects
 				(font

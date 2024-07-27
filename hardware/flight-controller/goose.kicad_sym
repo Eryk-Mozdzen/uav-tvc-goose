@@ -22,7 +22,7 @@
 				)
 			)
 		)
-		(property "Footprint" ""
+		(property "Footprint" "goose:HMC5883L_handsolder"
 			(at 12.7 18.542 0)
 			(effects
 				(font
@@ -31,7 +31,7 @@
 				(hide yes)
 			)
 		)
-		(property "Datasheet" ""
+		(property "Datasheet" "https://www.farnell.com/datasheets/1683374.pdf"
 			(at 12.7 18.542 0)
 			(effects
 				(font
