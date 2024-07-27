@@ -4350,7 +4350,7 @@
 				)
 			)
 		)
-		(property "Footprint" ""
+		(property "Footprint" "Inductor_SMD:L_0603_1608Metric"
 			(at 242.57 97.79 0)
 			(effects
 				(font
@@ -4677,7 +4677,7 @@
 				(justify left)
 			)
 		)
-		(property "Value" "4u7"
+		(property "Value" "10u"
 			(at 251.46 50.7999 0)
 			(effects
 				(font
@@ -4686,7 +4686,7 @@
 				(justify left)
 			)
 		)
-		(property "Footprint" ""
+		(property "Footprint" "Capacitor_SMD:C_0603_1608Metric"
 			(at 248.6152 53.34 0)
 			(effects
 				(font
@@ -4822,7 +4822,7 @@
 				)
 			)
 		)
-		(property "Footprint" ""
+		(property "Footprint" "Inductor_SMD:L_0603_1608Metric"
 			(at 104.14 52.07 0)
 			(effects
 				(font
@@ -4934,13 +4934,11 @@
 	(symbol
 		(lib_id "Device:C")
 		(at 99.06 147.32 0)
-		(mirror y)
 		(unit 1)
 		(exclude_from_sim no)
 		(in_bom yes)
 		(on_board yes)
 		(dnp no)
-		(fields_autoplaced yes)
 		(uuid "28fee084-4649-485f-8d3f-4d3a0bf840bb")
 		(property "Reference" "C53"
 			(at 95.25 146.0499 0)
@@ -4948,20 +4946,20 @@
 				(font
 					(size 1.27 1.27)
 				)
-				(justify left)
+				(justify right)
 			)
 		)
-		(property "Value" "4u7"
+		(property "Value" "10u"
 			(at 95.25 148.5899 0)
 			(effects
 				(font
 					(size 1.27 1.27)
 				)
-				(justify left)
+				(justify right)
 			)
 		)
-		(property "Footprint" ""
-			(at 98.0948 151.13 0)
+		(property "Footprint" "Capacitor_SMD:C_0603_1608Metric"
+			(at 100.0252 151.13 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -5086,7 +5084,7 @@
 				(justify left)
 			)
 		)
-		(property "Value" "4u7"
+		(property "Value" "10u"
 			(at 113.03 173.9899 0)
 			(effects
 				(font
@@ -5095,7 +5093,7 @@
 				(justify left)
 			)
 		)
-		(property "Footprint" ""
+		(property "Footprint" "Capacitor_SMD:C_0603_1608Metric"
 			(at 110.1852 176.53 0)
 			(effects
 				(font
@@ -5155,7 +5153,7 @@
 				(justify left)
 			)
 		)
-		(property "Value" "4u7"
+		(property "Value" "10u"
 			(at 113.03 88.8999 0)
 			(effects
 				(font
@@ -5164,7 +5162,7 @@
 				(justify left)
 			)
 		)
-		(property "Footprint" ""
+		(property "Footprint" "Capacitor_SMD:C_0603_1608Metric"
 			(at 110.1852 91.44 0)
 			(effects
 				(font
@@ -5233,7 +5231,7 @@
 				)
 			)
 		)
-		(property "Footprint" ""
+		(property "Footprint" "Inductor_SMD:L_0603_1608Metric"
 			(at 104.14 26.67 0)
 			(effects
 				(font
@@ -5359,7 +5357,7 @@
 				(justify left)
 			)
 		)
-		(property "Value" "4u7"
+		(property "Value" "10u"
 			(at 113.03 114.2999 0)
 			(effects
 				(font
@@ -5368,7 +5366,7 @@
 				(justify left)
 			)
 		)
-		(property "Footprint" ""
+		(property "Footprint" "Capacitor_SMD:C_0603_1608Metric"
 			(at 110.1852 116.84 0)
 			(effects
 				(font
@@ -5707,7 +5705,7 @@
 				(justify left)
 			)
 		)
-		(property "Value" "4u7"
+		(property "Value" "10u"
 			(at 251.46 77.4699 0)
 			(effects
 				(font
@@ -5716,7 +5714,7 @@
 				(justify left)
 			)
 		)
-		(property "Footprint" ""
+		(property "Footprint" "Capacitor_SMD:C_0603_1608Metric"
 			(at 248.6152 80.01 0)
 			(effects
 				(font
@@ -5894,13 +5892,11 @@
 	(symbol
 		(lib_id "Device:C")
 		(at 99.06 31.75 0)
-		(mirror y)
 		(unit 1)
 		(exclude_from_sim no)
 		(in_bom yes)
 		(on_board yes)
 		(dnp no)
-		(fields_autoplaced yes)
 		(uuid "57e94728-6047-41f4-b0ef-6fc3185bd336")
 		(property "Reference" "C39"
 			(at 95.25 30.4799 0)
@@ -5908,20 +5904,20 @@
 				(font
 					(size 1.27 1.27)
 				)
-				(justify left)
+				(justify right)
 			)
 		)
-		(property "Value" "4u7"
+		(property "Value" "10u"
 			(at 95.25 33.0199 0)
 			(effects
 				(font
 					(size 1.27 1.27)
 				)
-				(justify left)
+				(justify right)
 			)
 		)
-		(property "Footprint" ""
-			(at 98.0948 35.56 0)
+		(property "Footprint" "Capacitor_SMD:C_0603_1608Metric"
+			(at 100.0252 35.56 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -5981,7 +5977,7 @@
 				(justify left)
 			)
 		)
-		(property "Value" "4u7"
+		(property "Value" "10u"
 			(at 233.68 50.7999 0)
 			(effects
 				(font
@@ -5990,7 +5986,7 @@
 				(justify left)
 			)
 		)
-		(property "Footprint" ""
+		(property "Footprint" "Capacitor_SMD:C_0603_1608Metric"
 			(at 236.5248 53.34 0)
 			(effects
 				(font
@@ -6191,7 +6187,7 @@
 				(justify left)
 			)
 		)
-		(property "Value" "4u7"
+		(property "Value" "10u"
 			(at 233.68 77.4699 0)
 			(effects
 				(font
@@ -6200,7 +6196,7 @@
 				(justify left)
 			)
 		)
-		(property "Footprint" ""
+		(property "Footprint" "Capacitor_SMD:C_0603_1608Metric"
 			(at 236.5248 80.01 0)
 			(effects
 				(font
@@ -6396,7 +6392,7 @@
 				(justify left)
 			)
 		)
-		(property "Value" "4u7"
+		(property "Value" "10u"
 			(at 95.25 173.9899 0)
 			(effects
 				(font
@@ -6405,7 +6401,7 @@
 				(justify left)
 			)
 		)
-		(property "Footprint" ""
+		(property "Footprint" "Capacitor_SMD:C_0603_1608Metric"
 			(at 98.0948 176.53 0)
 			(effects
 				(font
@@ -6450,13 +6446,11 @@
 	(symbol
 		(lib_id "Device:C")
 		(at 99.06 57.15 0)
-		(mirror y)
 		(unit 1)
 		(exclude_from_sim no)
 		(in_bom yes)
 		(on_board yes)
 		(dnp no)
-		(fields_autoplaced yes)
 		(uuid "78793d2f-c484-48b0-9bfe-590f282f9b09")
 		(property "Reference" "C43"
 			(at 95.25 55.8799 0)
@@ -6464,20 +6458,20 @@
 				(font
 					(size 1.27 1.27)
 				)
-				(justify left)
+				(justify right)
 			)
 		)
-		(property "Value" "4u7"
+		(property "Value" "10u"
 			(at 95.25 58.4199 0)
 			(effects
 				(font
 					(size 1.27 1.27)
 				)
-				(justify left)
+				(justify right)
 			)
 		)
-		(property "Footprint" ""
-			(at 98.0948 60.96 0)
+		(property "Footprint" "Capacitor_SMD:C_0603_1608Metric"
+			(at 100.0252 60.96 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -6873,7 +6867,7 @@
 				(justify left)
 			)
 		)
-		(property "Value" "4u7"
+		(property "Value" "10u"
 			(at 113.03 148.5899 0)
 			(effects
 				(font
@@ -6882,7 +6876,7 @@
 				(justify left)
 			)
 		)
-		(property "Footprint" ""
+		(property "Footprint" "Capacitor_SMD:C_0603_1608Metric"
 			(at 110.1852 151.13 0)
 			(effects
 				(font
@@ -7059,13 +7053,11 @@
 	(symbol
 		(lib_id "Device:C")
 		(at 99.06 113.03 0)
-		(mirror y)
 		(unit 1)
 		(exclude_from_sim no)
 		(in_bom yes)
 		(on_board yes)
 		(dnp no)
-		(fields_autoplaced yes)
 		(uuid "93a833c1-59bc-4b32-b3ba-2a23fd678d79")
 		(property "Reference" "C51"
 			(at 95.25 111.7599 0)
@@ -7073,20 +7065,20 @@
 				(font
 					(size 1.27 1.27)
 				)
-				(justify left)
+				(justify right)
 			)
 		)
-		(property "Value" "4u7"
+		(property "Value" "10u"
 			(at 95.25 114.2999 0)
 			(effects
 				(font
 					(size 1.27 1.27)
 				)
-				(justify left)
+				(justify right)
 			)
 		)
-		(property "Footprint" ""
-			(at 98.0948 116.84 0)
+		(property "Footprint" "Capacitor_SMD:C_0603_1608Metric"
+			(at 100.0252 116.84 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -7154,7 +7146,7 @@
 				)
 			)
 		)
-		(property "Footprint" ""
+		(property "Footprint" "Inductor_SMD:L_0603_1608Metric"
 			(at 104.14 82.55 0)
 			(effects
 				(font
@@ -7215,7 +7207,7 @@
 				(justify left)
 			)
 		)
-		(property "Value" "4u7"
+		(property "Value" "10u"
 			(at 251.46 104.1399 0)
 			(effects
 				(font
@@ -7224,7 +7216,7 @@
 				(justify left)
 			)
 		)
-		(property "Footprint" ""
+		(property "Footprint" "Capacitor_SMD:C_0603_1608Metric"
 			(at 248.6152 106.68 0)
 			(effects
 				(font
@@ -7385,7 +7377,7 @@
 				)
 			)
 		)
-		(property "Footprint" ""
+		(property "Footprint" "Inductor_SMD:L_0603_1608Metric"
 			(at 104.14 142.24 0)
 			(effects
 				(font
@@ -7454,7 +7446,7 @@
 				)
 			)
 		)
-		(property "Footprint" ""
+		(property "Footprint" "Inductor_SMD:L_0603_1608Metric"
 			(at 104.14 107.95 0)
 			(effects
 				(font
@@ -7681,7 +7673,7 @@
 				)
 			)
 		)
-		(property "Footprint" ""
+		(property "Footprint" "Inductor_SMD:L_0603_1608Metric"
 			(at 242.57 71.12 0)
 			(effects
 				(font
@@ -7749,7 +7741,7 @@
 				)
 			)
 		)
-		(property "Footprint" ""
+		(property "Footprint" "Inductor_SMD:L_0603_1608Metric"
 			(at 242.57 44.45 0)
 			(effects
 				(font
@@ -7951,7 +7943,7 @@
 				)
 			)
 		)
-		(property "Footprint" ""
+		(property "Footprint" "Inductor_SMD:L_0603_1608Metric"
 			(at 104.14 167.64 0)
 			(effects
 				(font
@@ -8079,7 +8071,7 @@
 				(justify left)
 			)
 		)
-		(property "Value" "4u7"
+		(property "Value" "10u"
 			(at 113.03 33.0199 0)
 			(effects
 				(font
@@ -8088,7 +8080,7 @@
 				(justify left)
 			)
 		)
-		(property "Footprint" ""
+		(property "Footprint" "Capacitor_SMD:C_0603_1608Metric"
 			(at 110.1852 35.56 0)
 			(effects
 				(font
@@ -8133,13 +8125,11 @@
 	(symbol
 		(lib_id "Device:C")
 		(at 99.06 87.63 0)
-		(mirror y)
 		(unit 1)
 		(exclude_from_sim no)
 		(in_bom yes)
 		(on_board yes)
 		(dnp no)
-		(fields_autoplaced yes)
 		(uuid "c231c0c5-8c43-45ed-9ce8-bdac4d725391")
 		(property "Reference" "C47"
 			(at 95.25 86.3599 0)
@@ -8147,20 +8137,20 @@
 				(font
 					(size 1.27 1.27)
 				)
-				(justify left)
+				(justify right)
 			)
 		)
-		(property "Value" "4u7"
+		(property "Value" "10u"
 			(at 95.25 88.8999 0)
 			(effects
 				(font
 					(size 1.27 1.27)
 				)
-				(justify left)
+				(justify right)
 			)
 		)
-		(property "Footprint" ""
-			(at 98.0948 91.44 0)
+		(property "Footprint" "Capacitor_SMD:C_0603_1608Metric"
+			(at 100.0252 91.44 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -8760,7 +8750,7 @@
 				(justify left)
 			)
 		)
-		(property "Value" "4u7"
+		(property "Value" "10u"
 			(at 233.68 104.1399 0)
 			(effects
 				(font
@@ -8769,7 +8759,7 @@
 				(justify left)
 			)
 		)
-		(property "Footprint" ""
+		(property "Footprint" "Capacitor_SMD:C_0603_1608Metric"
 			(at 236.5248 106.68 0)
 			(effects
 				(font
@@ -9102,7 +9092,7 @@
 				(justify left)
 			)
 		)
-		(property "Value" "4u7"
+		(property "Value" "10u"
 			(at 113.03 58.4199 0)
 			(effects
 				(font
@@ -9111,7 +9101,7 @@
 				(justify left)
 			)
 		)
-		(property "Footprint" ""
+		(property "Footprint" "Capacitor_SMD:C_0603_1608Metric"
 			(at 110.1852 60.96 0)
 			(effects
 				(font
