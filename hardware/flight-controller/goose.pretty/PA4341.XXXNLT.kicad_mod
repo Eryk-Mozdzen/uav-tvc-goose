@@ -4,7 +4,7 @@
 	(generator_version "8.0")
 	(layer "F.Cu")
 	(property "Reference" "REF**"
-		(at 0 -4.25 0)
+		(at 0 -5.035 0)
 		(unlocked yes)
 		(layer "F.SilkS")
 		(uuid "e8293797-4ba2-47e3-a9ea-9cd77a0e2930")
@@ -16,7 +16,7 @@
 		)
 	)
 	(property "Value" "PA4341.XXXNLT"
-		(at 0 -5.715 0)
+		(at 0 -6.5 0)
 		(unlocked yes)
 		(layer "F.Fab")
 		(uuid "adf67b5d-2127-4a3e-b86f-3635b1c11ad6")
@@ -68,6 +68,17 @@
 	)
 	(attr smd)
 	(fp_rect
+		(start -4.5 -4)
+		(end 4.5 4)
+		(stroke
+			(width 0.05)
+			(type default)
+		)
+		(fill none)
+		(layer "F.CrtYd")
+		(uuid "c5fd5888-2906-43ee-81b5-87b7f26acdd8")
+	)
+	(fp_rect
 		(start -3.2 -3.3)
 		(end 3.2 3.3)
 		(stroke
@@ -79,7 +90,7 @@
 		(uuid "8186e1cd-ecfa-4dd4-bb3e-df8b21f97a2c")
 	)
 	(fp_text user "${REFERENCE}"
-		(at 0 -7.62 0)
+		(at 0 -8.405 0)
 		(unlocked yes)
 		(layer "F.Fab")
 		(uuid "e30886f9-5516-4635-bdcf-0164c47e0b90")
