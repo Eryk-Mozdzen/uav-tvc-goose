@@ -1826,7 +1826,7 @@
 	)
 	(wire
 		(pts
-			(xy 44.45 161.29) (xy 59.69 161.29)
+			(xy 35.56 161.29) (xy 50.8 161.29)
 		)
 		(stroke
 			(width 0)
@@ -1836,7 +1836,7 @@
 	)
 	(wire
 		(pts
-			(xy 73.66 166.37) (xy 73.66 167.64)
+			(xy 64.77 166.37) (xy 64.77 167.64)
 		)
 		(stroke
 			(width 0)
@@ -1936,7 +1936,7 @@
 	)
 	(wire
 		(pts
-			(xy 72.39 156.21) (xy 86.36 156.21)
+			(xy 63.5 156.21) (xy 86.36 156.21)
 		)
 		(stroke
 			(width 0)
@@ -2196,7 +2196,7 @@
 	)
 	(wire
 		(pts
-			(xy 44.45 163.83) (xy 44.45 161.29)
+			(xy 35.56 163.83) (xy 35.56 161.29)
 		)
 		(stroke
 			(width 0)
@@ -2253,16 +2253,6 @@
 			(type default)
 		)
 		(uuid "76304e32-a9a6-4c76-8812-0130f64a2b52")
-	)
-	(wire
-		(pts
-			(xy 72.39 158.75) (xy 86.36 158.75)
-		)
-		(stroke
-			(width 0)
-			(type default)
-		)
-		(uuid "769e964e-d44e-4184-ac7e-564591b44e3c")
 	)
 	(wire
 		(pts
@@ -2466,7 +2456,7 @@
 	)
 	(wire
 		(pts
-			(xy 72.39 166.37) (xy 73.66 166.37)
+			(xy 63.5 166.37) (xy 64.77 166.37)
 		)
 		(stroke
 			(width 0)
@@ -2856,6 +2846,16 @@
 	)
 	(wire
 		(pts
+			(xy 63.5 158.75) (xy 86.36 158.75)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "f9c6641a-dd85-488d-8e17-989ff9475a84")
+	)
+	(wire
+		(pts
 			(xy 261.62 73.66) (xy 261.62 80.01)
 		)
 		(stroke
@@ -2966,7 +2966,7 @@
 	)
 	(text "to 1kg load cell"
 		(exclude_from_sim no)
-		(at 59.436 187.706 0)
+		(at 50.546 187.706 0)
 		(effects
 			(font
 				(size 1.27 1.27)
@@ -2974,9 +2974,9 @@
 		)
 		(uuid "2218e213-c1e5-4997-98d8-ad063e2d8ba2")
 	)
-	(text "gnd for easy debug"
+	(text "GND for easy\nprope reference"
 		(exclude_from_sim no)
-		(at 155.448 162.814 0)
+		(at 154.94 189.738 0)
 		(effects
 			(font
 				(size 1.27 1.27)
@@ -3012,7 +3012,7 @@
 	)
 	(text "to castom hall\nbased tachometer"
 		(exclude_from_sim no)
-		(at 59.436 181.61 0)
+		(at 50.546 181.61 0)
 		(effects
 			(font
 				(size 1.27 1.27)
@@ -3061,13 +3061,24 @@
 	)
 	(text "to G28U7FTTL\ndev-board\n(with antenna)"
 		(exclude_from_sim no)
-		(at 59.436 174.752 0)
+		(at 50.546 174.752 0)
 		(effects
 			(font
 				(size 1.27 1.27)
 			)
 		)
 		(uuid "f9d3a028-32c5-4f32-9ce8-8b8f532018ce")
+	)
+	(label "LOAD_EN"
+		(at 36.83 161.29 180)
+		(fields_autoplaced yes)
+		(effects
+			(font
+				(size 1.27 1.27)
+			)
+			(justify right bottom)
+		)
+		(uuid "332416a5-44da-4371-816b-215ae3ef8990")
 	)
 	(label "RANGE_5V"
 		(at 68.58 95.25 0)
@@ -3113,8 +3124,8 @@
 		)
 		(uuid "9d643603-ac80-4ccc-8f18-93094f1a25d6")
 	)
-	(label "GPS_3V3"
-		(at 72.39 158.75 0)
+	(label "GPS_TACHO_LOAD_3V3"
+		(at 63.5 158.75 0)
 		(fields_autoplaced yes)
 		(effects
 			(font
@@ -3157,8 +3168,8 @@
 		)
 		(uuid "f1158db1-1774-4d0f-bd1c-dcdcff5729ea")
 	)
-	(label "GPS_5V"
-		(at 72.39 156.21 0)
+	(label "GPS_TACHO_LOAD_5V"
+		(at 63.5 156.21 0)
 		(fields_autoplaced yes)
 		(effects
 			(font
@@ -3170,7 +3181,7 @@
 	)
 	(global_label "LOAD_EP"
 		(shape input)
-		(at 59.69 158.75 180)
+		(at 50.8 158.75 180)
 		(fields_autoplaced yes)
 		(effects
 			(font
@@ -3180,7 +3191,7 @@
 		)
 		(uuid "00f87edf-3537-4c77-acf3-5996493a6e16")
 		(property "Intersheetrefs" "${INTERSHEET_REFS}"
-			(at 48.601 158.75 0)
+			(at 39.711 158.75 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -3258,7 +3269,7 @@
 	)
 	(global_label "GPS_RXD"
 		(shape input)
-		(at 72.39 163.83 0)
+		(at 63.5 163.83 0)
 		(fields_autoplaced yes)
 		(effects
 			(font
@@ -3268,7 +3279,7 @@
 		)
 		(uuid "2d916c67-58b4-4ba9-b8f4-cfc035ed98bf")
 		(property "Intersheetrefs" "${INTERSHEET_REFS}"
-			(at 83.8418 163.83 0)
+			(at 74.9518 163.83 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -3280,7 +3291,7 @@
 	)
 	(global_label "LOAD_SP"
 		(shape input)
-		(at 59.69 163.83 180)
+		(at 50.8 163.83 180)
 		(fields_autoplaced yes)
 		(effects
 			(font
@@ -3290,7 +3301,7 @@
 		)
 		(uuid "40113838-8905-4259-857a-f9786f800f4f")
 		(property "Intersheetrefs" "${INTERSHEET_REFS}"
-			(at 48.5405 163.83 0)
+			(at 39.6505 163.83 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -3368,7 +3379,7 @@
 	)
 	(global_label "GPS_TXD"
 		(shape input)
-		(at 72.39 161.29 0)
+		(at 63.5 161.29 0)
 		(fields_autoplaced yes)
 		(effects
 			(font
@@ -3378,7 +3389,7 @@
 		)
 		(uuid "773b88e7-6f0c-4c1b-97b8-6adc5e9c1a81")
 		(property "Intersheetrefs" "${INTERSHEET_REFS}"
-			(at 83.5394 161.29 0)
+			(at 74.6494 161.29 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -3478,7 +3489,7 @@
 	)
 	(global_label "LOAD_SN"
 		(shape input)
-		(at 59.69 166.37 180)
+		(at 50.8 166.37 180)
 		(fields_autoplaced yes)
 		(effects
 			(font
@@ -3488,7 +3499,7 @@
 		)
 		(uuid "a35f5955-fa64-4475-90e9-14311b3903cb")
 		(property "Intersheetrefs" "${INTERSHEET_REFS}"
-			(at 48.48 166.37 0)
+			(at 39.59 166.37 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -3544,7 +3555,7 @@
 	)
 	(global_label "TACH"
 		(shape input)
-		(at 59.69 156.21 180)
+		(at 50.8 156.21 180)
 		(fields_autoplaced yes)
 		(effects
 			(font
@@ -3554,7 +3565,7 @@
 		)
 		(uuid "d70bda05-9654-4cfd-a527-6c412927c754")
 		(property "Intersheetrefs" "${INTERSHEET_REFS}"
-			(at 52.0481 156.21 0)
+			(at 43.1581 156.21 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -4131,7 +4142,7 @@
 		(dnp no)
 		(fields_autoplaced yes)
 		(uuid "0ec41bc8-5601-487b-8d2a-8b7bfa7f81d9")
-		(property "Reference" "#PWR0121"
+		(property "Reference" "#PWR0122"
 			(at 109.22 182.88 0)
 			(effects
 				(font
@@ -4181,7 +4192,7 @@
 		(instances
 			(project "flight-controller"
 				(path "/52d2474d-2865-43c6-846b-d5f8a367c5f4/d9c0588f-daf7-400c-b697-bf3dc495626c"
-					(reference "#PWR0121")
+					(reference "#PWR0122")
 					(unit 1)
 				)
 			)
@@ -4197,7 +4208,7 @@
 		(dnp no)
 		(fields_autoplaced yes)
 		(uuid "118f99cc-3a48-4df4-9e86-dced292b7502")
-		(property "Reference" "R32"
+		(property "Reference" "R31"
 			(at 53.34 86.3599 0)
 			(effects
 				(font
@@ -4251,7 +4262,7 @@
 		(instances
 			(project "flight-controller"
 				(path "/52d2474d-2865-43c6-846b-d5f8a367c5f4/d9c0588f-daf7-400c-b697-bf3dc495626c"
-					(reference "R32")
+					(reference "R31")
 					(unit 1)
 				)
 			)
@@ -4342,7 +4353,7 @@
 				)
 			)
 		)
-		(property "Value" "2u2"
+		(property "Value" "2.2u/1A"
 			(at 242.57 95.25 90)
 			(effects
 				(font
@@ -4469,7 +4480,7 @@
 		(dnp no)
 		(fields_autoplaced yes)
 		(uuid "1ae7f990-b87e-4fd4-bf00-c1a0a77eec91")
-		(property "Reference" "#PWR0122"
+		(property "Reference" "#PWR0123"
 			(at 151.13 186.69 0)
 			(effects
 				(font
@@ -4519,7 +4530,7 @@
 		(instances
 			(project "flight-controller"
 				(path "/52d2474d-2865-43c6-846b-d5f8a367c5f4/d9c0588f-daf7-400c-b697-bf3dc495626c"
-					(reference "#PWR0122")
+					(reference "#PWR0123")
 					(unit 1)
 				)
 			)
@@ -4668,7 +4679,7 @@
 		(dnp no)
 		(fields_autoplaced yes)
 		(uuid "21782881-85a1-4224-abd9-72f042edc925")
-		(property "Reference" "C42"
+		(property "Reference" "C43"
 			(at 251.46 48.2599 0)
 			(effects
 				(font
@@ -4722,7 +4733,7 @@
 		(instances
 			(project "flight-controller"
 				(path "/52d2474d-2865-43c6-846b-d5f8a367c5f4/d9c0588f-daf7-400c-b697-bf3dc495626c"
-					(reference "C42")
+					(reference "C43")
 					(unit 1)
 				)
 			)
@@ -4814,7 +4825,7 @@
 				)
 			)
 		)
-		(property "Value" "2u2"
+		(property "Value" "2.2u/1A"
 			(at 104.14 49.53 90)
 			(effects
 				(font
@@ -4875,7 +4886,7 @@
 		(dnp no)
 		(fields_autoplaced yes)
 		(uuid "25735637-1a05-4af1-8ae0-7b8b3f8b17b2")
-		(property "Reference" "#PWR0120"
+		(property "Reference" "#PWR0121"
 			(at 99.06 182.88 0)
 			(effects
 				(font
@@ -4925,7 +4936,7 @@
 		(instances
 			(project "flight-controller"
 				(path "/52d2474d-2865-43c6-846b-d5f8a367c5f4/d9c0588f-daf7-400c-b697-bf3dc495626c"
-					(reference "#PWR0120")
+					(reference "#PWR0121")
 					(unit 1)
 				)
 			)
@@ -4940,7 +4951,7 @@
 		(on_board yes)
 		(dnp no)
 		(uuid "28fee084-4649-485f-8d3f-4d3a0bf840bb")
-		(property "Reference" "C53"
+		(property "Reference" "C54"
 			(at 95.25 146.0499 0)
 			(effects
 				(font
@@ -4994,7 +5005,7 @@
 		(instances
 			(project "flight-controller"
 				(path "/52d2474d-2865-43c6-846b-d5f8a367c5f4/d9c0588f-daf7-400c-b697-bf3dc495626c"
-					(reference "C53")
+					(reference "C54")
 					(unit 1)
 				)
 			)
@@ -5075,7 +5086,7 @@
 		(on_board yes)
 		(dnp no)
 		(uuid "3369caf6-4cff-4a93-a3cc-27c1260a656d")
-		(property "Reference" "C56"
+		(property "Reference" "C57"
 			(at 113.03 171.4499 0)
 			(effects
 				(font
@@ -5129,7 +5140,7 @@
 		(instances
 			(project "flight-controller"
 				(path "/52d2474d-2865-43c6-846b-d5f8a367c5f4/d9c0588f-daf7-400c-b697-bf3dc495626c"
-					(reference "C56")
+					(reference "C57")
 					(unit 1)
 				)
 			)
@@ -5144,7 +5155,7 @@
 		(on_board yes)
 		(dnp no)
 		(uuid "35c89079-7377-4fd3-92df-13ae83663d7b")
-		(property "Reference" "C48"
+		(property "Reference" "C49"
 			(at 113.03 86.3599 0)
 			(effects
 				(font
@@ -5198,7 +5209,7 @@
 		(instances
 			(project "flight-controller"
 				(path "/52d2474d-2865-43c6-846b-d5f8a367c5f4/d9c0588f-daf7-400c-b697-bf3dc495626c"
-					(reference "C48")
+					(reference "C49")
 					(unit 1)
 				)
 			)
@@ -5223,7 +5234,7 @@
 				)
 			)
 		)
-		(property "Value" "2u2"
+		(property "Value" "2.2u/1A"
 			(at 104.14 24.13 90)
 			(effects
 				(font
@@ -5348,7 +5359,7 @@
 		(on_board yes)
 		(dnp no)
 		(uuid "4762d5a4-aff5-4ac7-b071-78a0ca2ed5b4")
-		(property "Reference" "C52"
+		(property "Reference" "C53"
 			(at 113.03 111.7599 0)
 			(effects
 				(font
@@ -5402,7 +5413,7 @@
 		(instances
 			(project "flight-controller"
 				(path "/52d2474d-2865-43c6-846b-d5f8a367c5f4/d9c0588f-daf7-400c-b697-bf3dc495626c"
-					(reference "C52")
+					(reference "C53")
 					(unit 1)
 				)
 			)
@@ -5696,7 +5707,7 @@
 		(dnp no)
 		(fields_autoplaced yes)
 		(uuid "4a22327e-71e5-4b30-ba99-38cf25aa64f0")
-		(property "Reference" "C46"
+		(property "Reference" "C47"
 			(at 251.46 74.9299 0)
 			(effects
 				(font
@@ -5750,7 +5761,7 @@
 		(instances
 			(project "flight-controller"
 				(path "/52d2474d-2865-43c6-846b-d5f8a367c5f4/d9c0588f-daf7-400c-b697-bf3dc495626c"
-					(reference "C46")
+					(reference "C47")
 					(unit 1)
 				)
 			)
@@ -5898,7 +5909,7 @@
 		(on_board yes)
 		(dnp no)
 		(uuid "57e94728-6047-41f4-b0ef-6fc3185bd336")
-		(property "Reference" "C39"
+		(property "Reference" "C40"
 			(at 95.25 30.4799 0)
 			(effects
 				(font
@@ -5952,7 +5963,7 @@
 		(instances
 			(project "flight-controller"
 				(path "/52d2474d-2865-43c6-846b-d5f8a367c5f4/d9c0588f-daf7-400c-b697-bf3dc495626c"
-					(reference "C39")
+					(reference "C40")
 					(unit 1)
 				)
 			)
@@ -5968,7 +5979,7 @@
 		(on_board yes)
 		(dnp no)
 		(uuid "59a7c877-a167-4662-8546-9258058cc0ff")
-		(property "Reference" "C41"
+		(property "Reference" "C42"
 			(at 233.68 48.2599 0)
 			(effects
 				(font
@@ -6022,7 +6033,7 @@
 		(instances
 			(project "flight-controller"
 				(path "/52d2474d-2865-43c6-846b-d5f8a367c5f4/d9c0588f-daf7-400c-b697-bf3dc495626c"
-					(reference "C41")
+					(reference "C42")
 					(unit 1)
 				)
 			)
@@ -6178,7 +6189,7 @@
 		(on_board yes)
 		(dnp no)
 		(uuid "678cfa88-5cfa-47ee-9f92-7562364829a6")
-		(property "Reference" "C45"
+		(property "Reference" "C46"
 			(at 233.68 74.9299 0)
 			(effects
 				(font
@@ -6232,7 +6243,7 @@
 		(instances
 			(project "flight-controller"
 				(path "/52d2474d-2865-43c6-846b-d5f8a367c5f4/d9c0588f-daf7-400c-b697-bf3dc495626c"
-					(reference "C45")
+					(reference "C46")
 					(unit 1)
 				)
 			)
@@ -6383,7 +6394,7 @@
 		(on_board yes)
 		(dnp no)
 		(uuid "70232ced-9968-4a83-8ecf-f063b77a5403")
-		(property "Reference" "C55"
+		(property "Reference" "C56"
 			(at 95.25 171.4499 0)
 			(effects
 				(font
@@ -6437,7 +6448,7 @@
 		(instances
 			(project "flight-controller"
 				(path "/52d2474d-2865-43c6-846b-d5f8a367c5f4/d9c0588f-daf7-400c-b697-bf3dc495626c"
-					(reference "C55")
+					(reference "C56")
 					(unit 1)
 				)
 			)
@@ -6452,7 +6463,7 @@
 		(on_board yes)
 		(dnp no)
 		(uuid "78793d2f-c484-48b0-9bfe-590f282f9b09")
-		(property "Reference" "C43"
+		(property "Reference" "C44"
 			(at 95.25 55.8799 0)
 			(effects
 				(font
@@ -6506,7 +6517,7 @@
 		(instances
 			(project "flight-controller"
 				(path "/52d2474d-2865-43c6-846b-d5f8a367c5f4/d9c0588f-daf7-400c-b697-bf3dc495626c"
-					(reference "C43")
+					(reference "C44")
 					(unit 1)
 				)
 			)
@@ -6655,7 +6666,7 @@
 		(on_board yes)
 		(dnp no)
 		(uuid "828ec1be-08a2-4a9d-b30a-eaba1e30646c")
-		(property "Reference" "R31"
+		(property "Reference" "R30"
 			(at 44.45 86.3599 0)
 			(effects
 				(font
@@ -6709,7 +6720,7 @@
 		(instances
 			(project "flight-controller"
 				(path "/52d2474d-2865-43c6-846b-d5f8a367c5f4/d9c0588f-daf7-400c-b697-bf3dc495626c"
-					(reference "R31")
+					(reference "R30")
 					(unit 1)
 				)
 			)
@@ -6858,7 +6869,7 @@
 		(on_board yes)
 		(dnp no)
 		(uuid "8951faad-6d2b-4cca-a4c2-3c1c0ff1425f")
-		(property "Reference" "C54"
+		(property "Reference" "C55"
 			(at 113.03 146.0499 0)
 			(effects
 				(font
@@ -6912,7 +6923,7 @@
 		(instances
 			(project "flight-controller"
 				(path "/52d2474d-2865-43c6-846b-d5f8a367c5f4/d9c0588f-daf7-400c-b697-bf3dc495626c"
-					(reference "C54")
+					(reference "C55")
 					(unit 1)
 				)
 			)
@@ -7059,7 +7070,7 @@
 		(on_board yes)
 		(dnp no)
 		(uuid "93a833c1-59bc-4b32-b3ba-2a23fd678d79")
-		(property "Reference" "C51"
+		(property "Reference" "C52"
 			(at 95.25 111.7599 0)
 			(effects
 				(font
@@ -7113,7 +7124,7 @@
 		(instances
 			(project "flight-controller"
 				(path "/52d2474d-2865-43c6-846b-d5f8a367c5f4/d9c0588f-daf7-400c-b697-bf3dc495626c"
-					(reference "C51")
+					(reference "C52")
 					(unit 1)
 				)
 			)
@@ -7138,7 +7149,7 @@
 				)
 			)
 		)
-		(property "Value" "2u2"
+		(property "Value" "2.2u/1A"
 			(at 104.14 80.01 90)
 			(effects
 				(font
@@ -7198,7 +7209,7 @@
 		(dnp no)
 		(fields_autoplaced yes)
 		(uuid "9578958e-f513-4a63-a0f8-3e5b0718d0ab")
-		(property "Reference" "C50"
+		(property "Reference" "C51"
 			(at 251.46 101.5999 0)
 			(effects
 				(font
@@ -7252,7 +7263,7 @@
 		(instances
 			(project "flight-controller"
 				(path "/52d2474d-2865-43c6-846b-d5f8a367c5f4/d9c0588f-daf7-400c-b697-bf3dc495626c"
-					(reference "C50")
+					(reference "C51")
 					(unit 1)
 				)
 			)
@@ -7260,7 +7271,7 @@
 	)
 	(symbol
 		(lib_id "Connector_Generic:Conn_02x05_Odd_Even")
-		(at 64.77 161.29 0)
+		(at 55.88 161.29 0)
 		(unit 1)
 		(exclude_from_sim no)
 		(in_bom yes)
@@ -7269,7 +7280,7 @@
 		(fields_autoplaced yes)
 		(uuid "965aa351-d72b-43a8-a36b-762e0f1ff6e2")
 		(property "Reference" "J10"
-			(at 66.04 149.86 0)
+			(at 57.15 149.86 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -7277,7 +7288,7 @@
 			)
 		)
 		(property "Value" "IDC-10"
-			(at 66.04 152.4 0)
+			(at 57.15 152.4 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -7285,7 +7296,7 @@
 			)
 		)
 		(property "Footprint" "goose:IDC-10-horizontal"
-			(at 64.77 161.29 0)
+			(at 55.88 161.29 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -7294,7 +7305,7 @@
 			)
 		)
 		(property "Datasheet" "~"
-			(at 64.77 161.29 0)
+			(at 55.88 161.29 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -7303,7 +7314,7 @@
 			)
 		)
 		(property "Description" "Generic connector, double row, 02x05, odd/even pin numbering scheme (row 1 odd numbers, row 2 even numbers), script generated (kicad-library-utils/schlib/autogen/connector/)"
-			(at 64.77 161.29 0)
+			(at 55.88 161.29 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -7369,7 +7380,7 @@
 				)
 			)
 		)
-		(property "Value" "2u2"
+		(property "Value" "2.2u/1A"
 			(at 104.14 139.7 90)
 			(effects
 				(font
@@ -7438,7 +7449,7 @@
 				)
 			)
 		)
-		(property "Value" "2u2"
+		(property "Value" "2.2u/1A"
 			(at 104.14 105.41 90)
 			(effects
 				(font
@@ -7591,7 +7602,7 @@
 		(dnp no)
 		(fields_autoplaced yes)
 		(uuid "a5fc53af-0640-431d-aa27-433d28ee760e")
-		(property "Reference" "#PWR0118"
+		(property "Reference" "#PWR0119"
 			(at 109.22 170.18 0)
 			(effects
 				(font
@@ -7641,7 +7652,7 @@
 		(instances
 			(project "flight-controller"
 				(path "/52d2474d-2865-43c6-846b-d5f8a367c5f4/d9c0588f-daf7-400c-b697-bf3dc495626c"
-					(reference "#PWR0118")
+					(reference "#PWR0119")
 					(unit 1)
 				)
 			)
@@ -7665,7 +7676,7 @@
 				)
 			)
 		)
-		(property "Value" "2u2"
+		(property "Value" "2.2u/1A"
 			(at 242.57 68.58 90)
 			(effects
 				(font
@@ -7733,7 +7744,7 @@
 				)
 			)
 		)
-		(property "Value" "2u2"
+		(property "Value" "2.2u/1A"
 			(at 242.57 41.91 90)
 			(effects
 				(font
@@ -7935,7 +7946,7 @@
 				)
 			)
 		)
-		(property "Value" "2u2"
+		(property "Value" "2.2u/1A"
 			(at 104.14 165.1 90)
 			(effects
 				(font
@@ -8062,7 +8073,7 @@
 		(on_board yes)
 		(dnp no)
 		(uuid "bf982d46-0f55-4470-a4d2-5ca7b3841708")
-		(property "Reference" "C40"
+		(property "Reference" "C41"
 			(at 113.03 30.4799 0)
 			(effects
 				(font
@@ -8116,7 +8127,7 @@
 		(instances
 			(project "flight-controller"
 				(path "/52d2474d-2865-43c6-846b-d5f8a367c5f4/d9c0588f-daf7-400c-b697-bf3dc495626c"
-					(reference "C40")
+					(reference "C41")
 					(unit 1)
 				)
 			)
@@ -8131,7 +8142,7 @@
 		(on_board yes)
 		(dnp no)
 		(uuid "c231c0c5-8c43-45ed-9ce8-bdac4d725391")
-		(property "Reference" "C47"
+		(property "Reference" "C48"
 			(at 95.25 86.3599 0)
 			(effects
 				(font
@@ -8185,7 +8196,7 @@
 		(instances
 			(project "flight-controller"
 				(path "/52d2474d-2865-43c6-846b-d5f8a367c5f4/d9c0588f-daf7-400c-b697-bf3dc495626c"
-					(reference "C47")
+					(reference "C48")
 					(unit 1)
 				)
 			)
@@ -8460,7 +8471,7 @@
 	)
 	(symbol
 		(lib_id "power:GND")
-		(at 44.45 163.83 0)
+		(at 35.56 163.83 0)
 		(mirror y)
 		(unit 1)
 		(exclude_from_sim no)
@@ -8468,8 +8479,8 @@
 		(on_board yes)
 		(dnp no)
 		(uuid "cd287387-9edf-4226-978a-c3e631293c6c")
-		(property "Reference" "#PWR0123"
-			(at 44.45 170.18 0)
+		(property "Reference" "#PWR0118"
+			(at 35.56 170.18 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -8478,7 +8489,7 @@
 			)
 		)
 		(property "Value" "GND"
-			(at 44.45 168.91 0)
+			(at 35.56 168.91 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -8486,7 +8497,7 @@
 			)
 		)
 		(property "Footprint" ""
-			(at 44.45 163.83 0)
+			(at 35.56 163.83 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -8495,7 +8506,7 @@
 			)
 		)
 		(property "Datasheet" ""
-			(at 44.45 163.83 0)
+			(at 35.56 163.83 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -8504,7 +8515,7 @@
 			)
 		)
 		(property "Description" "Power symbol creates a global label with name \"GND\" , ground"
-			(at 44.45 163.83 0)
+			(at 35.56 163.83 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -8518,7 +8529,7 @@
 		(instances
 			(project "flight-controller"
 				(path "/52d2474d-2865-43c6-846b-d5f8a367c5f4/d9c0588f-daf7-400c-b697-bf3dc495626c"
-					(reference "#PWR0123")
+					(reference "#PWR0118")
 					(unit 1)
 				)
 			)
@@ -8741,7 +8752,7 @@
 		(on_board yes)
 		(dnp no)
 		(uuid "eb1c809a-2c0e-4f96-b804-709402dec973")
-		(property "Reference" "C49"
+		(property "Reference" "C50"
 			(at 233.68 101.5999 0)
 			(effects
 				(font
@@ -8795,7 +8806,7 @@
 		(instances
 			(project "flight-controller"
 				(path "/52d2474d-2865-43c6-846b-d5f8a367c5f4/d9c0588f-daf7-400c-b697-bf3dc495626c"
-					(reference "C49")
+					(reference "C50")
 					(unit 1)
 				)
 			)
@@ -8870,7 +8881,7 @@
 	)
 	(symbol
 		(lib_id "power:GND")
-		(at 73.66 167.64 0)
+		(at 64.77 167.64 0)
 		(mirror y)
 		(unit 1)
 		(exclude_from_sim no)
@@ -8878,8 +8889,8 @@
 		(on_board yes)
 		(dnp no)
 		(uuid "fa898a90-b47b-48c7-b741-a73ba2e29ce5")
-		(property "Reference" "#PWR0119"
-			(at 73.66 173.99 0)
+		(property "Reference" "#PWR0120"
+			(at 64.77 173.99 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -8888,7 +8899,7 @@
 			)
 		)
 		(property "Value" "GND"
-			(at 73.66 172.72 0)
+			(at 64.77 172.72 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -8896,7 +8907,7 @@
 			)
 		)
 		(property "Footprint" ""
-			(at 73.66 167.64 0)
+			(at 64.77 167.64 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -8905,7 +8916,7 @@
 			)
 		)
 		(property "Datasheet" ""
-			(at 73.66 167.64 0)
+			(at 64.77 167.64 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -8914,7 +8925,7 @@
 			)
 		)
 		(property "Description" "Power symbol creates a global label with name \"GND\" , ground"
-			(at 73.66 167.64 0)
+			(at 64.77 167.64 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -8928,7 +8939,7 @@
 		(instances
 			(project "flight-controller"
 				(path "/52d2474d-2865-43c6-846b-d5f8a367c5f4/d9c0588f-daf7-400c-b697-bf3dc495626c"
-					(reference "#PWR0119")
+					(reference "#PWR0120")
 					(unit 1)
 				)
 			)
@@ -9083,7 +9094,7 @@
 		(on_board yes)
 		(dnp no)
 		(uuid "fdd32ae8-35a5-4f0d-89e4-98de78159c1e")
-		(property "Reference" "C44"
+		(property "Reference" "C45"
 			(at 113.03 55.8799 0)
 			(effects
 				(font
@@ -9137,7 +9148,7 @@
 		(instances
 			(project "flight-controller"
 				(path "/52d2474d-2865-43c6-846b-d5f8a367c5f4/d9c0588f-daf7-400c-b697-bf3dc495626c"
-					(reference "C44")
+					(reference "C45")
 					(unit 1)
 				)
 			)

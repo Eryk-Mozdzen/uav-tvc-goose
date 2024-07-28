@@ -1,0 +1,120 @@
+(footprint "PA4341.XXXNLT"
+	(version 20240108)
+	(generator "pcbnew")
+	(generator_version "8.0")
+	(layer "F.Cu")
+	(property "Reference" "REF**"
+		(at 0 -4.25 0)
+		(unlocked yes)
+		(layer "F.SilkS")
+		(uuid "e8293797-4ba2-47e3-a9ea-9cd77a0e2930")
+		(effects
+			(font
+				(size 1 1)
+				(thickness 0.15)
+			)
+		)
+	)
+	(property "Value" "PA4341.XXXNLT"
+		(at 0 -5.715 0)
+		(unlocked yes)
+		(layer "F.Fab")
+		(uuid "adf67b5d-2127-4a3e-b86f-3635b1c11ad6")
+		(effects
+			(font
+				(size 1 1)
+				(thickness 0.15)
+			)
+		)
+	)
+	(property "Footprint" ""
+		(at 0 0 0)
+		(unlocked yes)
+		(layer "F.Fab")
+		(hide yes)
+		(uuid "acfcb0d4-8721-419d-9731-35bb82bfa4f0")
+		(effects
+			(font
+				(size 1 1)
+				(thickness 0.15)
+			)
+		)
+	)
+	(property "Datasheet" ""
+		(at 0 0 0)
+		(unlocked yes)
+		(layer "F.Fab")
+		(hide yes)
+		(uuid "cdbbdbc4-c203-4e3d-93a1-da4c8fc2e017")
+		(effects
+			(font
+				(size 1 1)
+				(thickness 0.15)
+			)
+		)
+	)
+	(property "Description" ""
+		(at 0 0 0)
+		(unlocked yes)
+		(layer "F.Fab")
+		(hide yes)
+		(uuid "c13e9361-1680-4689-b019-9a51687f5425")
+		(effects
+			(font
+				(size 1 1)
+				(thickness 0.15)
+			)
+		)
+	)
+	(attr smd)
+	(fp_rect
+		(start -3.2 -3.3)
+		(end 3.2 3.3)
+		(stroke
+			(width 0.1)
+			(type default)
+		)
+		(fill none)
+		(layer "F.Fab")
+		(uuid "8186e1cd-ecfa-4dd4-bb3e-df8b21f97a2c")
+	)
+	(fp_text user "${REFERENCE}"
+		(at 0 -7.62 0)
+		(unlocked yes)
+		(layer "F.Fab")
+		(uuid "e30886f9-5516-4635-bdcf-0164c47e0b90")
+		(effects
+			(font
+				(size 1 1)
+				(thickness 0.15)
+			)
+		)
+	)
+	(pad "1" smd roundrect
+		(at -2.975 0)
+		(size 2.15 3.4)
+		(layers "F.Cu" "F.Paste" "F.Mask")
+		(roundrect_rratio 0.09302325581)
+		(thermal_bridge_angle 45)
+		(uuid "56243189-d000-450a-aa02-9afb033bd29b")
+	)
+	(pad "2" smd roundrect
+		(at 2.875 0)
+		(size 2.15 3.4)
+		(layers "F.Cu" "F.Paste" "F.Mask")
+		(roundrect_rratio 0.09302325581)
+		(thermal_bridge_angle 45)
+		(uuid "4ddcfcbb-eec9-42e1-af2b-4ddca0246397")
+	)
+	(model "${KIPRJMOD}/models/pa4341.xxxnlt.step"
+		(offset
+			(xyz 0 0 0)
+		)
+		(scale
+			(xyz 1 1 1)
+		)
+		(rotate
+			(xyz 0 0 0)
+		)
+	)
+)
