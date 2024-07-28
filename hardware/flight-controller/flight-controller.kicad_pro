@@ -473,7 +473,7 @@
       "plot": "",
       "pos_files": "",
       "specctra_dsn": "",
-      "step": "",
+      "step": "flight-controller.step",
       "svg": "",
       "vrml": ""
     },
