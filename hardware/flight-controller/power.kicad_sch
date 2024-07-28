@@ -5944,7 +5944,7 @@
 				(hide yes)
 			)
 		)
-		(property "Footprint" ""
+		(property "Footprint" "goose:JS102011SAQN"
 			(at 49.53 71.12 0)
 			(effects
 				(font
