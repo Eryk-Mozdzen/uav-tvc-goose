@@ -88,6 +88,17 @@
 		(uuid "97cc52af-753f-4828-9b3c-f5591507a0fb")
 	)
 	(fp_rect
+		(start -4 -3)
+		(end 4 3)
+		(stroke
+			(width 0.05)
+			(type default)
+		)
+		(fill none)
+		(layer "F.CrtYd")
+		(uuid "4acf3547-061b-444b-8d8c-825148e0f2ea")
+	)
+	(fp_rect
 		(start -1.95 -2.45)
 		(end 1.95 2.45)
 		(stroke

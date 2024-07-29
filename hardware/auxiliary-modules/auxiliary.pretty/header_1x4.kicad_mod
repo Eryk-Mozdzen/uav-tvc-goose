@@ -67,6 +67,28 @@
 		)
 	)
 	(attr through_hole)
+	(fp_rect
+		(start -1.905 -1.905)
+		(end 9.525 1.905)
+		(stroke
+			(width 0.05)
+			(type default)
+		)
+		(fill none)
+		(layer "F.CrtYd")
+		(uuid "a953d70f-f51c-425d-86a0-8ddcf442c6a8")
+	)
+	(fp_rect
+		(start -1.27 -1.27)
+		(end 8.89 1.27)
+		(stroke
+			(width 0.1)
+			(type default)
+		)
+		(fill none)
+		(layer "F.Fab")
+		(uuid "5d6ef152-47fe-4ed3-bcbf-877b59dd8509")
+	)
 	(fp_text user "${REFERENCE}"
 		(at 0 2.5 0)
 		(unlocked yes)
@@ -81,7 +103,7 @@
 	)
 	(pad "1" thru_hole circle
 		(at 0 0)
-		(size 1.524 1.524)
+		(size 1.9 1.9)
 		(drill 1)
 		(layers "*.Cu" "*.Mask")
 		(remove_unused_layers no)
@@ -89,7 +111,7 @@
 	)
 	(pad "2" thru_hole circle
 		(at 2.54 0)
-		(size 1.524 1.524)
+		(size 1.9 1.9)
 		(drill 1)
 		(layers "*.Cu" "*.Mask")
 		(remove_unused_layers no)
@@ -97,7 +119,7 @@
 	)
 	(pad "3" thru_hole circle
 		(at 5.08 0)
-		(size 1.524 1.524)
+		(size 1.9 1.9)
 		(drill 1)
 		(layers "*.Cu" "*.Mask")
 		(remove_unused_layers no)
@@ -105,7 +127,7 @@
 	)
 	(pad "4" thru_hole circle
 		(at 7.62 0)
-		(size 1.524 1.524)
+		(size 1.9 1.9)
 		(drill 1)
 		(layers "*.Cu" "*.Mask")
 		(remove_unused_layers no)
