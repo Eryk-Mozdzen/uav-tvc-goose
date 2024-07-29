@@ -6,7 +6,7 @@
 	(paper "A4")
 	(title_block
 		(title "UAV TVC Goose Auxiliary Modules")
-		(date "2024-07-28")
+		(date "2024-07-29")
 		(rev "V1.0")
 		(comment 4 "Author: Eryk Możdżeń")
 	)
