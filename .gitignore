@@ -4,7 +4,6 @@
 *.bak
 *-backups
 *.kicad_prl
-*.step
 fp-info-cache
 _autosave-*
 \#auto_saved_files#
