@@ -9,20 +9,31 @@ extern "C" {
 #include <stdint.h>
 #include <stdbool.h>
 
+typedef void (*protocol_callback_rx_t)(const uint8_t, const void *, const uint32_t);
+typedef void (*protocol_callback_tx_t)(const void *, const uint32_t);
+
 typedef struct {
     uint8_t *buffer;
-    size_t size;
-    size_t counter;
-} protocol_decoder_t;
+    uint32_t size;
+    uint32_t read;
+    uint32_t write;
+} fifo_t;
 
 typedef struct {
-    void *payload;
-    size_t size;
-    uint8_t id;
-} protocol_message_t;
+    protocol_callback_tx_t callback_tx;
+    protocol_callback_rx_t callback_rx;
+    fifo_t fifo_tx;
+    fifo_t fifo_rx;
+    uint32_t last_time;
+} protocol_t;
 
-size_t protocol_encode(void *dest, const protocol_message_t *message);
-bool protocol_decode(protocol_decoder_t *decoder, const uint8_t byte, protocol_message_t *message);
+typedef struct {
+    uint32_t time;
+    bool available;
+} protocol_info_t;
+
+void protocol_enqueue(protocol_t *obj, const uint8_t id, const void *payload, const uint32_t payload_size);
+void protocol_process(protocol_t *obj, const protocol_info_t *info);
 
 #ifdef __cplusplus
 }
