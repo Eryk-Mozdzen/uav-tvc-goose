@@ -6,7 +6,7 @@
 	(paper "A4")
 	(title_block
 		(title "UAV TVC Goose Flight Controller")
-		(date "2024-07-28")
+		(date "2024-07-31")
 		(rev "V2.1")
 		(comment 4 "Author: Eryk Możdżeń")
 	)
@@ -1759,7 +1759,7 @@
 					(justify left)
 				)
 			)
-			(property "Value" "VL14340"
+			(property "Value" "LV14340"
 				(at 0.508 16.764 0)
 				(effects
 					(font
@@ -4755,7 +4755,7 @@
 				(justify left)
 			)
 		)
-		(property "Value" "~"
+		(property "Value" "SK56"
 			(at 71.12 129.2224 90)
 			(effects
 				(font
@@ -4773,7 +4773,7 @@
 				(hide yes)
 			)
 		)
-		(property "Datasheet" "~"
+		(property "Datasheet" "https://diotec.com/request/datasheet/sk52.pdf"
 			(at 73.66 128.27 0)
 			(effects
 				(font
@@ -4962,7 +4962,7 @@
 				)
 			)
 		)
-		(property "Value" "VL14340"
+		(property "Value" "LV14340"
 			(at 52.07 113.03 0)
 			(effects
 				(font
@@ -5339,7 +5339,7 @@
 				(hide yes)
 			)
 		)
-		(property "Datasheet" "~"
+		(property "Datasheet" "https://www.mouser.pl/datasheet/2/447/pulse_plei_s_a0006349355_1-2904706.pdf"
 			(at 78.74 123.19 0)
 			(effects
 				(font
@@ -5926,22 +5926,21 @@
 		(dnp no)
 		(uuid "aa59d1c3-98b4-41bf-8c9d-84928bdad38e")
 		(property "Reference" "SW1"
-			(at 58.166 71.12 90)
+			(at 54.102 69.85 90)
 			(effects
 				(font
 					(size 1.27 1.27)
 				)
-				(justify left)
+				(justify right)
 			)
 		)
-		(property "Value" "SW_Push_SPDT"
-			(at 44.45 72.3899 90)
+		(property "Value" "JS102011SAQN"
+			(at 54.102 71.882 90)
 			(effects
 				(font
 					(size 1.27 1.27)
 				)
-				(justify left)
-				(hide yes)
+				(justify right)
 			)
 		)
 		(property "Footprint" "goose:JS102011SAQN"
@@ -5953,7 +5952,7 @@
 				(hide yes)
 			)
 		)
-		(property "Datasheet" "~"
+		(property "Datasheet" "https://www.mouser.pl/datasheet/2/240/js-3050885.pdf"
 			(at 49.53 71.12 0)
 			(effects
 				(font

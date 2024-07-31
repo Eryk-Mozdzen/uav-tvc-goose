@@ -6,7 +6,7 @@
 	(paper "A4")
 	(title_block
 		(title "UAV TVC Goose Flight Controller")
-		(date "2024-07-28")
+		(date "2024-07-31")
 		(rev "V2.1")
 		(comment 4 "Author: Eryk Możdżeń")
 	)
@@ -9031,14 +9031,14 @@
 		(dnp no)
 		(uuid "ade97830-3b73-446f-8a71-72347f606c23")
 		(property "Reference" "SW2"
-			(at 31.75 83.566 0)
+			(at 31.75 81.534 0)
 			(effects
 				(font
 					(size 1.27 1.27)
 				)
 			)
 		)
-		(property "Value" "~"
+		(property "Value" "KMS231GPLFS"
 			(at 31.75 83.82 0)
 			(effects
 				(font
@@ -9055,7 +9055,7 @@
 				(hide yes)
 			)
 		)
-		(property "Datasheet" ""
+		(property "Datasheet" "https://www.mouser.pl/datasheet/2/240/kms-3050656.pdf"
 			(at 31.75 83.82 0)
 			(effects
 				(font
