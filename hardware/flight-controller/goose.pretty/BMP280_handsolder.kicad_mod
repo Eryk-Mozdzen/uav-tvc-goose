@@ -88,8 +88,8 @@
 		(uuid "1980f548-8b4c-4a26-876f-2dc2d568023b")
 	)
 	(fp_rect
-		(start -2 -2.5)
-		(end 2 2.5)
+		(start -2.5 -1.5)
+		(end 2.5 1.5)
 		(stroke
 			(width 0.05)
 			(type default)
