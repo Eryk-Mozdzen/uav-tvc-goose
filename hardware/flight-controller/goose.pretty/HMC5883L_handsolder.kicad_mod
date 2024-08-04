@@ -233,6 +233,34 @@
 		(thermal_bridge_angle 45)
 		(uuid "da036c51-df64-4a76-adaa-2cf63d38e005")
 	)
+	(zone
+		(net 0)
+		(net_name "")
+		(layers "*.Cu")
+		(uuid "7c40e725-11b1-46b1-b57f-9c7277432e03")
+		(hatch edge 0.5)
+		(connect_pads
+			(clearance 0)
+		)
+		(min_thickness 0.25)
+		(filled_areas_thickness no)
+		(keepout
+			(tracks not_allowed)
+			(vias not_allowed)
+			(pads not_allowed)
+			(copperpour not_allowed)
+			(footprints allowed)
+		)
+		(fill
+			(thermal_gap 0.5)
+			(thermal_bridge_width 0.5)
+		)
+		(polygon
+			(pts
+				(xy -1 -1) (xy 1 -1) (xy 1 1) (xy -1 1)
+			)
+		)
+	)
 	(model "${KIPRJMOD}/models/hmc5883l.step"
 		(offset
 			(xyz 0 0 0)
