@@ -6,7 +6,7 @@
 	(paper "A4")
 	(title_block
 		(title "UAV TVC Goose Flight Controller")
-		(date "2024-08-04")
+		(date "2024-08-05")
 		(rev "V2.1")
 		(comment 4 "Author: Eryk Możdżeń")
 	)

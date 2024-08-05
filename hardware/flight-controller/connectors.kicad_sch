@@ -6,7 +6,7 @@
 	(paper "A4")
 	(title_block
 		(title "UAV TVC Goose Flight Controller")
-		(date "2024-08-04")
+		(date "2024-08-05")
 		(rev "V2.1")
 		(comment 4 "Author: Eryk Możdżeń")
 	)
@@ -3022,7 +3022,7 @@
 	)
 	(text "servos"
 		(exclude_from_sim no)
-		(at 225.552 20.066 0)
+		(at 212.09 19.812 0)
 		(effects
 			(font
 				(size 2.54 2.54)

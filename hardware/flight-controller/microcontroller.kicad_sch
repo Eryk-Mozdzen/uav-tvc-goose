@@ -6,7 +6,7 @@
 	(paper "A4")
 	(title_block
 		(title "UAV TVC Goose Flight Controller")
-		(date "2024-08-04")
+		(date "2024-08-05")
 		(rev "V2.1")
 		(comment 4 "Author: Eryk Możdżeń")
 	)
@@ -3135,6 +3135,10 @@
 		(uuid "3e6d1c7d-5e63-4f3b-94a0-f693975266b9")
 	)
 	(no_connect
+		(at 110.49 127)
+		(uuid "3ebe0047-9d46-4553-820d-bf28ec39156e")
+	)
+	(no_connect
 		(at 110.49 119.38)
 		(uuid "60765617-96dc-416a-9e47-6695db0c18df")
 	)
@@ -3181,10 +3185,6 @@
 	(no_connect
 		(at 77.47 154.94)
 		(uuid "d3dd6418-90c9-4a97-85dc-f329904b5574")
-	)
-	(no_connect
-		(at 110.49 139.7)
-		(uuid "e40da12c-2941-4d83-9b8e-7833edf63371")
 	)
 	(no_connect
 		(at 214.63 95.25)
@@ -4366,16 +4366,6 @@
 	)
 	(wire
 		(pts
-			(xy 113.03 127) (xy 110.49 127)
-		)
-		(stroke
-			(width 0)
-			(type default)
-		)
-		(uuid "cc19e1e0-e060-4963-94ed-b7b754724016")
-	)
-	(wire
-		(pts
 			(xy 138.43 137.16) (xy 138.43 138.43)
 		)
 		(stroke
@@ -4553,6 +4543,16 @@
 			(type default)
 		)
 		(uuid "e981b87d-bf0c-4065-a33e-7a4eb956f3a7")
+	)
+	(wire
+		(pts
+			(xy 113.03 139.7) (xy 110.49 139.7)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "efc7b78f-84f8-4d66-8c72-9e918566b103")
 	)
 	(wire
 		(pts
@@ -5331,7 +5331,7 @@
 	)
 	(global_label "IMU_INT"
 		(shape input)
-		(at 113.03 127 0)
+		(at 113.03 139.7 0)
 		(fields_autoplaced yes)
 		(effects
 			(font
@@ -5341,7 +5341,7 @@
 		)
 		(uuid "82f196fc-1330-46d4-a0f1-c945deffa093")
 		(property "Intersheetrefs" "${INTERSHEET_REFS}"
-			(at 123.2724 127 0)
+			(at 123.2724 139.7 0)
 			(effects
 				(font
 					(size 1.27 1.27)
