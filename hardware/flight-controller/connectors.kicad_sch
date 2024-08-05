@@ -1883,16 +1883,6 @@
 	)
 	(wire
 		(pts
-			(xy 63.5 161.29) (xy 76.2 161.29)
-		)
-		(stroke
-			(width 0)
-			(type default)
-		)
-		(uuid "24e98384-20da-43c1-aded-f442d40d9465")
-	)
-	(wire
-		(pts
 			(xy 55.88 102.87) (xy 81.28 102.87)
 		)
 		(stroke
@@ -2103,6 +2093,16 @@
 	)
 	(wire
 		(pts
+			(xy 50.8 166.37) (xy 38.1 166.37)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "60876db4-4d67-4826-b055-da1b1a827697")
+	)
+	(wire
+		(pts
 			(xy 151.13 167.64) (xy 153.67 167.64)
 		)
 		(stroke
@@ -2110,16 +2110,6 @@
 			(type default)
 		)
 		(uuid "61f22311-2e5e-4ac0-9964-2c363312a1b3")
-	)
-	(wire
-		(pts
-			(xy 76.2 167.64) (xy 76.2 161.29)
-		)
-		(stroke
-			(width 0)
-			(type default)
-		)
-		(uuid "6291b2d0-5fcb-45ed-8ed2-2899f05d4824")
 	)
 	(wire
 		(pts
@@ -2833,6 +2823,16 @@
 	)
 	(wire
 		(pts
+			(xy 38.1 166.37) (xy 38.1 167.64)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "f5f2485c-be34-4c57-a703-06e2617bc59b")
+	)
+	(wire
+		(pts
 			(xy 63.5 158.75) (xy 86.36 158.75)
 		)
 		(stroke
@@ -3057,13 +3057,13 @@
 		(uuid "f9d3a028-32c5-4f32-9ce8-8b8f532018ce")
 	)
 	(label "LOAD_EN"
-		(at 64.77 161.29 0)
+		(at 39.37 166.37 180)
 		(fields_autoplaced yes)
 		(effects
 			(font
 				(size 1.27 1.27)
 			)
-			(justify left bottom)
+			(justify right bottom)
 		)
 		(uuid "332416a5-44da-4371-816b-215ae3ef8990")
 	)
@@ -3267,22 +3267,22 @@
 	)
 	(global_label "GPS_TXD"
 		(shape input)
-		(at 50.8 166.37 180)
+		(at 63.5 161.29 0)
 		(fields_autoplaced yes)
 		(effects
 			(font
 				(size 1.27 1.27)
 			)
-			(justify right)
+			(justify left)
 		)
 		(uuid "773b88e7-6f0c-4c1b-97b8-6adc5e9c1a81")
 		(property "Intersheetrefs" "${INTERSHEET_REFS}"
-			(at 39.6506 166.37 0)
+			(at 74.6494 161.29 0)
 			(effects
 				(font
 					(size 1.27 1.27)
 				)
-				(justify right)
+				(justify left)
 				(hide yes)
 			)
 		)
@@ -8633,7 +8633,7 @@
 	)
 	(symbol
 		(lib_id "power:GND")
-		(at 76.2 167.64 0)
+		(at 38.1 167.64 0)
 		(mirror y)
 		(unit 1)
 		(exclude_from_sim no)
@@ -8642,7 +8642,7 @@
 		(dnp no)
 		(uuid "cd287387-9edf-4226-978a-c3e631293c6c")
 		(property "Reference" "#PWR0128"
-			(at 76.2 173.99 0)
+			(at 38.1 173.99 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -8651,7 +8651,7 @@
 			)
 		)
 		(property "Value" "GND"
-			(at 76.2 172.72 0)
+			(at 38.1 172.72 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -8659,7 +8659,7 @@
 			)
 		)
 		(property "Footprint" ""
-			(at 76.2 167.64 0)
+			(at 38.1 167.64 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -8668,7 +8668,7 @@
 			)
 		)
 		(property "Datasheet" ""
-			(at 76.2 167.64 0)
+			(at 38.1 167.64 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -8677,7 +8677,7 @@
 			)
 		)
 		(property "Description" "Power symbol creates a global label with name \"GND\" , ground"
-			(at 76.2 167.64 0)
+			(at 38.1 167.64 0)
 			(effects
 				(font
 					(size 1.27 1.27)
