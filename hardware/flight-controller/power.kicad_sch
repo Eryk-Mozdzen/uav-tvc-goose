@@ -5,7 +5,7 @@
 	(uuid "582f4844-1759-41ec-899d-4e7834c8d8b4")
 	(paper "A4")
 	(title_block
-		(title "UAV TVC Goose Flight Controller")
+		(title "UAV TVC Goose II: Flight Controller")
 		(date "2024-08-05")
 		(rev "V2.1")
 		(comment 4 "Author: Eryk Możdżeń")
