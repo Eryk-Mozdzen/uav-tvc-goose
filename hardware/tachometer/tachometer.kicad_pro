@@ -485,7 +485,7 @@
       "plot": "gerbers/",
       "pos_files": "",
       "specctra_dsn": "",
-      "step": "",
+      "step": "tachometer.step",
       "svg": "",
       "vrml": ""
     },

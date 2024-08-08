@@ -9,6 +9,10 @@ _autosave-*
 \#auto_saved_files#
 gerbers
 *.zip
+tachometer.step
+flow-adapter.step
+range-adapter.step
+flight-controller.step
 
 # stm32cubeide
 .metadata
