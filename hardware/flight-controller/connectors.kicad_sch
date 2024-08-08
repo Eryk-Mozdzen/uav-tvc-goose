@@ -8641,7 +8641,7 @@
 		(on_board yes)
 		(dnp no)
 		(uuid "cd287387-9edf-4226-978a-c3e631293c6c")
-		(property "Reference" "#PWR0128"
+		(property "Reference" "#PWR0127"
 			(at 38.1 173.99 0)
 			(effects
 				(font
@@ -8691,7 +8691,7 @@
 		(instances
 			(project "flight-controller"
 				(path "/52d2474d-2865-43c6-846b-d5f8a367c5f4/d9c0588f-daf7-400c-b697-bf3dc495626c"
-					(reference "#PWR0128")
+					(reference "#PWR0127")
 					(unit 1)
 				)
 			)
@@ -9394,7 +9394,7 @@
 		(on_board yes)
 		(dnp no)
 		(uuid "fa898a90-b47b-48c7-b741-a73ba2e29ce5")
-		(property "Reference" "#PWR0127"
+		(property "Reference" "#PWR0128"
 			(at 64.77 173.99 0)
 			(effects
 				(font
@@ -9444,7 +9444,7 @@
 		(instances
 			(project "flight-controller"
 				(path "/52d2474d-2865-43c6-846b-d5f8a367c5f4/d9c0588f-daf7-400c-b697-bf3dc495626c"
-					(reference "#PWR0127")
+					(reference "#PWR0128")
 					(unit 1)
 				)
 			)
