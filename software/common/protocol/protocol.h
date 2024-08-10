@@ -11,9 +11,15 @@ extern "C" {
 
 #define PROTOCOL_INIT {NULL, NULL, NULL, NULL, {NULL, 0, 0, 0}, {NULL, 0, 0, 0}, true, 0, 0, NULL, NULL, 0, 0, 0, 0, 0}
 
+typedef enum {
+    PROTOCOL_ERROR_DOUBLE_ZERO,
+    PROTOCOL_ERROR_CRC_MISMATCH,
+    PROTOCOL_ERROR_DECODER_OVERFLOW,
+} protocol_error_t;
+
 typedef void (*protocol_tx_cb_t)(void *, const void *, const uint32_t);
 typedef void (*protocol_rx_cb_t)(void *, const uint8_t, const void *, const uint32_t);
-typedef void (*protocol_err_cb_t)(void *);
+typedef void (*protocol_err_cb_t)(void *, const protocol_error_t);
 
 typedef struct {
     uint8_t *buffer;

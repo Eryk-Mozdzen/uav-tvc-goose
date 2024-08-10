@@ -4,14 +4,14 @@
 
 #include "protocol.h"
 
-#define RX_LIMIT            16
+#define RX_LIMIT            32
 #define TX_SIZE_THRESHOLD   256
 #define TX_TIME_THRESHOLD   100
 
 #define MIN(a, b)           ((a)<(b) ? (a) : (b))
 
 enum state {
-    STATE_BEGIN,
+    STATE_START,
     STATE_DATA,
 };
 
@@ -32,19 +32,17 @@ static inline uint32_t fifo_pending(const protocol_fifo_t *fifo) {
     return ((fifo->read>fifo->write ? fifo->size : 0) + fifo->write) - fifo->read;
 }
 
-static uint32_t crc32(uint32_t crc, const void *buffer, const uint32_t size) {
+static void crc32(uint32_t *crc, const void *buffer, const uint32_t size) {
     for(uint32_t i=0; i<size; i++) {
-        crc ^=((uint8_t *)buffer)[i];
+        *crc ^=((uint8_t *)buffer)[i];
         for(uint8_t j=0; j<8; j++) {
-            if(crc & 0x00000001) {
-                crc = (crc>>1)^0xEDB88320;
+            if(*crc & 0x00000001) {
+                *crc = (*crc>>1)^0xEDB88320;
             } else {
-                crc >>=1;
+                *crc >>=1;
             }
         }
     }
-
-    return crc;
 }
 
 static uint8_t * cobs_encode(protocol_fifo_t *fifo, uint8_t *cobs, const void *buffer, const uint32_t size) {
@@ -70,8 +68,8 @@ static uint8_t * cobs_encode(protocol_fifo_t *fifo, uint8_t *cobs, const void *b
 
 void protocol_enqueue(protocol_t *instance, const uint8_t id, const void *payload, const uint32_t size) {
     uint32_t crc = 0;
-    crc = crc32(crc, &id, sizeof(id));
-    crc = crc32(crc, payload, size);
+    crc32(&crc, &id, sizeof(id));
+    crc32(&crc, payload, size);
 
     uint8_t *cobs = &instance->fifo_tx.buffer[instance->fifo_tx.write];
     fifo_write(&instance->fifo_tx, 1);
@@ -90,15 +88,15 @@ void protocol_process(protocol_t *instance) {
         const uint8_t byte = fifo_read(&instance->fifo_rx);
 
         switch(instance->state) {
-            case STATE_BEGIN: {
+            case STATE_START: {
                 instance->cursor = instance->decoded;
                 instance->cobs = byte;
                 instance->crc = 0;
                 instance->counter = 0;
                 if(byte) {
                     instance->state = STATE_DATA;
-                } else if(instance->callback_err) {
-                    instance->callback_err(instance->user);
+                } else {
+                    instance->callback_err(instance->user, PROTOCOL_ERROR_DOUBLE_ZERO);
                 }
             } break;
             case STATE_DATA: {
@@ -108,26 +106,34 @@ void protocol_process(protocol_t *instance) {
                     if(!instance->crc) {
                         const uint8_t id = instance->decoded[0];
                         const uint8_t *payload = &instance->decoded[1];
-                        const uint32_t size = instance->cursor - instance->decoded - 9;
+                        const uint32_t size = instance->cursor - instance->decoded - 5;
 
                         instance->callback_rx(instance->user, id, payload, size);
-                    } else if(instance->callback_err) {
-                        instance->callback_err(instance->user);
+                    } else {
+                        instance->callback_err(instance->user, PROTOCOL_ERROR_CRC_MISMATCH);
                     }
 
-                    instance->state = STATE_BEGIN;
+                    instance->state = STATE_START;
                 } else if(instance->cobs==instance->counter) {
                     if(instance->cobs!=0xFF) {
                         *instance->cursor = 0;
-                        instance->crc = crc32(instance->crc, instance->cursor, 1);
+                        crc32(&instance->crc, instance->cursor, 1);
                         instance->cursor++;
+                        if(instance->cursor>=instance->decoded+instance->max) {
+                            instance->callback_err(instance->user, PROTOCOL_ERROR_DECODER_OVERFLOW);
+                            instance->state = STATE_START;
+                        }
                     }
                     instance->cobs = byte;
                     instance->counter = 0;
                 } else {
                     *instance->cursor = byte;
-                    instance->crc = crc32(instance->crc, instance->cursor, 1);
+                    crc32(&instance->crc, instance->cursor, 1);
                     instance->cursor++;
+                    if(instance->cursor>=instance->decoded+instance->max) {
+                        instance->callback_err(instance->user, PROTOCOL_ERROR_DECODER_OVERFLOW);
+                        instance->state = STATE_START;
+                    }
                 }
             } break;
         }

@@ -14,15 +14,16 @@ Serial::Serial(const char *port, QObject *parent) : QObject{parent} {
         if(self->serial.isOpen()) {
             self->protocol.available = false;
             self->serial.write(reinterpret_cast<const char *>(data), size);
+            self->serial.flush();
         }
     };
     protocol.callback_rx = [](void *user, const uint8_t id, const void *payload, const uint32_t size) {
         Serial *self = reinterpret_cast<Serial *>(user);
         self->receive(id, payload, size);
     };
-    protocol.callback_err = [](void *user) {
+    protocol.callback_err = [](void *user, const protocol_error_t error) {
         Serial *self = reinterpret_cast<Serial *>(user);
-        self->error();
+        self->error(error);
     };
     protocol.fifo_tx.buffer = buffer_tx;
     protocol.fifo_tx.size = sizeof(buffer_tx);
@@ -59,6 +60,10 @@ Serial::Serial(const char *port, QObject *parent) : QObject{parent} {
 
     serial.setPortName(port);
     serial.setBaudRate(QSerialPort::Baud115200);
+    serial.setDataBits(QSerialPort::Data8);
+    serial.setParity(QSerialPort::NoParity);
+    serial.setStopBits(QSerialPort::TwoStop);
+    serial.setFlowControl(QSerialPort::NoFlowControl);
     serial.open(QIODevice::ReadWrite);
 }
 

@@ -21,7 +21,7 @@ public slots:
 
 signals:
 	void receive(const uint8_t id, const void *payload, const uint32_t size);
-	void error();
+	void error(const protocol_error_t error);
 
 public:
 	Serial(const char *port="/dev/ttyACM0", QObject *parent = nullptr);
