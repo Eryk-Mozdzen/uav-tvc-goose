@@ -33,8 +33,6 @@ static inline uint32_t fifo_pending(const protocol_fifo_t *fifo) {
 }
 
 static uint32_t crc32(uint32_t crc, const void *buffer, const uint32_t size) {
-    crc ^=0xFFFFFFFF;
-
     for(uint32_t i=0; i<size; i++) {
         crc ^=((uint8_t *)buffer)[i];
         for(uint8_t j=0; j<8; j++) {
@@ -45,8 +43,6 @@ static uint32_t crc32(uint32_t crc, const void *buffer, const uint32_t size) {
             }
         }
     }
-
-    crc ^=0xFFFFFFFF;
 
     return crc;
 }
@@ -72,89 +68,81 @@ static uint8_t * cobs_encode(protocol_fifo_t *fifo, uint8_t *cobs, const void *b
     return cobs;
 }
 
-void protocol_enqueue(protocol_t *obj, const uint8_t id, const void *payload, const uint32_t size) {
+void protocol_enqueue(protocol_t *instance, const uint8_t id, const void *payload, const uint32_t size) {
     uint32_t crc = 0;
-    crc = crc32(crc, &size, sizeof(size));
     crc = crc32(crc, &id, sizeof(id));
     crc = crc32(crc, payload, size);
 
-    uint8_t *cobs = &obj->fifo_tx.buffer[obj->fifo_tx.write];
-    fifo_write(&obj->fifo_tx, 1);
+    uint8_t *cobs = &instance->fifo_tx.buffer[instance->fifo_tx.write];
+    fifo_write(&instance->fifo_tx, 1);
 
-    cobs = cobs_encode(&obj->fifo_tx, cobs, &crc, sizeof(crc));
-    cobs = cobs_encode(&obj->fifo_tx, cobs, &size, sizeof(size));
-    cobs = cobs_encode(&obj->fifo_tx, cobs, &id, sizeof(id));
-    cobs = cobs_encode(&obj->fifo_tx, cobs, payload, size);
+    cobs = cobs_encode(&instance->fifo_tx, cobs, &id, sizeof(id));
+    cobs = cobs_encode(&instance->fifo_tx, cobs, payload, size);
+    cobs = cobs_encode(&instance->fifo_tx, cobs, &crc, sizeof(crc));
 
-    fifo_write(&obj->fifo_tx, 0);
+    fifo_write(&instance->fifo_tx, 0);
 }
 
-void protocol_process(protocol_t *obj) {
-    const uint32_t rx_pending = fifo_pending(&obj->fifo_rx);
+void protocol_process(protocol_t *instance) {
+    const uint32_t rx_pending = fifo_pending(&instance->fifo_rx);
 
     for(uint32_t i=0; i<RX_LIMIT && i<rx_pending; i++) {
-        const uint8_t byte = fifo_read(&obj->fifo_rx);
+        const uint8_t byte = fifo_read(&instance->fifo_rx);
 
-        switch(obj->state) {
+        switch(instance->state) {
             case STATE_BEGIN: {
-                obj->cursor = obj->decoded;
-                obj->cobs = byte;
-                obj->counter = 0;
-                obj->state = STATE_DATA;
+                instance->cursor = instance->decoded;
+                instance->cobs = byte;
+                instance->crc = 0;
+                instance->counter = 0;
+                if(byte) {
+                    instance->state = STATE_DATA;
+                } else if(instance->callback_err) {
+                    instance->callback_err(instance->user);
+                }
             } break;
             case STATE_DATA: {
-                obj->counter++;
+                instance->counter++;
 
                 if(!byte) {
-                    uint32_t frame_size;
-                    uint32_t frame_crc;
-                    memcpy(&frame_size, &obj->decoded[4], 4);
-                    memcpy(&frame_crc, &obj->decoded[0], 4);
+                    if(!instance->crc) {
+                        const uint8_t id = instance->decoded[0];
+                        const uint8_t *payload = &instance->decoded[1];
+                        const uint32_t size = instance->cursor - instance->decoded - 9;
 
-                    const uint32_t num = obj->cursor - obj->decoded;
-
-                    if((num-9)==frame_size) {
-                        const uint8_t id = obj->decoded[8];
-                        const uint8_t *payload = &obj->decoded[9];
-                        const uint32_t size = num - 9;
-
-                        uint32_t crc = 0;
-                        crc = crc32(crc, &size, sizeof(size));
-                        crc = crc32(crc, &id, sizeof(id));
-                        crc = crc32(crc, payload, size);
-
-                        if(frame_crc==crc) {
-                            obj->callback_rx(obj->ctx, id, payload, size);
-                        }
+                        instance->callback_rx(instance->user, id, payload, size);
+                    } else if(instance->callback_err) {
+                        instance->callback_err(instance->user);
                     }
 
-                    obj->state = STATE_BEGIN;
-                } else if(obj->cobs==obj->counter) {
-                    if(obj->cobs!=0xFF) {
-                        *obj->cursor = 0;
-                        obj->cursor++;
+                    instance->state = STATE_BEGIN;
+                } else if(instance->cobs==instance->counter) {
+                    if(instance->cobs!=0xFF) {
+                        *instance->cursor = 0;
+                        instance->crc = crc32(instance->crc, instance->cursor, 1);
+                        instance->cursor++;
                     }
-                    obj->cobs = byte;
-                    obj->counter = 0;
+                    instance->cobs = byte;
+                    instance->counter = 0;
                 } else {
-                    *obj->cursor = byte;
-                    obj->cursor++;
+                    *instance->cursor = byte;
+                    instance->crc = crc32(instance->crc, instance->cursor, 1);
+                    instance->cursor++;
                 }
-
             } break;
         }
     }
 
-    const uint32_t delta_time = obj->time - obj->time_last;
-    const uint32_t tx_pending = fifo_pending(&obj->fifo_tx);
+    const uint32_t delta_time = instance->time - instance->time_last;
+    const uint32_t tx_pending = fifo_pending(&instance->fifo_tx);
 
-    if(obj->available && tx_pending && (tx_pending>TX_SIZE_THRESHOLD || delta_time>TX_TIME_THRESHOLD)) {
-        const uint32_t len = MIN(tx_pending, obj->fifo_tx.size - obj->fifo_tx.read);
+    if(instance->available && tx_pending && (tx_pending>TX_SIZE_THRESHOLD || delta_time>TX_TIME_THRESHOLD)) {
+        const uint32_t len = MIN(tx_pending, instance->fifo_tx.size - instance->fifo_tx.read);
 
-        obj->callback_tx(obj->ctx, &obj->fifo_tx.buffer[obj->fifo_tx.read], len);
-        obj->fifo_tx.read +=len;
-        obj->fifo_tx.read %=obj->fifo_tx.size;
+        instance->callback_tx(instance->user, &instance->fifo_tx.buffer[instance->fifo_tx.read], len);
+        instance->fifo_tx.read +=len;
+        instance->fifo_tx.read %=instance->fifo_tx.size;
 
-        obj->time_last = obj->time;
+        instance->time_last = instance->time;
     }
 }

@@ -1,3 +1,4 @@
+#include <chrono>
 #include <QSerialPort>
 #include <QTimer>
 
@@ -7,17 +8,21 @@
 namespace common {
 
 Serial::Serial(const char *port, QObject *parent) : QObject{parent} {
-    protocol.ctx = this;
-    protocol.callback_tx = [](void *ctx, const void *data, const uint32_t size) {
-        Serial *self = reinterpret_cast<Serial *>(ctx);
+    protocol.user = this;
+    protocol.callback_tx = [](void *user, const void *data, const uint32_t size) {
+        Serial *self = reinterpret_cast<Serial *>(user);
         if(self->serial.isOpen()) {
             self->protocol.available = false;
             self->serial.write(reinterpret_cast<const char *>(data), size);
         }
     };
-    protocol.callback_rx = [](void *ctx, const uint8_t id, const void* payload, const uint32_t size) {
-        Serial *self = reinterpret_cast<Serial *>(ctx);
+    protocol.callback_rx = [](void *user, const uint8_t id, const void *payload, const uint32_t size) {
+        Serial *self = reinterpret_cast<Serial *>(user);
         self->receive(id, payload, size);
+    };
+    protocol.callback_err = [](void *user) {
+        Serial *self = reinterpret_cast<Serial *>(user);
+        self->error();
     };
     protocol.fifo_tx.buffer = buffer_tx;
     protocol.fifo_tx.size = sizeof(buffer_tx);
@@ -43,10 +48,14 @@ Serial::Serial(const char *port, QObject *parent) : QObject{parent} {
 
     QTimer *timer = new QTimer();
     connect(timer, &QTimer::timeout, [&]() {
-        protocol.time +=10;
+        const auto end = std::chrono::high_resolution_clock::now();
+        const auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count();
+
+        protocol.time = duration;
         protocol_process(&protocol);
     });
-    timer->start(10);
+    start = std::chrono::high_resolution_clock::now();
+    timer->start(1);
 
     serial.setPortName(port);
     serial.setBaudRate(QSerialPort::Baud115200);

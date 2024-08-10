@@ -9,10 +9,11 @@ extern "C" {
 #include <stdint.h>
 #include <stdbool.h>
 
-#define PROTOCOL_INIT {NULL, NULL, NULL, {NULL, 0, 0, 0}, {NULL, 0, 0, 0}, true, 0, 0, NULL, NULL, 0, 0, 0, 0}
+#define PROTOCOL_INIT {NULL, NULL, NULL, NULL, {NULL, 0, 0, 0}, {NULL, 0, 0, 0}, true, 0, 0, NULL, NULL, 0, 0, 0, 0, 0}
 
-typedef void (*protocol_callback_rx_t)(void *, const uint8_t, const void *, const uint32_t);
-typedef void (*protocol_callback_tx_t)(void *, const void *, const uint32_t);
+typedef void (*protocol_tx_cb_t)(void *, const void *, const uint32_t);
+typedef void (*protocol_rx_cb_t)(void *, const uint8_t, const void *, const uint32_t);
+typedef void (*protocol_err_cb_t)(void *);
 
 typedef struct {
     uint8_t *buffer;
@@ -22,9 +23,10 @@ typedef struct {
 } protocol_fifo_t;
 
 typedef struct {
-    void *ctx;
-    protocol_callback_tx_t callback_tx;
-    protocol_callback_rx_t callback_rx;
+    void *user;
+    protocol_tx_cb_t callback_tx;
+    protocol_rx_cb_t callback_rx;
+    protocol_err_cb_t callback_err;
     protocol_fifo_t fifo_tx;
     protocol_fifo_t fifo_rx;
     bool available;
@@ -37,10 +39,11 @@ typedef struct {
     uint8_t cobs;
     uint8_t counter;
     uint8_t state;
+    uint32_t crc;
 } protocol_t;
 
-void protocol_enqueue(protocol_t *obj, const uint8_t id, const void *payload, const uint32_t payload_size);
-void protocol_process(protocol_t *obj);
+void protocol_enqueue(protocol_t *instance, const uint8_t id, const void *payload, const uint32_t size);
+void protocol_process(protocol_t *instance);
 
 #ifdef __cplusplus
 }
