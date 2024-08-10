@@ -1,12 +1,14 @@
 #pragma once
 
 #include <QSerialPort>
+#include <QWidget>
+#include <QComboBox>
 
 #include "common/protocol/protocol.h"
 
 namespace common {
 
-class Serial : public QObject {
+class Serial : public QWidget {
     Q_OBJECT
 
 	uint8_t buffer_tx[10*1024];
@@ -16,6 +18,11 @@ class Serial : public QObject {
 	QSerialPort serial;
 	std::chrono::_V2::system_clock::time_point start;
 
+	QComboBox *portComboBox;
+
+	void updatePortComboBox();
+	void changePort(const QString &port);
+
 public slots:
 	void transmit(const uint8_t id, const void *payload, const uint32_t size);
 
@@ -24,8 +31,7 @@ signals:
 	void error(const protocol_error_t error);
 
 public:
-	Serial(const char *port="/dev/ttyACM0", QObject *parent = nullptr);
-	~Serial();
+	Serial(QWidget *parent = nullptr);
 };
 
 }
