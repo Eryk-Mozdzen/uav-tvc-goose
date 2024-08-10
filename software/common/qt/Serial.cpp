@@ -1,4 +1,3 @@
-#include <chrono>
 #include <QSerialPort>
 #include <QSerialPortInfo>
 #include <QTimer>
@@ -118,7 +117,7 @@ void Serial::updatePortComboBox() {
 
 void Serial::changePort(const QString &port) {
     if(!port.isEmpty() && (!serial.isOpen() || port!=serial.portName())) {
-        //qDebug() << text;
+        //qDebug() << port;
 
         if(serial.isOpen()) {
             serial.close();

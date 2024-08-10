@@ -103,10 +103,12 @@ void protocol_process(protocol_t *instance) {
                 instance->counter++;
 
                 if(!byte) {
-                    if(!instance->crc) {
+                    const uint32_t num = instance->cursor - instance->decoded;
+
+                    if(!instance->crc && num>=5) {
                         const uint8_t id = instance->decoded[0];
                         const uint8_t *payload = &instance->decoded[1];
-                        const uint32_t size = instance->cursor - instance->decoded - 5;
+                        const uint32_t size = num - 5;
 
                         instance->callback_rx(instance->user, id, payload, size);
                     } else {
