@@ -3,11 +3,14 @@
 #include <QHostAddress>
 #include <QProcess>
 #include <QTimer>
-#include <QGridLayout>
+#include <QVBoxLayout>
+#include <QFormLayout>
 #include <QGroupBox>
 #include <QComboBox>
 #include <QPushButton>
+#include <QLabel>
 #include <QDebug>
+#include <QMetaEnum>
 
 #include "common/qt/Network.h"
 #include "common/protocol/protocol.h"
@@ -48,20 +51,25 @@ Network::Network(QWidget *parent) : QWidget{parent} {
                 protocol.fifo_rx.write++;
                 protocol.fifo_rx.write %=protocol.fifo_rx.size;
             }
+
+            downloadBytes +=data.size();
         });
 
         connect(&socket, &QTcpSocket::bytesWritten, [&](qint64 bytes) {
-            (void)bytes;
             protocol.available = true;
+
+            uploadBytes +=bytes;
         });
 
         connect(&socket, &QTcpSocket::errorOccurred, [&](QAbstractSocket::SocketError error) {
+            uiLabels[0]->setText(QString(QMetaEnum::fromType<QAbstractSocket::SocketError>().valueToKey(error)).replace("Error",""));
+
             protocol.available = true;
-            qDebug() << error;
         });
 
         connect(&socket, &QTcpSocket::stateChanged, [&](QAbstractSocket::SocketState state) {
-            qDebug() << state;
+            uiLabels[0]->setText(QString(QMetaEnum::fromType<QAbstractSocket::SocketState>().valueToKey(state)).replace("State",""));
+
             switch(state) {
                 case QAbstractSocket::UnconnectedState:
                 case QAbstractSocket::HostLookupState:
@@ -91,16 +99,43 @@ Network::Network(QWidget *parent) : QWidget{parent} {
 
     QGridLayout *inside = new QGridLayout(this);
     QGroupBox *group = new QGroupBox("Network Interface");
-    QGridLayout *grid = new QGridLayout(group);
+    QVBoxLayout *layout = new QVBoxLayout(group);
+    QFormLayout *form = new QFormLayout();
 
     addressComboBox = new QComboBox();
     connect(addressComboBox, &QComboBox::currentTextChanged, this, &Network::changeAddress);
 
-    QPushButton *scanButton = new QPushButton("Scan");
+    scanButton = new QPushButton("Scan");
     connect(scanButton, &QPushButton::pressed, this, &Network::scanAddresses);
 
-    grid->addWidget(addressComboBox, 0, 0);
-    grid->addWidget(scanButton, 1, 0);
+    QTimer *timer = new QTimer();
+    connect(timer, &QTimer::timeout, [&]() {
+        if(socket.state()==QAbstractSocket::ConnectedState) {
+            uiLabels[1]->setText(QString::asprintf("%.3f kB/s", uploadBytes/1024.0));
+            uiLabels[2]->setText(QString::asprintf("%.3f kB/s", downloadBytes/1024.0));
+        } else {
+            uiLabels[1]->setText(QString::asprintf("--- kB/s"));
+            uiLabels[2]->setText(QString::asprintf("--- kB/s"));
+        }
+
+        uploadBytes = 0;
+        downloadBytes = 0;
+    });
+    start = std::chrono::high_resolution_clock::now();
+    timer->start(1000);
+
+    uiLabels[0] = new QLabel("---");
+    uiLabels[1] = new QLabel("--- kB/s");
+    uiLabels[2] = new QLabel("--- kB/s");
+
+    form->setLabelAlignment(Qt::AlignRight);
+    form->addRow("Status:", uiLabels[0]);
+    form->addRow("Upload:", uiLabels[1]);
+    form->addRow("Download:", uiLabels[2]);
+
+    layout->addLayout(form);
+    layout->addWidget(addressComboBox);
+    layout->addWidget(scanButton);
 
     inside->addWidget(group, 0, 0);
 
@@ -113,10 +148,12 @@ void Network::transmit(const uint8_t id, const void *payload, const uint32_t siz
 
 void Network::scanAddresses() {
     addressComboBox->clear();
+    scanButton->setDisabled(true);
+    scanButton->setText("0/0");
 
     const QList<QNetworkInterface> allInterfaces = QNetworkInterface::allInterfaces();
 
-    QList<QHostAddress> interfaces;
+    QList<QHostAddress> localAddresses;
 
     for(const QNetworkInterface &interface : allInterfaces) {
         if(interface.flags().testFlag(QNetworkInterface::IsUp) &&
@@ -124,36 +161,44 @@ void Network::scanAddresses() {
             !interface.flags().testFlag(QNetworkInterface::IsLoopBack)) {
             for(const QNetworkAddressEntry &entry : interface.addressEntries()) {
                 if(entry.ip().protocol()==QAbstractSocket::IPv4Protocol) {
-                    interfaces.append(entry.ip());
+                    localAddresses.append(entry.ip());
                 }
             }
         }
     }
 
-    if(interfaces.isEmpty()) {
-        return;
-    }
+    const int overall = localAddresses.size()*253;
+    scanButton->setText(QString::asprintf("0/%d", overall));
 
-    for(const QHostAddress &interface : interfaces) {
-        const quint32 baseIp = interface.toIPv4Address() & 0xFFFFFF00;   // assuming /24 net mask
+    for(const QHostAddress &localAddress : localAddresses) {
+        const quint32 netmask = 0xFFFFFF00;   // assuming 255.255.255.0 netmask
+        const quint32 subnet = localAddress.toIPv4Address() & netmask;
 
         for(int i=2; i<255; i++) {
-            const QHostAddress address(baseIp | i);
+            const QHostAddress address(subnet | i);
 
             QProcess *pingProcess = new QProcess(this);
 
-            connect(pingProcess, &QProcess::finished, [this, pingProcess](int exitCode, QProcess::ExitStatus exitStatus) {
+            connect(pingProcess, &QProcess::finished, [this, pingProcess, address](int exitCode, QProcess::ExitStatus exitStatus) {
                 if(exitCode==0 && exitStatus==QProcess::NormalExit) {
                     const QString output = pingProcess->readAllStandardOutput();
                     if(output.contains("ttl=")) {
-                        const QString addr = pingProcess->property("address").toString();
-                        addressComboBox->addItem(addr);
+                        addressComboBox->addItem(address.toString());
                     }
                 }
                 pingProcess->deleteLater();
+
+                const QStringList progress = scanButton->text().split("/");
+                const int ready = progress[0].toInt() + 1;
+                const int overall = progress[1].toInt();
+                scanButton->setText(QString::asprintf("%d/%d", ready, overall));
+
+                if(ready==overall) {
+                    scanButton->setDisabled(false);
+                    scanButton->setText("Scan");
+                }
             });
 
-            pingProcess->setProperty("address", address.toString());
             pingProcess->start("ping", QStringList() << "-c 1" << address.toString());
         }
     }

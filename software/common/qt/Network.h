@@ -3,6 +3,8 @@
 #include <QTcpSocket>
 #include <QWidget>
 #include <QComboBox>
+#include <QPushButton>
+#include <QLabel>
 
 #include "common/protocol/protocol.h"
 
@@ -19,6 +21,10 @@ class Network : public QWidget {
 	std::chrono::_V2::system_clock::time_point start;
 
 	QComboBox *addressComboBox;
+	QPushButton *scanButton;
+	QLabel *uiLabels[3];
+	int uploadBytes;
+	int downloadBytes;
 
 	void scanAddresses();
 	void changeAddress(const QString &port);
