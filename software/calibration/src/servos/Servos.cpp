@@ -103,8 +103,38 @@ Servos::Servos(Window *window, QWidget *parent) : Interface{"servos", parent}, w
             }
         });
     }
+}
 
+Interface * Servos::create() const {
+    Servos *instance = new Servos(window);
+    instance->startTransmit();
+    return instance;
+}
+
+void Servos::receive(const protocol_readings_t &readings) {
+    (void)readings;
+}
+
+void Servos::update(protocol_calibration_t &calibration) const {
+    calibration.servos[0] = sliders[0]->value();
+    calibration.servos[3] = sliders[1]->value();
+    calibration.servos[6] = sliders[2]->value();
+    calibration.servos[9] = sliders[3]->value();
+
+    calibration.servos[1]  = sliders[4]->value();
+    calibration.servos[4]  = sliders[5]->value();
+    calibration.servos[7]  = sliders[6]->value();
+    calibration.servos[10] = sliders[7]->value();
+
+    calibration.servos[2]  = sliders[8]->value();
+    calibration.servos[5]  = sliders[9]->value();
+    calibration.servos[8]  = sliders[10]->value();
+    calibration.servos[11] = sliders[11]->value();
+}
+
+void Servos::startTransmit() {
     QTimer *timer = new QTimer(this);
+
     connect(timer, &QTimer::timeout, [this]() {
         protocol_control_t control;
         control.motor = 0;
@@ -130,39 +160,8 @@ Servos::Servos(Window *window, QWidget *parent) : Interface{"servos", parent}, w
             } break;
         }
 
-        const protocol_message_t control_frame = {
-            &control,
-            sizeof(control),
-            PROTOCOL_ID_CONTROL
-        };
-
-        this->window->transmit(control_frame);
+        this->window->transmit(PROTOCOL_ID_CONTROL, &control, sizeof(control));
     });
 
     timer->start(50);
-}
-
-Interface * Servos::create() const {
-    return new Servos(window);
-}
-
-void Servos::receive(const protocol_readings_t &readings) {
-    (void)readings;
-}
-
-void Servos::update(protocol_calibration_t &calibration) const {
-    calibration.servos[0] = sliders[0]->value();
-    calibration.servos[3] = sliders[1]->value();
-    calibration.servos[6] = sliders[2]->value();
-    calibration.servos[9] = sliders[3]->value();
-
-    calibration.servos[1]  = sliders[4]->value();
-    calibration.servos[4]  = sliders[5]->value();
-    calibration.servos[7]  = sliders[6]->value();
-    calibration.servos[10] = sliders[7]->value();
-
-    calibration.servos[2]  = sliders[8]->value();
-    calibration.servos[5]  = sliders[9]->value();
-    calibration.servos[8]  = sliders[10]->value();
-    calibration.servos[11] = sliders[11]->value();
 }

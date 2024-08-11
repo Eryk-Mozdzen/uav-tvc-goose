@@ -2,7 +2,7 @@
 
 #include <QWidget>
 
-#include "protocol/protocol_data.h"
+#include "common/protocol/protocol_data.h"
 
 class Interface : public QWidget {
     QString name;

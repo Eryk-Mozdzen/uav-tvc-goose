@@ -1,47 +1,85 @@
 #include <QSerialPort>
+#include <QSerialPortInfo>
+#include <QMetaEnum>
 
-#include "Serial.h"
-#include "protocol/protocol.h"
+#include "common/qt/AbstractInterface.h"
+#include "common/qt/Serial.h"
 
-namespace shared {
+namespace common {
 
-Serial::Serial(const char *port, QObject *parent) : QObject{parent} {
-    decoder.buffer = decoder_buffer;
-    decoder.size = sizeof(decoder_buffer);
-    decoder.counter = 0;
-
-    serial.setPortName(port);
-    serial.setBaudRate(QSerialPort::Baud115200);
-
+Serial::Serial(QWidget *parent) : AbstractInterface{"Serial Interface", parent} {
     connect(&serial, &QSerialPort::readyRead, [&]() {
-        const QByteArray data = serial.readAll();
-
-		for(const uint8_t byte : data) {
-			protocol_message_t message;
-
-			if(protocol_decode(&decoder, byte, &message)) {
-				receive(message);
-			}
-		}
+        receiveBytes(serial.readAll());
     });
 
-    serial.open(QIODevice::ReadWrite);
+    connect(&serial, &QSerialPort::bytesWritten, [&](qint64 bytes) {
+        (void)bytes;
+        transmitAvailable(true);
+    });
+
+    connect(&serial, &QSerialPort::errorOccurred, [&](QSerialPort::SerialPortError error) {
+        setStatus(QString(QMetaEnum::fromType<QSerialPort::SerialPortError>().valueToKey(error)));
+
+        if(error==QSerialPort::NoError) {
+            transmitAvailable(true);
+        }
+    });
+
+    scanInput();
 }
 
-Serial::~Serial() {
+void Serial::transmitBytes(const QByteArray &bytes) {
     if(serial.isOpen()) {
-        serial.close();
+        transmitAvailable(false);
+        serial.write(bytes);
+        serial.flush();
     }
 }
 
-void Serial::transmit(const protocol_message_t &message) {
-    if(serial.isOpen()) {
-        uint8_t buffer[1024];
-        const uint16_t size = protocol_encode(buffer, &message);
+void Serial::scanInput() {
+    scanButton->setText("Scan ports");
 
-        serial.write(reinterpret_cast<char *>(buffer), size);
-        serial.waitForBytesWritten();
-	}
+    const QList<QSerialPortInfo> infos = QSerialPortInfo::availablePorts();
+
+    QList<QString> ports;
+    for(const QSerialPortInfo &info : infos) {
+        ports.append(info.portName());
+    }
+
+    for(const QString &port : ports) {
+        if(addressComboBox->findText(port)==-1) {
+            addressComboBox->addItem(port);
+        }
+    }
+
+    for(int i=0; i<addressComboBox->count(); i++) {
+        if(!ports.contains(addressComboBox->itemText(i))) {
+            addressComboBox->removeItem(i);
+            i--;
+        }
+    }
+
+    const int index = addressComboBox->findText(getDefaultInput());
+    if(index!=-1) {
+        addressComboBox->setCurrentIndex(index);
+    }
+}
+
+void Serial::changeInput(const QString &input) {
+    if(!input.isEmpty() && (!serial.isOpen() || input!=serial.portName())) {
+        if(serial.isOpen()) {
+            serial.close();
+        }
+
+        serial.setPortName(input);
+        serial.setBaudRate(QSerialPort::Baud115200);
+        serial.setDataBits(QSerialPort::Data8);
+        serial.setParity(QSerialPort::NoParity);
+        serial.setStopBits(QSerialPort::TwoStop);
+        serial.setFlowControl(QSerialPort::NoFlowControl);
+
+        serial.open(QIODevice::ReadWrite);
+    }
 }
 
 }

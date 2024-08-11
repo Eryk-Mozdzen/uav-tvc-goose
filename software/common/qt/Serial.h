@@ -2,26 +2,19 @@
 
 #include <QSerialPort>
 
-#include "protocol/protocol.h"
+#include "common/qt/AbstractInterface.h"
 
-namespace shared {
+namespace common {
 
-class Serial : public QObject {
-    Q_OBJECT
-
-	uint8_t decoder_buffer[1024];
-	protocol_decoder_t decoder;
+class Serial : public AbstractInterface {
 	QSerialPort serial;
 
-public slots:
-	void transmit(const protocol_message_t &message);
-
-signals:
-	void receive(const protocol_message_t &message);
+	void transmitBytes(const QByteArray &bytes) override;
+    void scanInput() override;
+	void changeInput(const QString &input) override;
 
 public:
-	Serial(const char *port="/dev/ttyACM0", QObject *parent = nullptr);
-	~Serial();
+	Serial(QWidget *parent = nullptr);
 };
 
 }

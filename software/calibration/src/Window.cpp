@@ -8,6 +8,7 @@
 #include <QPushButton>
 #include <QTextEdit>
 
+#include "common/protocol/protocol_data.h"
 #include "Window.h"
 #include "Magnetometer.h"
 #include "Accelerometer.h"
@@ -54,6 +55,19 @@ Window::Window(QWidget *parent) : QWidget{parent}, current{nullptr} {
     QGridLayout *grid = new QGridLayout(this);
 
     {
+        common::Serial *serial = new common::Serial(this);
+	    common::Network *network = new common::Network(this);
+
+        connect(serial, &common::Serial::receive, this, &Window::receive);
+        connect(network, &common::Network::receive, this, &Window::receive);
+        connect(this, &Window::transmit, serial, &common::Serial::transmit);
+        connect(this, &Window::transmit, network, &common::Network::transmit);
+
+        grid->addWidget(serial, 0, 0);
+        grid->addWidget(network, 1, 0);
+    }
+
+    {
         QGroupBox *group = new QGroupBox("applications");
         QHBoxLayout *layout  = new QHBoxLayout(group);
 
@@ -69,7 +83,7 @@ Window::Window(QWidget *parent) : QWidget{parent}, current{nullptr} {
             layout->addWidget(button);
         }
 
-        grid->addWidget(group, 0, 0);
+        grid->addWidget(group, 0, 1);
     }
 
     {
@@ -78,7 +92,7 @@ Window::Window(QWidget *parent) : QWidget{parent}, current{nullptr} {
 
         group->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
 
-        grid->addWidget(group, 1, 0);
+        grid->addWidget(group, 1, 1, 2, 1);
     }
 
     {
@@ -99,8 +113,7 @@ Window::Window(QWidget *parent) : QWidget{parent}, current{nullptr} {
 
         connect(button_read, &QPushButton::clicked, [&]() {
             calibration_text->setText("fetching...");
-            const protocol_message_t calibration_request = {nullptr, 0, PROTOCOL_ID_CALIBRATION};
-            transmit(calibration_request);
+            transmit(PROTOCOL_ID_CALIBRATION, NULL, 0);
         });
 
         connect(button_update, &QPushButton::clicked, [&]() {
@@ -117,12 +130,7 @@ Window::Window(QWidget *parent) : QWidget{parent}, current{nullptr} {
 
         connect(button_set, &QPushButton::clicked, [&]() {
             calibration_text->setText("saving...");
-            const protocol_message_t calibration_frame = {
-                &calibration,
-                sizeof(calibration),
-                PROTOCOL_ID_CALIBRATION
-            };
-            transmit(calibration_frame);
+            transmit(PROTOCOL_ID_CALIBRATION, &calibration, sizeof(calibration));
         });
 
         layout->addWidget(calibration_text);
@@ -130,7 +138,7 @@ Window::Window(QWidget *parent) : QWidget{parent}, current{nullptr} {
         layout->addWidget(button_update);
         layout->addWidget(button_set);
 
-        grid->addWidget(group, 0, 1, 2, 1);
+        grid->addWidget(group, 0, 2, 3, 1);
     }
 }
 
@@ -150,9 +158,9 @@ void Window::setCurrent(Interface *interface) {
     }
 }
 
-void Window::receive(const protocol_message_t &frame) {
-    if(current && frame.id==PROTOCOL_ID_READINGS) {
-        protocol_readings_t *readings = reinterpret_cast<protocol_readings_t *>(frame.payload);
+void Window::receive(const uint8_t id, const void *payload, const uint32_t size) {
+    if(current && id==PROTOCOL_ID_READINGS && size==sizeof(protocol_readings_t)) {
+        const protocol_readings_t *readings = reinterpret_cast<const protocol_readings_t *>(payload);
 
         current->receive(*readings);
 
@@ -161,8 +169,8 @@ void Window::receive(const protocol_message_t &frame) {
         return;
     }
 
-    if(frame.id==PROTOCOL_ID_CALIBRATION) {
-        memcpy(&calibration, frame.payload, sizeof(calibration));
+    if(id==PROTOCOL_ID_CALIBRATION && size==sizeof(protocol_calibration_t)) {
+        memcpy(&calibration, payload, sizeof(calibration));
 
         std::ostringstream stream;
         stream << calibration;

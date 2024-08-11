@@ -1,113 +1,156 @@
-#include <assert.h>
 #include <stddef.h>
 #include <stdint.h>
-#include <stdbool.h>
 #include <string.h>
 
 #include "protocol.h"
 
-static uint8_t crc8(const uint8_t *buffer, const size_t size) {
-    assert(buffer);
+#define RX_LIMIT            32
+#define TX_SIZE_THRESHOLD   256
+#define TX_TIME_THRESHOLD   100
 
-    uint8_t crc = 0xFF;
+#define MIN(a, b)           ((a)<(b) ? (a) : (b))
 
-    for(size_t i=0; i<size; i++) {
-        crc ^=buffer[i];
+enum state {
+    STATE_START,
+    STATE_DATA,
+};
 
-        for(size_t j=0; j<8; j++) {
-            if((crc & 0x80)!=0) {
-                crc = (uint8_t)((crc<<1)^0x31);
+static inline void fifo_write(protocol_fifo_t *fifo, const uint8_t byte) {
+    fifo->buffer[fifo->write] = byte;
+    fifo->write++;
+    fifo->write %=fifo->size;
+}
+
+static inline uint8_t fifo_read(protocol_fifo_t *fifo) {
+    const uint8_t byte = fifo->buffer[fifo->read];
+    fifo->read++;
+    fifo->read %=fifo->size;
+    return byte;
+}
+
+static inline uint32_t fifo_pending(const protocol_fifo_t *fifo) {
+    return ((fifo->read>fifo->write ? fifo->size : 0) + fifo->write) - fifo->read;
+}
+
+static void crc32(uint32_t *crc, const void *buffer, const uint32_t size) {
+    for(uint32_t i=0; i<size; i++) {
+        *crc ^=((uint8_t *)buffer)[i];
+        for(uint8_t j=0; j<8; j++) {
+            if(*crc & 0x00000001) {
+                *crc = (*crc>>1)^0xEDB88320;
             } else {
-                crc <<=1;
-			}
+                *crc >>=1;
+            }
+        }
+    }
+}
+
+static uint8_t * cobs_encode(protocol_fifo_t *fifo, uint8_t *cobs, const void *buffer, const uint32_t size) {
+    for(uint32_t i=0; i<size; i++) {
+        const uint8_t byte = ((uint8_t *)buffer)[i];
+
+        if(*cobs==0xFF) {
+            cobs = &fifo->buffer[fifo->write];
+            fifo_write(fifo, 1);
+        }
+
+        if(byte) {
+            (*cobs)++;
+            fifo_write(fifo, byte);
+        } else {
+            cobs = &fifo->buffer[fifo->write];
+            fifo_write(fifo, 1);
         }
     }
 
-    return crc;
+    return cobs;
 }
 
-static uint8_t cobs_encode(uint8_t *buffer, const size_t size) {
-    assert(buffer);
+void protocol_enqueue(protocol_t *instance, const uint8_t id, const void *payload, const uint32_t size) {
+    uint32_t crc = 0;
+    crc32(&crc, &id, sizeof(id));
+    crc32(&crc, payload, size);
 
-	uint8_t cobs = 1;
+    uint8_t *cobs = &instance->fifo_tx.buffer[instance->fifo_tx.write];
+    fifo_write(&instance->fifo_tx, 1);
 
-	for(size_t i=0; i<size; i++) {
-		if(buffer[size-i-1]) {
-			cobs++;
-		} else {
-            buffer[size-i-1] = cobs;
-		    cobs = 1;
+    cobs = cobs_encode(&instance->fifo_tx, cobs, &id, sizeof(id));
+    cobs = cobs_encode(&instance->fifo_tx, cobs, payload, size);
+    cobs = cobs_encode(&instance->fifo_tx, cobs, &crc, sizeof(crc));
+
+    fifo_write(&instance->fifo_tx, 0);
+}
+
+void protocol_process(protocol_t *instance) {
+    const uint32_t rx_pending = fifo_pending(&instance->fifo_rx);
+
+    for(uint32_t i=0; i<RX_LIMIT && i<rx_pending; i++) {
+        const uint8_t byte = fifo_read(&instance->fifo_rx);
+
+        switch(instance->state) {
+            case STATE_START: {
+                instance->cursor = instance->decoded;
+                instance->cobs = byte;
+                instance->crc = 0;
+                instance->counter = 0;
+                if(byte) {
+                    instance->state = STATE_DATA;
+                } else {
+                    instance->callback_err(instance->user, PROTOCOL_ERROR_DOUBLE_ZERO);
+                }
+            } break;
+            case STATE_DATA: {
+                instance->counter++;
+
+                if(!byte) {
+                    const uint32_t num = instance->cursor - instance->decoded;
+
+                    if(!instance->crc && num>=5) {
+                        const uint8_t id = instance->decoded[0];
+                        const uint8_t *payload = &instance->decoded[1];
+                        const uint32_t size = num - 5;
+
+                        instance->callback_rx(instance->user, id, payload, size);
+                    } else {
+                        instance->callback_err(instance->user, PROTOCOL_ERROR_CRC_MISMATCH);
+                    }
+
+                    instance->state = STATE_START;
+                } else if(instance->cobs==instance->counter) {
+                    if(instance->cobs!=0xFF) {
+                        *instance->cursor = 0;
+                        crc32(&instance->crc, instance->cursor, 1);
+                        instance->cursor++;
+                        if(instance->cursor>=instance->decoded+instance->max) {
+                            instance->callback_err(instance->user, PROTOCOL_ERROR_DECODER_OVERFLOW);
+                            instance->state = STATE_START;
+                        }
+                    }
+                    instance->cobs = byte;
+                    instance->counter = 0;
+                } else {
+                    *instance->cursor = byte;
+                    crc32(&instance->crc, instance->cursor, 1);
+                    instance->cursor++;
+                    if(instance->cursor>=instance->decoded+instance->max) {
+                        instance->callback_err(instance->user, PROTOCOL_ERROR_DECODER_OVERFLOW);
+                        instance->state = STATE_START;
+                    }
+                }
+            } break;
         }
-	}
-
-	return cobs;
-}
-
-static void cobs_decode(uint8_t *buffer, const size_t size, const uint8_t cobs) {
-    assert(buffer);
-
-	size_t index = cobs - 1;
-    uint8_t next;
-
-	while(index<size) {
-		next = buffer[index];
-		buffer[index] = 0;
-		index +=next;
-	}
-}
-
-size_t protocol_encode(void *dest, const protocol_message_t *message) {
-    assert(dest);
-    assert(message);
-    assert(message->size<=250);
-    assert(message->payload || (!message->payload && message->size));
-
-    uint8_t *buffer = (uint8_t *)dest;
-
-    buffer[message->size + 4] = 0;
-
-    if(message->payload) {
-        memcpy(&buffer[4], message->payload, message->size);
     }
 
-    buffer[3] = message->id;
-    buffer[2] = message->size;
-    buffer[1] = crc8(&buffer[2], message->size + 2);
-    buffer[0] = cobs_encode(&buffer[1], message->size + 3);
+    const uint32_t delta_time = instance->time - instance->time_last;
+    const uint32_t tx_pending = fifo_pending(&instance->fifo_tx);
 
-    return message->size + 5;
-}
+    if(instance->available && tx_pending && (tx_pending>TX_SIZE_THRESHOLD || delta_time>TX_TIME_THRESHOLD)) {
+        const uint32_t len = MIN(tx_pending, instance->fifo_tx.size - instance->fifo_tx.read);
 
-bool protocol_decode(protocol_decoder_t *decoder, const uint8_t byte, protocol_message_t *message) {
-    assert(decoder);
-    assert(decoder->buffer);
-    assert(decoder->size);
-    assert(message);
+        instance->callback_tx(instance->user, &instance->fifo_tx.buffer[instance->fifo_tx.read], len);
+        instance->fifo_tx.read +=len;
+        instance->fifo_tx.read %=instance->fifo_tx.size;
 
-    decoder->buffer[decoder->counter] = byte;
-    decoder->counter++;
-
-    if(byte || (decoder->counter>=decoder->size)) {
-        decoder->counter = 0;
-        return false;
+        instance->time_last = instance->time;
     }
-
-    cobs_decode(&decoder->buffer[1], decoder->counter - 1, decoder->buffer[0]);
-
-    if(decoder->buffer[2]!=(decoder->counter - 5)) {
-        decoder->counter = 0;
-    	return false;
-    }
-
-	if(decoder->buffer[1]!=crc8(&decoder->buffer[2], decoder->counter - 2)) {
-        decoder->counter = 0;
-		return false;
-	}
-
-    message->payload = &decoder->buffer[4];
-    message->id = decoder->buffer[3];
-    message->size = decoder->buffer[2];
-
-    decoder->counter = 0;
-	return true;
 }
