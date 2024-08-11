@@ -209,7 +209,15 @@ void Network::scanAddresses() {
             nmapProcess->deleteLater();
         });
 
-        nmapProcess->start("nmap", QStringList() << "-sn" << "-n" << "--open" << "-oG" << "-" << (localAddress.toString() + "/24"));
+        QStringList nmapArgs;
+        nmapArgs << "-sn";
+        nmapArgs << "-n";
+        nmapArgs << "-oG" << "-";
+        nmapArgs << "--open";
+        nmapArgs << "--noninteractive";
+        nmapArgs << (localAddress.toString() + "/24");
+
+        nmapProcess->start("nmap", nmapArgs);
     }
 }
 
