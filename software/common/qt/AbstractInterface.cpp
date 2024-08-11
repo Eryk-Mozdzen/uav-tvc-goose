@@ -12,7 +12,7 @@
 
 namespace common {
 
-AbstractInterface::AbstractInterface(const QString name, QWidget *parent) : QWidget{parent} {
+AbstractInterface::AbstractInterface(const QString name, QWidget *parent) : QGroupBox{name, parent} {
     {
         protocol.user = this;
         protocol.callback_tx = [](void *user, const void *data, const uint32_t size) {
@@ -48,9 +48,7 @@ AbstractInterface::AbstractInterface(const QString name, QWidget *parent) : QWid
         timer->start(1);
     }
 
-    QGridLayout *inside = new QGridLayout(this);
-    QGroupBox *group = new QGroupBox(name);
-    QGridLayout *layout = new QGridLayout(group);
+    QGridLayout *layout = new QGridLayout(this);
     QFormLayout *form = new QFormLayout();
 
     addressComboBox = new QComboBox();
@@ -86,7 +84,7 @@ AbstractInterface::AbstractInterface(const QString name, QWidget *parent) : QWid
     layout->addWidget(saveButton, 2, 0);
     layout->addLayout(form, 0, 1, 3, 2);
 
-    inside->addWidget(group, 0, 0);
+    setLayout(layout);
 }
 
 void AbstractInterface::transmit(const uint8_t id, const void *payload, const uint32_t size) {

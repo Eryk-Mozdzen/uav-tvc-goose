@@ -1,6 +1,7 @@
 #pragma once
 
 #include <QWidget>
+#include <QGroupBox>
 #include <QComboBox>
 #include <QPushButton>
 #include <QLabel>
@@ -10,7 +11,7 @@
 
 namespace common {
 
-class AbstractInterface : public QWidget {
+class AbstractInterface : public QGroupBox {
     Q_OBJECT
 
 	uint8_t buffer_tx[10*1024];
