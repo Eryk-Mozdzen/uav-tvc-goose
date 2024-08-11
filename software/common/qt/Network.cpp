@@ -10,6 +10,7 @@
 #include <QPushButton>
 #include <QLabel>
 #include <QMetaEnum>
+#include <QSettings>
 
 #include "common/qt/Network.h"
 #include "common/protocol/protocol.h"
@@ -106,8 +107,13 @@ Network::Network(QWidget *parent) : QWidget{parent} {
     addressComboBox->setMinimumWidth(125);
     connect(addressComboBox, &QComboBox::currentTextChanged, this, &Network::changeAddress);
 
-    scanButton = new QPushButton("Scan");
+    scanButton = new QPushButton("Scan network");
     connect(scanButton, &QPushButton::pressed, this, &Network::scanAddresses);
+
+    saveButton = new QPushButton("Save as default");
+    connect(saveButton, &QPushButton::pressed, [this]() {
+        settings.setValue("hostAddress", addressComboBox->currentText());
+    });
 
     QTimer *timer = new QTimer();
     connect(timer, &QTimer::timeout, this, &Network::updateStats);
@@ -127,6 +133,7 @@ Network::Network(QWidget *parent) : QWidget{parent} {
 
     layout->addWidget(addressComboBox, 0, 0);
     layout->addWidget(scanButton, 1, 0);
+    layout->addWidget(saveButton, 2, 0);
     layout->addLayout(form, 0, 1, 3, 2);
 
     inside->addWidget(group, 0, 0);
@@ -139,8 +146,10 @@ void Network::transmit(const uint8_t id, const void *payload, const uint32_t siz
 }
 
 void Network::scanAddresses() {
-    addressComboBox->clear();
+    addressComboBox->setDisabled(true);
     scanButton->setDisabled(true);
+    saveButton->setDisabled(true);
+    addressComboBox->clear();
     scanButton->setText("0/0");
 
     const QList<QNetworkInterface> allInterfaces = QNetworkInterface::allInterfaces();
@@ -159,40 +168,48 @@ void Network::scanAddresses() {
         }
     }
 
-    const int overall = localAddresses.size()*253;
-    scanButton->setText(QString::asprintf("0/%d", overall));
+    scanButton->setText(QString("1/%1").arg(localAddresses.size()));
 
     for(const QHostAddress &localAddress : localAddresses) {
-        const quint32 netmask = 0xFFFFFF00;   // assuming 255.255.255.0 netmask
-        const quint32 subnet = localAddress.toIPv4Address() & netmask;
+        QProcess *nmapProcess = new QProcess(this);
 
-        for(int i=2; i<255; i++) {
-            const QHostAddress address(subnet | i);
+        connect(nmapProcess, &QProcess::finished, [this, nmapProcess](int exitCode, QProcess::ExitStatus exitStatus) {
+            (void)exitCode;
+            (void)exitStatus;
 
-            QProcess *pingProcess = new QProcess(this);
+            const QString output = nmapProcess->readAllStandardOutput();
 
-            connect(pingProcess, &QProcess::finished, [this, pingProcess, address](int exitCode, QProcess::ExitStatus exitStatus) {
-                if(exitCode==0 && exitStatus==QProcess::NormalExit) {
-                    const QString output = pingProcess->readAllStandardOutput();
-                    if(output.contains("ttl=")) {
-                        addressComboBox->addItem(address.toString());
-                    }
+            const QRegularExpression regex(R"(Host:\s+(\d+\.\d+\.\d+\.\d+)\s+)");
+            QRegularExpressionMatchIterator i = regex.globalMatch(output);
+
+            while(i.hasNext()) {
+                const QRegularExpressionMatch match = i.next();
+                const QString address = match.captured(1);
+
+                addressComboBox->addItem(address);
+            }
+
+            const QStringList progress = scanButton->text().split("/");
+            const int ready = progress[0].toInt();
+            const int overall = progress[1].toInt();
+            scanButton->setText(QString("%1/%2").arg(ready + 1).arg(overall));
+
+            if(ready==overall) {
+                const int index = addressComboBox->findText(settings.value("hostAddress").toString());
+                if(index != -1) {
+                    addressComboBox->setCurrentIndex(index);
                 }
-                pingProcess->deleteLater();
 
-                const QStringList progress = scanButton->text().split("/");
-                const int ready = progress[0].toInt() + 1;
-                const int overall = progress[1].toInt();
-                scanButton->setText(QString::asprintf("%d/%d", ready, overall));
+                addressComboBox->setDisabled(false);
+                scanButton->setDisabled(false);
+                saveButton->setDisabled(false);
+                scanButton->setText("Scan network");
+            }
 
-                if(ready==overall) {
-                    scanButton->setDisabled(false);
-                    scanButton->setText("Scan");
-                }
-            });
+            nmapProcess->deleteLater();
+        });
 
-            pingProcess->start("ping", QStringList() << "-c 1" << address.toString());
-        }
+        nmapProcess->start("nmap", QStringList() << "-sn" << "-n" << "--open" << "-oG" << "-" << (localAddress.toString() + "/24"));
     }
 }
 

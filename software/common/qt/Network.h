@@ -5,6 +5,7 @@
 #include <QComboBox>
 #include <QPushButton>
 #include <QLabel>
+#include <QSettings>
 
 #include "common/protocol/protocol.h"
 
@@ -22,10 +23,13 @@ class Network : public QWidget {
 
 	QComboBox *addressComboBox;
 	QPushButton *scanButton;
+	QPushButton *saveButton;
 	QLabel *uiLabels[4];
 	int uploadBytes;
 	int downloadBytes;
 	int errorNum;
+
+	QSettings settings;
 
 	void scanAddresses();
 	void changeAddress(const QString &port);
