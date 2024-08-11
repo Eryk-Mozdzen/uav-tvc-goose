@@ -1,45 +1,17 @@
 #pragma once
 
 #include <QTcpSocket>
-#include <QWidget>
-#include <QComboBox>
-#include <QPushButton>
-#include <QLabel>
-#include <QSettings>
 
-#include "common/protocol/protocol.h"
+#include "common/qt/AbstractInterface.h"
 
 namespace common {
 
-class Network : public QWidget {
-    Q_OBJECT
-
-	uint8_t buffer_tx[10*1024];
-    uint8_t buffer_rx[10*1024];
-    uint8_t buffer_decode[10*1024];
-	protocol_t protocol = PROTOCOL_INIT;
+class Network : public AbstractInterface {
     QTcpSocket socket;
-	std::chrono::_V2::system_clock::time_point start;
 
-	QComboBox *addressComboBox;
-	QPushButton *scanButton;
-	QPushButton *saveButton;
-	QLabel *uiLabels[4];
-	int uploadBytes;
-	int downloadBytes;
-	int errorNum;
-
-	QSettings settings;
-
-	void scanAddresses();
-	void changeAddress(const QString &port);
-	void updateStats();
-
-public slots:
-	void transmit(const uint8_t id, const void *payload, const uint32_t size);
-
-signals:
-	void receive(const uint8_t id, const void *payload, const uint32_t size);
+    void transmitBytes(const QByteArray &bytes) override;
+    void scanInput() override;
+	void changeInput(const QString &input) override;
 
 public:
 	Network(QWidget *parent = nullptr);
