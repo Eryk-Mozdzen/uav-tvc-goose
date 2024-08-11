@@ -3,13 +3,12 @@
 #include <QHostAddress>
 #include <QProcess>
 #include <QTimer>
-#include <QVBoxLayout>
+#include <QGridLayout>
 #include <QFormLayout>
 #include <QGroupBox>
 #include <QComboBox>
 #include <QPushButton>
 #include <QLabel>
-#include <QDebug>
 #include <QMetaEnum>
 
 #include "common/qt/Network.h"
@@ -33,8 +32,9 @@ Network::Network(QWidget *parent) : QWidget{parent} {
             self->receive(id, payload, size);
         };
         protocol.callback_err = [](void *user, const protocol_error_t error) {
+            (void)error;
             Network *self = reinterpret_cast<Network *>(user);
-            self->error(error);
+            self->errorNum++;
         };
         protocol.fifo_tx.buffer = buffer_tx;
         protocol.fifo_tx.size = sizeof(buffer_tx);
@@ -99,43 +99,35 @@ Network::Network(QWidget *parent) : QWidget{parent} {
 
     QGridLayout *inside = new QGridLayout(this);
     QGroupBox *group = new QGroupBox("Network Interface");
-    QVBoxLayout *layout = new QVBoxLayout(group);
+    QGridLayout *layout = new QGridLayout(group);
     QFormLayout *form = new QFormLayout();
 
     addressComboBox = new QComboBox();
+    addressComboBox->setMinimumWidth(125);
     connect(addressComboBox, &QComboBox::currentTextChanged, this, &Network::changeAddress);
 
     scanButton = new QPushButton("Scan");
     connect(scanButton, &QPushButton::pressed, this, &Network::scanAddresses);
 
     QTimer *timer = new QTimer();
-    connect(timer, &QTimer::timeout, [&]() {
-        if(socket.state()==QAbstractSocket::ConnectedState) {
-            uiLabels[1]->setText(QString::asprintf("%.3f kB/s", uploadBytes/1024.0));
-            uiLabels[2]->setText(QString::asprintf("%.3f kB/s", downloadBytes/1024.0));
-        } else {
-            uiLabels[1]->setText(QString::asprintf("--- kB/s"));
-            uiLabels[2]->setText(QString::asprintf("--- kB/s"));
-        }
-
-        uploadBytes = 0;
-        downloadBytes = 0;
-    });
-    start = std::chrono::high_resolution_clock::now();
+    connect(timer, &QTimer::timeout, this, &Network::updateStats);
     timer->start(1000);
 
     uiLabels[0] = new QLabel("---");
     uiLabels[1] = new QLabel("--- kB/s");
     uiLabels[2] = new QLabel("--- kB/s");
+    uiLabels[3] = new QLabel("---");
 
+    layout->setAlignment(Qt::AlignCenter);
     form->setLabelAlignment(Qt::AlignRight);
     form->addRow("Status:", uiLabels[0]);
     form->addRow("Upload:", uiLabels[1]);
     form->addRow("Download:", uiLabels[2]);
+    form->addRow("Frame errors:", uiLabels[3]);
 
-    layout->addLayout(form);
-    layout->addWidget(addressComboBox);
-    layout->addWidget(scanButton);
+    layout->addWidget(addressComboBox, 0, 0);
+    layout->addWidget(scanButton, 1, 0);
+    layout->addLayout(form, 0, 1, 3, 2);
 
     inside->addWidget(group, 0, 0);
 
@@ -210,6 +202,22 @@ void Network::changeAddress(const QString &address) {
         socket.abort();
         socket.connectToHost(address, 23);
     }
+}
+
+void Network::updateStats() {
+    if(socket.state()==QAbstractSocket::ConnectedState) {
+        uiLabels[1]->setText(QString::asprintf("%.3f kB/s", uploadBytes/1024.0));
+        uiLabels[2]->setText(QString::asprintf("%.3f kB/s", downloadBytes/1024.0));
+        uiLabels[3]->setText(QString::asprintf("%d", errorNum));
+    } else {
+        uiLabels[1]->setText(QString::asprintf("--- kB/s"));
+        uiLabels[2]->setText(QString::asprintf("--- kB/s"));
+        uiLabels[3]->setText(QString::asprintf("---"));
+    }
+
+    uploadBytes = 0;
+    downloadBytes = 0;
+    errorNum = 0;
 }
 
 }

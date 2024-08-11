@@ -22,19 +22,20 @@ class Network : public QWidget {
 
 	QComboBox *addressComboBox;
 	QPushButton *scanButton;
-	QLabel *uiLabels[3];
+	QLabel *uiLabels[4];
 	int uploadBytes;
 	int downloadBytes;
+	int errorNum;
 
 	void scanAddresses();
 	void changeAddress(const QString &port);
+	void updateStats();
 
 public slots:
 	void transmit(const uint8_t id, const void *payload, const uint32_t size);
 
 signals:
 	void receive(const uint8_t id, const void *payload, const uint32_t size);
-	void error(const protocol_error_t error);
 
 public:
 	Network(QWidget *parent = nullptr);
