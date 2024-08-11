@@ -6,8 +6,8 @@
 #include <QTextEdit>
 #include <QHBoxLayout>
 
-#include "protocol/protocol.h"
-#include "protocol/protocol_data.h"
+#include "common/qt/Serial.h"
+#include "common/qt/Network.h"
 #include "Interface.h"
 
 class Window : public QWidget {
@@ -27,10 +27,10 @@ class Window : public QWidget {
     void setCurrent(Interface *interface);
 
 signals:
-    void transmit(const protocol_message_t &frame);
+    void transmit(const uint8_t id, const void *payload, const uint32_t size);
 
 public slots:
-    void receive(const protocol_message_t &frame);
+    void receive(const uint8_t id, const void *payload, const uint32_t size);
 
 public:
     Window(QWidget *parent = nullptr);

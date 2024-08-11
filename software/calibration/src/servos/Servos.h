@@ -19,6 +19,8 @@ class Servos : public Interface {
     Position position;
     bool direction;
 
+    void startTransmit();
+
 public:
     Servos(Window *window, QWidget *parent = nullptr);
 
