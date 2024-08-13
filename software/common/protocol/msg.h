@@ -10,64 +10,55 @@ extern "C" {
 typedef enum {
     MSG_ID_LOG,
     MSG_ID_PASSTHROUGH_GPS,
-    MSG_ID_IMU,
-	MSG_ID_BAROMETER,
-	MSG_ID_POWER,
-	MSG_ID_RANGEFINDER,
-	MSG_ID_TACHOMETER,
-    MSG_ID_FLOW,
-    MSG_ID_GPS,
+    MSG_ID_SENSOR,
     MSG_ID_ESTIMATION,
     MSG_ID_CONTROLLER,
     MSG_ID_CALIBRATION,
-    MSG_ID_CONTROL,
+    MSG_ID_MANUAL,
     MSG_ID_COMMAND_START,
     MSG_ID_COMMAND_ABORT,
 } msg_id_t;
 
 typedef struct {
     struct {
-        float magnetometer[3];
-        float accelerometer[3];
-        float gyroscope[3];
-    } raw;
+        float raw[3];
+        float calib[3];
+    } magnetometer;
     struct {
-        float magnetometer[3];
-        float accelerometer[3];
-        float gyroscope[3];
-    } calibrated;
-} msg_frame_imu_t;
-
-typedef struct {
-    float pressure;
-} msg_frame_barometer_t;
-
-typedef struct {
-    float voltage;
-    float current;
-} msg_frame_power_t;
-
-typedef struct {
-    float distance;
-} msg_frame_rangefinder_t;
-
-typedef struct {
-    float velocity;
-} msg_frame_tachometer_t;
-
-typedef struct {
-    float delta[2];
-} msg_frame_flow_t;
-
-typedef struct {
+        float raw[3];
+        float calib[3];
+    } accelerometer;
+    struct {
+        float raw[3];
+        float calib[3];
+    } gyroscope;
+    struct {
+        uint32_t raw;
+        float calib;
+    } load;
+    float barometer;
+    float rangefinder;
+    float tachometer;
+    float power[2];
+    float flow[2];
+    float gps[2];
     union {
         struct {
-            float latitude;
-            float longitude;
-        } earth;
-        float position[2];
+            uint16_t magnetometer : 1;
+            uint16_t accelerometer : 1;
+            uint16_t gyroscope : 1;
+            uint16_t load : 1;
+            uint16_t barometer : 1;
+            uint16_t rangefinder : 1;
+            uint16_t tachometer : 1;
+            uint16_t power : 1;
+            uint16_t flow : 1;
+            uint16_t gps : 1;
+            uint16_t unused : 6;
+        } valid;
+        uint16_t valid_all;
     };
-} msg_frame_gps_t;
+} msg_frame_sensor_t;
 
 typedef struct {
     float position[3];
@@ -86,9 +77,13 @@ typedef struct {
 } msg_frame_calibration_t;
 
 typedef struct {
-    uint16_t motor;
-    uint16_t servos[3];
-} msg_frame_control_t;
+    union {
+        uint32_t raw[3];
+        float calibrated[3];
+    } servos;
+    uint8_t motor;
+    uint8_t is_raw;
+} msg_frame_manual_t;
 
 #ifdef __cplusplus
 }

@@ -3,16 +3,16 @@
 #include <QWidget>
 #include <QGroupBox>
 #include <QLineEdit>
-#include <QFormLayout>
 
 class Form : public QGroupBox {
     Q_OBJECT
 
+    const QVector<QString> labels;
     QVector<QLineEdit *> fields;
 
 public:
-    Form(QString name, QVector<QString> labels, QWidget *parent = nullptr);
-    void set(int index, QString value);
-    void set(int index, const char *format, float value);
+    Form(const QString name, const QVector<QString> labels, QWidget *parent = nullptr);
+    void set(const QString label, const QString value);
+    void set(const QString label, const char *format, const float value);
     void reset();
 };

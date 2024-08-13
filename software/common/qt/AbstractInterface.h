@@ -18,7 +18,7 @@ class AbstractInterface : public QGroupBox {
     uint8_t buffer_rx[10*1024];
     uint8_t buffer_decode[10*1024];
 	protocol_t protocol = PROTOCOL_INIT;
-	std::chrono::_V2::system_clock::time_point start;
+	qint64 start;
 
 	QSettings settings;
 	QLabel *uiLabels[4];

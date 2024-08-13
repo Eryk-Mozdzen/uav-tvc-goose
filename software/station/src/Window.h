@@ -1,6 +1,7 @@
 #pragma once
 
 #include <QWidget>
+#include <QSettings>
 
 #include "Form.h"
 #include "LiveChart.h"
@@ -18,6 +19,7 @@ class Window : public QWidget {
     LiveChart *linear_vel;
 
     Gamepad gamepad;
+    QSettings settings;
 
 signals:
     void transmit(const uint8_t id, const void *payload, const uint32_t size);

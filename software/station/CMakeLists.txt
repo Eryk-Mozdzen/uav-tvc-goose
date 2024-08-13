@@ -23,7 +23,6 @@ add_executable(${PROJECT_NAME}
 	"src/Gamepad.cpp"
 	"src/Form.cpp"
 	"src/LiveChart.cpp"
-	"src/EscapeCodes.cpp"
 )
 
 target_include_directories(${PROJECT_NAME} PRIVATE

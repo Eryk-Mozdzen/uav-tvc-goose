@@ -1,14 +1,16 @@
 #include <iostream>
+#include <iomanip>
 #include <cmath>
 
 #include <QGroupBox>
 #include <QGridLayout>
 #include <QFormLayout>
+#include <QVBoxLayout>
 #include <QLineEdit>
 #include <QLabel>
 #include <QComboBox>
 #include <QCheckBox>
-#include <QDebug>
+#include <QRadioButton>
 #include <QTimer>
 #include <QComboBox>
 #include <QPushButton>
@@ -19,7 +21,71 @@
 #include "common/qt/Serial.h"
 #include "common/qt/Network.h"
 #include "Window.h"
-#include "EscapeCodes.h"
+
+std::ostream & operator<<(std::ostream &stream, const msg_frame_sensor_t sensor) {
+	stream << "press";
+	stream << std::setprecision(0) << std::fixed << std::noshowpos << std::setw(7);
+	stream << (sensor.valid.barometer ? sensor.barometer : std::nan(""));
+
+	stream << "   range";
+	stream << std::setprecision(2) << std::fixed << std::noshowpos << std::setw(5);
+	stream << (sensor.valid.rangefinder ? sensor.rangefinder : std::nan(""));
+
+	stream << "   mag [";
+	stream << std::setprecision(2) << std::fixed << std::showpos;
+	stream << std::setw(6) << (sensor.valid.magnetometer ? sensor.magnetometer.calib[0] : std::nan(""));
+	stream << std::setw(6) << (sensor.valid.magnetometer ? sensor.magnetometer.calib[1] : std::nan(""));
+	stream << std::setw(6) << (sensor.valid.magnetometer ? sensor.magnetometer.calib[2] : std::nan(""));
+	stream << "]";
+
+	stream << "   accel [";
+	stream << std::setprecision(2) << std::fixed << std::showpos;
+	stream << std::setw(6) << (sensor.valid.accelerometer ? sensor.accelerometer.calib[0] : std::nan(""));
+	stream << std::setw(6) << (sensor.valid.accelerometer ? sensor.accelerometer.calib[1] : std::nan(""));
+	stream << std::setw(6) << (sensor.valid.accelerometer ? sensor.accelerometer.calib[2] : std::nan(""));
+	stream << "]";
+
+	stream << "   gyro [";
+	stream << std::setprecision(2) << std::fixed << std::showpos;
+	stream << std::setw(6) << (sensor.valid.gyroscope ? sensor.gyroscope.calib[0] : std::nan(""));
+	stream << std::setw(6) << (sensor.valid.gyroscope ? sensor.gyroscope.calib[1] : std::nan(""));
+	stream << std::setw(6) << (sensor.valid.gyroscope ? sensor.gyroscope.calib[2] : std::nan(""));
+	stream << "]";
+
+	stream << "   gps [";
+	stream << std::setprecision(6) << std::fixed << std::noshowpos;
+	stream << std::setw(10) << (sensor.valid.gps ? sensor.gps[0] : std::nan(""));
+	stream << std::setw(10) << (sensor.valid.gps ? sensor.gps[1] : std::nan(""));
+	stream << "]";
+
+	return stream;
+}
+
+std::ostream & operator<<(std::ostream &stream, const msg_frame_estimation_t estimation) {
+	stream << "qua [";
+	stream << std::setprecision(2) << std::fixed << std::showpos;
+	stream << std::setw(6) << estimation.orientation[0];
+	stream << std::setw(6) << estimation.orientation[1];
+	stream << std::setw(6) << estimation.orientation[2];
+	stream << std::setw(6) << estimation.orientation[3];
+	stream << "]";
+
+	stream << "   pos [";
+	stream << std::setprecision(2) << std::fixed << std::showpos;
+	stream << std::setw(6) << estimation.position[0];
+	stream << std::setw(6) << estimation.position[1];
+	stream << std::setw(6) << estimation.position[2];
+	stream << "]";
+
+	stream << "   vel [";
+	stream << std::setprecision(2) << std::fixed << std::showpos;
+	stream << std::setw(6) << estimation.velocity[0];
+	stream << std::setw(6) << estimation.velocity[1];
+	stream << std::setw(6) << estimation.velocity[2];
+	stream << "]";
+
+	return stream;
+}
 
 Window::Window(QWidget *parent) : QWidget(parent) {
     QGridLayout *layout = new QGridLayout(this);
@@ -38,13 +104,12 @@ Window::Window(QWidget *parent) : QWidget(parent) {
     }
 
     {
-        others = new Form("others", {
+        others = new Form("Others", {
             "state",
-            "magnetic declination",
+            "magnetic inclination",
             "ground pressure",
             "pressure",
             "distance",
-            "",
             "rotor velocity",
             "supply voltage",
             "supply current"
@@ -54,40 +119,79 @@ Window::Window(QWidget *parent) : QWidget(parent) {
     }
 
     {
-        QGroupBox *group = new QGroupBox("steering");
-        QGridLayout *grid = new QGridLayout(group);
+        QGroupBox *group = new QGroupBox("Controls", this);
+        QVBoxLayout *inner = new QVBoxLayout(group);
 
         QPushButton *cmd_start = new QPushButton("Start", this);
-        QPushButton *cmd_land = new QPushButton("Land", this);
         QPushButton *cmd_abort = new QPushButton("Abort", this);
         QPushButton *resume = new QPushButton("Resume", this);
         QPushButton *save = new QPushButton("Save", this);
+        QRadioButton *source1 = new QRadioButton("Logger", this);
+        QRadioButton *source2 = new QRadioButton("GPS passthrough", this);
+        QRadioButton *source3 = new QRadioButton("Sensor readings", this);
+        QRadioButton *source4 = new QRadioButton("Estimation", this);
 
-        grid->addWidget(cmd_start, 0, 0);
-        grid->addWidget(cmd_land, 1, 0);
-        grid->addWidget(cmd_abort, 2, 0);
-        grid->addWidget(resume, 3, 0);
-        grid->addWidget(save, 4, 0);
+        inner->addWidget(cmd_start);
+        inner->addWidget(cmd_abort);
+        inner->addWidget(resume);
+        inner->addWidget(save);
+        inner->addWidget(source1);
+        inner->addWidget(source2);
+        inner->addWidget(source3);
+        inner->addWidget(source4);
 
         layout->addWidget(group, 2, 0);
 
-        QTimer *timer = new QTimer();
-	    timer->start(20);
-
         connect(cmd_start, &QPushButton::clicked, [this]() {
-            //transmit(Transfer::encode(comm::Command::START, Transfer::ID::CONTROL_COMMAND));
-        });
-
-        connect(cmd_land, &QPushButton::clicked, [this]() {
-            //transmit(Transfer::encode(comm::Command::LAND, Transfer::ID::CONTROL_COMMAND));
+            transmit(MSG_ID_COMMAND_START, NULL, 0);
         });
 
         connect(cmd_abort, &QPushButton::clicked, [this]() {
-            //transmit(Transfer::encode(comm::Command::ABORT, Transfer::ID::CONTROL_COMMAND));
+            transmit(MSG_ID_COMMAND_ABORT, NULL, 0);
         });
 
+        connect(resume, &QPushButton::clicked, []() {
+            LiveChart::resume();
+        });
+
+        connect(save, &QPushButton::clicked, []() {
+            LiveChart::save();
+        });
+
+        switch(settings.value("terminalSource").toInt()) {
+            case 1: {
+                source1->setChecked(true);
+            } break;
+            case 2: {
+                source2->setChecked(true);
+            } break;
+            case 3: {
+                source3->setChecked(true);
+            } break;
+            case 4: {
+                source4->setChecked(true);
+            } break;
+        }
+
+        connect(source1, &QRadioButton::clicked, [this]() {
+            settings.setValue("terminalSource", 1);
+        });
+
+        connect(source2, &QRadioButton::clicked, [this]() {
+            settings.setValue("terminalSource", 2);
+        });
+
+        connect(source3, &QRadioButton::clicked, [this]() {
+            settings.setValue("terminalSource", 3);
+        });
+
+        connect(source4, &QRadioButton::clicked, [this]() {
+            settings.setValue("terminalSource", 4);
+        });
+
+        /*QTimer *timer = new QTimer();
         connect(timer, &QTimer::timeout, [this]() {
-            /*comm::Controller::State setpoint;
+            comm::Controller::State setpoint;
 
             setpoint.rpy[0] = -30.f*deg2rad*gamepad.get(Gamepad::Analog::LX);
             setpoint.rpy[1] = +30.f*deg2rad*gamepad.get(Gamepad::Analog::LY);
@@ -114,20 +218,13 @@ Window::Window(QWidget *parent) : QWidget(parent) {
 
             if(gamepad.get(Gamepad::Button::CIRCLE_B)) {
                 widgets::LiveChart::resume();
-            }*/
+            }
         });
-
-        connect(resume, &QPushButton::clicked, [this]() {
-            LiveChart::resume();
-        });
-
-        connect(save, &QPushButton::clicked, [this]() {
-            LiveChart::save();
-        });
+        timer->start(20);*/
     }
 
     {
-        QGroupBox *group = new QGroupBox("manual");
+        QGroupBox *group = new QGroupBox("Manual");
         QGridLayout *grid = new QGridLayout(group);
 
         QCheckBox *manual_switch = new QCheckBox("Active");
@@ -138,28 +235,29 @@ Window::Window(QWidget *parent) : QWidget(parent) {
         manual[2] = new QSlider(Qt::Orientation::Vertical);
         manual[3] = new QSlider(Qt::Orientation::Vertical);
 
-        manual[0]->setRange(-15, 15);
-        manual[1]->setRange(-15, 15);
-        manual[2]->setRange(-15, 15);
-        manual[3]->setRange(0, 20);
+        manual[0]->setRange(-100, 100);
+        manual[1]->setRange(-100, 100);
+        manual[2]->setRange(-100, 100);
+        manual[3]->setRange(0, 100);
 
         QTimer *timer = new QTimer();
         timer->setInterval(20);
-
         connect(timer, &QTimer::timeout, [this, manual]() {
-            /*const float x = deg2rad*manual[0]->value();
-            const float y = deg2rad*manual[1]->value();
-            const float z = deg2rad*manual[2]->value();
+            const float mx = manual[0]->value();
+            const float my = manual[1]->value();
+            const float mz = manual[2]->value();
+            const float ur = manual[3]->value();
 
-            comm::Manual data;
-            data.type = comm::Manual::Type::NORMAL;
-            data.angles[0] = - x - z;
-            data.angles[1] = - y - z;
-            data.angles[2] = + x - z;
-            data.angles[3] = + y - z;
-            data.throttle = manual[3]->value()/20.f;
+            constexpr float C = 0.01;
 
-            transmit(Transfer::encode(data, Transfer::ID::CONTROL_MANUAL));*/
+            msg_frame_manual_t frame;
+            frame.is_raw = 0;
+            frame.servos.calibrated[0] = C*(-0.333*mx - 0.577*my - 0.333*mz);
+            frame.servos.calibrated[1] = C*( 0.667*mx            - 0.333*mz);
+            frame.servos.calibrated[2] = C*(-0.333*mx + 0.577*my - 0.333*mz);
+            frame.motor = ur;
+
+            transmit(MSG_ID_MANUAL, &frame, sizeof(frame));
         });
 
         connect(manual_switch, &QCheckBox::stateChanged, [timer, manual](int state) {
@@ -261,12 +359,12 @@ Window::Window(QWidget *parent) : QWidget(parent) {
         config.yFormat = "%3.0f";
 
         angular_vel = new LiveChart(config, this);
-        angular_vel->addSeries("X setpoint",    QPen(Qt::red,   1, Qt::DashLine));
-        angular_vel->addSeries("X process",     QPen(Qt::red,   2, Qt::SolidLine));
-        angular_vel->addSeries("Y setpoint",    QPen(Qt::green, 1, Qt::DashLine));
-        angular_vel->addSeries("Y process",     QPen(Qt::green, 2, Qt::SolidLine));
-        angular_vel->addSeries("Z setpoint",    QPen(Qt::blue,  1, Qt::DashLine));
-        angular_vel->addSeries("Z process",     QPen(Qt::blue,  2, Qt::SolidLine));
+        angular_vel->addSeries("x setpoint", QPen(Qt::red,   1, Qt::DashLine));
+        angular_vel->addSeries("x process",  QPen(Qt::red,   2, Qt::SolidLine));
+        angular_vel->addSeries("y setpoint", QPen(Qt::green, 1, Qt::DashLine));
+        angular_vel->addSeries("y process",  QPen(Qt::green, 2, Qt::SolidLine));
+        angular_vel->addSeries("z setpoint", QPen(Qt::blue,  1, Qt::DashLine));
+        angular_vel->addSeries("z process",  QPen(Qt::blue,  2, Qt::SolidLine));
 
         layout->addWidget(angular_vel, 2, 3);
     }
@@ -280,29 +378,57 @@ Window::Window(QWidget *parent) : QWidget(parent) {
         config.yFormat = "%1.0f";
 
         linear_vel = new LiveChart(config, this);
-        linear_vel->addSeries("velocity", QPen(Qt::black,   2, Qt::SolidLine));
+        linear_vel->addSeries("x setpoint", QPen(Qt::red,   1, Qt::DashLine));
+        linear_vel->addSeries("x process",  QPen(Qt::red,   2, Qt::SolidLine));
+        linear_vel->addSeries("y setpoint", QPen(Qt::green, 1, Qt::DashLine));
+        linear_vel->addSeries("y process",  QPen(Qt::green, 2, Qt::SolidLine));
+        linear_vel->addSeries("z setpoint", QPen(Qt::blue,  1, Qt::DashLine));
+        linear_vel->addSeries("z process",  QPen(Qt::blue,  2, Qt::SolidLine));
 
         layout->addWidget(linear_vel, 2, 4);
     }
 }
 
 void Window::receive(const uint8_t id, const void *payload, const uint32_t size) {
-    /*if(id==MSG_ID_READINGS && size==sizeof(protocol_readings_t)) {
-
+    if(id==MSG_ID_LOG) {
+        if(settings.value("terminalSource").toInt()==1) {
+            std::cout << std::string(reinterpret_cast<const char *>(payload), size) << std::endl;
+        }
 
         return;
-    }*/
+    }
+
+    if(id==MSG_ID_PASSTHROUGH_GPS) {
+        if(settings.value("terminalSource").toInt()==2) {
+            std::cout << std::string(reinterpret_cast<const char *>(payload), size);
+            std::cout.flush();
+        }
+
+        return;
+    }
+
+    if(id==MSG_ID_SENSOR && size==sizeof(msg_frame_sensor_t)) {
+        const msg_frame_sensor_t *sensor = static_cast<const msg_frame_sensor_t *>(payload);
+
+        if(settings.value("terminalSource").toInt()==3) {
+            std::cout << *sensor << std::endl;
+        }
+
+        return;
+    }
 
     if(id==MSG_ID_ESTIMATION && size==sizeof(msg_frame_estimation_t)) {
         const msg_frame_estimation_t *estimation = static_cast<const msg_frame_estimation_t *>(payload);
 
-        float quat[4];
-        float rpy[3];
-        utils_normalize(estimation->orientation, quat, 4);
-        utils_quaternion_to_rpy(quat, rpy);
+        if(settings.value("terminalSource").toInt()==4) {
+            std::cout << *estimation << std::endl;
+        }
 
-        others->set(1, "%6.2f", estimation->theta_d);
-        others->set(2, "%6.0f", estimation->pressure_0);
+        float rpy[3];
+        utils_quaternion_to_rpy(estimation->orientation, rpy);
+
+        others->set("magnetic inclination", "%+6.0f", estimation->theta_d*RAD2DEG);
+        others->set("ground pressure", "%6.0f", estimation->pressure_0);
         position->append("x process", estimation->position[0]);
         position->append("y process", estimation->position[1]);
         position->append("z process", estimation->position[2]);
@@ -318,91 +444,4 @@ void Window::receive(const uint8_t id, const void *payload, const uint32_t size)
 
         return;
     }
-
-    /*if(frame.id==Transfer::ID::TELEMETRY_ESTIMATOR) {
-        comm::Estimator estimator_data;
-        frame.getPayload(estimator_data);
-
-        others->set(1, "%6.0f", estimator_data.ground_pressure);
-        vertical_vel->append("velocity", estimator_data.velocity[2]);
-    }
-
-    if(frame.id==Transfer::ID::TELEMETRY_CONTROLLER) {
-        comm::Controller controller_data;
-        frame.getPayload(controller_data);
-
-        switch(controller_data.state) {
-            case comm::Controller::SMState::ABORT:      others->set(0, "abort");     break;
-            case comm::Controller::SMState::READY:      others->set(0, "ready");     break;
-            case comm::Controller::SMState::ACTIVE:     others->set(0, "active");    break;
-            case comm::Controller::SMState::LANDING:    others->set(0, "landing");   break;
-            case comm::Controller::SMState::MANUAL:     others->set(0, "manual");   break;
-        }
-
-        if(controller_data.state==comm::Controller::SMState::ABORT) {
-            widgets::LiveChart::pause();
-        }
-
-        throttle->append("throttle", 100*controller_data.throttle);
-        fins->append("vane 1", rad2deg*controller_data.angles[0]);
-        fins->append("vane 2", rad2deg*controller_data.angles[1]);
-        fins->append("vane 3", rad2deg*controller_data.angles[2]);
-        fins->append("vane 4", rad2deg*controller_data.angles[3]);
-
-        altitude->append("setpoint", controller_data.setpoint.z);
-        altitude->append("process", controller_data.process_value.z);
-
-        attitude->append("roll setpoint", rad2deg*controller_data.setpoint.rpy[0]);
-        attitude->append("pitch setpoint", rad2deg*controller_data.setpoint.rpy[1]);
-        attitude->append("roll process", rad2deg*controller_data.process_value.rpy[0]);
-        attitude->append("pitch process", rad2deg*controller_data.process_value.rpy[1]);
-        attitude->append("yaw process", rad2deg*controller_data.process_value.rpy[2]);
-
-        angular_vel->append("X setpoint", rad2deg*controller_data.setpoint.w[0]);
-        angular_vel->append("Y setpoint", rad2deg*controller_data.setpoint.w[1]);
-        angular_vel->append("Z setpoint", rad2deg*controller_data.setpoint.w[2]);
-        angular_vel->append("X process", rad2deg*controller_data.process_value.w[0]);
-        angular_vel->append("Y process", rad2deg*controller_data.process_value.w[1]);
-        angular_vel->append("Z process", rad2deg*controller_data.process_value.w[2]);
-    }
-
-    if(frame.id<=Transfer::ID::LOG_ERROR) {
-		switch(frame.id) {
-			case Transfer::ID::LOG_DEBUG:	std::cout << EscapeCode::GRAY;		break;
-			case Transfer::ID::LOG_INFO:	std::cout << EscapeCode::CYAN;		break;
-			case Transfer::ID::LOG_WARNING:	std::cout << EscapeCode::YELLOW;	break;
-			case Transfer::ID::LOG_ERROR:	std::cout << EscapeCode::RED;		break;
-			default: break;
-		}
-
-		std::cout << std::string(reinterpret_cast<const char *>(frame.payload), frame.length) << std::endl;
-
-		return;
-	}
-
-    if(frame.id==Transfer::ID::SENSOR_POWER_MONITOR) {
-        comm::Power monitor;
-        frame.getPayload(monitor);
-
-        power->set(0, "%2.2f", monitor.bus);
-        power->set(1, "%2.2f", monitor.current);
-    }
-
-    if(frame.id==Transfer::ID::SENSOR_PRESSURE) {
-        float pressure;
-        frame.getPayload(pressure);
-        others->set(2, "%6.0f", pressure);
-    }
-
-    if(frame.id==Transfer::ID::SENSOR_DISTANCE) {
-        float distance;
-        frame.getPayload(distance);
-        others->set(3, "%6.3f", distance);
-    }
-
-    if(frame.id==Transfer::ID::SENSOR_MOTOR_VELOCITY) {
-        float velocity;
-        frame.getPayload(velocity);
-        others->set(4, "%6.0f", velocity);
-    }*/
 }

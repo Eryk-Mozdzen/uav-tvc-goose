@@ -6,6 +6,7 @@
 #include <QPushButton>
 #include <QLabel>
 #include <QSettings>
+#include <QDateTime>
 
 #include "common/protocol/protocol.h"
 #include "common/qt/AbstractInterface.h"
@@ -38,13 +39,10 @@ AbstractInterface::AbstractInterface(const QString name, QWidget *parent) : QGro
 
         QTimer *timer = new QTimer();
         connect(timer, &QTimer::timeout, [&]() {
-            const auto end = std::chrono::high_resolution_clock::now();
-            const auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count();
-
-            protocol.time = duration;
+            protocol.time = QDateTime::currentMSecsSinceEpoch() - start;
             protocol_process(&protocol);
         });
-        start = std::chrono::high_resolution_clock::now();
+        start = QDateTime::currentMSecsSinceEpoch();
         timer->start(1);
     }
 

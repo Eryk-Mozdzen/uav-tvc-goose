@@ -5,7 +5,7 @@ float utils_length(const float *vec, const size_t dim) {
     float sum = 0;
 
     for(size_t i=0; i<dim; i++) {
-        sum +=vec[i];
+        sum +=vec[i]*vec[i];
     }
 
     return sqrtf(sum);
@@ -15,7 +15,7 @@ void utils_normalize(const float *src, float *dest, const size_t dim) {
     float sum = 0;
 
     for(size_t i=0; i<dim; i++) {
-        sum +=src[i];
+        sum +=src[i]*src[i];
     }
 
     float len = sqrtf(sum);
@@ -35,9 +35,8 @@ void utils_quaternion_to_rpy(const float *quaternion, float *rpy) {
 	const float qz = quaternion[2];
 	const float qw = quaternion[3];
 
-	const float ysqr = qy * qy;
 	const float t0 = 2.f * (qw * qx + qy * qz);
-	const float t1 = 1.f - 2.f * (qx * qx + ysqr);
+	const float t1 = 1.f - 2.f * (qx * qx + qy * qy);
 	const float roll = atan2f(t0, t1);
 
 	float t2 = 2.f * (qw * qy - qz * qx);
@@ -46,7 +45,7 @@ void utils_quaternion_to_rpy(const float *quaternion, float *rpy) {
 	const float pitch = asinf(t2);
 
 	const float t3 = 2.f * (qw * qz + qx * qy);
-	const float t4 = 1.f - 2.f * (ysqr + qz * qz);
+	const float t4 = 1.f - 2.f * (qy * qy + qz * qz);
 	const float yaw = atan2f(t3, t4);
 
     rpy[0] = roll;

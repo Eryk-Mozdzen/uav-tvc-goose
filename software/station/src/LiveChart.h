@@ -8,7 +8,7 @@
 #include <QTimer>
 
 class LiveChart : public QChartView {
-    static const qint64 start;
+    static qint64 start;
     static bool paused;
     static QVector<QLineSeries *> series;
 

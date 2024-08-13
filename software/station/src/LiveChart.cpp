@@ -1,3 +1,5 @@
+#include <cassert>
+
 #include <QChart>
 #include <QChartView>
 #include <QLineSeries>
@@ -12,7 +14,7 @@
 
 #include "LiveChart.h"
 
-const qint64 LiveChart::start = QDateTime::currentMSecsSinceEpoch();
+qint64 LiveChart::start = QDateTime::currentMSecsSinceEpoch();
 bool LiveChart::paused = false;
 QVector<QLineSeries *> LiveChart::series;
 
@@ -30,7 +32,6 @@ LiveChart::LiveChart(const Config &config, QWidget *parent) : QChartView{parent}
     setMinimumSize(300, 200);
 
     axisX = new QValueAxis(this);
-    axisX->setTitleText("time [s]");
     axisX->setLabelFormat("%5.1f");
     axisX->setTitleFont(QFont());
     chart->addAxis(axisX, Qt::AlignBottom);
@@ -85,12 +86,17 @@ float LiveChart::getTime() {
 }
 
 void LiveChart::append(const QString name, const float value) {
+    bool found = false;
+
     for(QLineSeries *s : series) {
         if(s->name()==name && s->chart()==chart) {
             s->append(getTime(), value);
-            return;
+            found = true;
+            break;
         }
     }
+
+    assert(found);
 }
 
 void LiveChart::resume() {
@@ -99,6 +105,8 @@ void LiveChart::resume() {
     for(QLineSeries *s : series) {
         s->clear();
     }
+
+    LiveChart::start = QDateTime::currentMSecsSinceEpoch();
 }
 
 void LiveChart::pause() {
@@ -111,6 +119,10 @@ void LiveChart::save() {
     QString basename = "livechart_" + QDateTime::currentDateTime().toString("yyyy-MM-dd_HH:mm:ss");
 
     basename = QFileDialog::getSaveFileName(nullptr, "DialogTitle", basename).replace(" ", "_");
+
+    if(basename.isEmpty()) {
+        return;
+    }
 
     QDir().mkdir(basename);
 
