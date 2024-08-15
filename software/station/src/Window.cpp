@@ -16,7 +16,6 @@
 #include <QPushButton>
 #include <QSlider>
 #include <QSettings>
-#include <QThread>
 
 #include "common/math/utils.h"
 #include "common/protocol/msg.h"
@@ -96,18 +95,6 @@ Window::Window(QWidget *parent) : QWidget(parent) {
     QGridLayout *layout = new QGridLayout(this);
 
     {
-        QThread *thread = new QThread();
-
-        visualizer.moveToThread(thread);
-
-        connect(thread, &QThread::started, &visualizer, &Visualizer::start);
-        connect(thread, &QThread::finished, &visualizer, &Visualizer::deleteLater);
-        connect(thread, &QThread::finished, thread, &QThread::deleteLater);
-
-        thread->start();
-    }
-
-    {
         common::Network *network = new common::Network(this);
         common::Serial *serial = new common::Serial(this);
 
@@ -121,6 +108,7 @@ Window::Window(QWidget *parent) : QWidget(parent) {
         layout->addWidget(network, 0, 0, 1, 2);
         layout->addWidget(serial, 0, 2);
         layout->addWidget(&gamepad, 0, 3);
+        layout->addWidget(&visualizer, 0, 4);
     }
 
     {
@@ -368,7 +356,7 @@ Window::Window(QWidget *parent) : QWidget(parent) {
 
     {
         LiveChart::Config config;
-        config.title = "Angular Velocity";
+        config.title = "Angular velocity";
         config.yLabel = "[°/s]";
         config.yMin = -360;
         config.yMax = 360;

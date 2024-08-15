@@ -4,7 +4,6 @@ project(station)
 
 set(CMAKE_AUTOMOC ON)
 
-find_package(drake REQUIRED)
 find_package(Qt6 COMPONENTS
 	Widgets
 	Network
@@ -52,7 +51,6 @@ target_compile_options(${PROJECT_NAME} PRIVATE
 )
 
 target_link_libraries(${PROJECT_NAME}
-	drake::drake
 	Qt6::Widgets
 	Qt6::Network
 	Qt6::SerialPort

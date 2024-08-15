@@ -1,32 +1,52 @@
-#include <drake/geometry/meshcat.h>
+#include <QGroupBox>
+#include <QGridLayout>
+#include <QPushButton>
+#include <QTcpSocket>
+#include <QProcess>
+#include <QTimer>
 
 #include "common/math/utils.h"
 #include "common/protocol/msg.h"
 #include "Visualizer.h"
 
-using namespace drake::math;
-using namespace drake::geometry;
+Visualizer::Visualizer(QWidget *parent) : QGroupBox{"Visualization server", parent} {
+    setlocale(LC_NUMERIC, "en_US.UTF-8");
 
-Visualizer::Visualizer(QObject *parent) : QObject{parent} {
+    QGridLayout *layout = new QGridLayout(this);
 
-}
+    spawnButton = new QPushButton("Spawn server", this);
 
-void Visualizer::start() {
-    visualizer = new Meshcat();
+    layout->addWidget(spawnButton, 0, 0);
+    layout->setAlignment(Qt::AlignCenter);
 
-    visualizer->SetObject("pos", Sphere(0.1));
-    visualizer->SetObject("pos/marker", Box(0.25, 0.25, 0.25), Rgba(1, 1, 1));
-    visualizer->SetObject("pos/marker/x", Box(1, 0.05, 0.05), Rgba(1, 0, 0));
-    visualizer->SetObject("pos/marker/y", Box(0.05, 1, 0.05), Rgba(0, 1, 0));
-    visualizer->SetObject("pos/marker/z", Box(0.05, 0.05, 1), Rgba(0, 0, 1));
-    visualizer->SetObject("pos/marker/acc", Sphere(0.05), Rgba(0, 1, 0));
-    visualizer->SetObject("pos/marker/mag", Sphere(0.05), Rgba(0, 0, 1));
-    visualizer->SetObject("pos/vel", Sphere(0.05), Rgba(1, 0, 0));
-    visualizer->SetObject("gps", Sphere(0.15), Rgba(1, 0, 1));
+    connect(spawnButton, &QPushButton::pressed, [this]() {
+        spawnButton->setDisabled(true);
+        QProcess *process = new QProcess(this);
 
-    visualizer->SetTransform("pos/marker/x", RigidTransformd(Eigen::Vector3d(0.5, 0, 0)));
-    visualizer->SetTransform("pos/marker/y", RigidTransformd(Eigen::Vector3d(0, 0.5, 0)));
-    visualizer->SetTransform("pos/marker/z", RigidTransformd(Eigen::Vector3d(0, 0, 0.5)));
+        connect(process, &QProcess::finished, process, [this, process]() {
+            spawnButton->setDisabled(false);
+            process->deleteLater();
+        });
+
+        process->start("../../third-party/visualization-3d/server/build/server");
+
+        QTimer::singleShot(1000, [this]() {
+            socket.connectToHost("localhost", 8080);
+            socket.waitForConnected();
+
+            //write("mode dark\n");
+            write("clear\n");
+            write("create pos            empty\n");
+            write("create pos.marker     cuboid material color 255 255 255 geometry 0.25 0.25 0.25\n");
+            write("create pos.marker.x   cuboid material color 255   0   0 geometry 1.00 0.05 0.05 transform translation 0.5 0 0\n");
+            write("create pos.marker.y   cuboid material color   0 255   0 geometry 0.05 1.00 0.05 transform translation 0 0.5 0\n");
+            write("create pos.marker.z   cuboid material color   0   0 255 geometry 0.05 0.05 1.00 transform translation 0 0 0.5\n");
+            write("create pos.marker.acc sphere material color   0 255   0 geometry 0.05\n");
+            write("create pos.marker.mag sphere material color   0   0 255 geometry 0.05\n");
+            write("create pos.vel        sphere material color 255   0   0 geometry 0.05\n");
+            write("create gps            sphere material color 255   0 255 geometry 0.15\n");
+        });
+    });
 }
 
 void Visualizer::receive(const uint8_t id, const QByteArray &payload) {
@@ -35,26 +55,34 @@ void Visualizer::receive(const uint8_t id, const QByteArray &payload) {
         const msg_frame_sensor_t *sensor = reinterpret_cast<const msg_frame_sensor_t *>(payload.data());
 
         if(sensor->valid.accelerometer) {
-            visualizer->SetTransform("pos/marker/acc", RigidTransformd(Eigen::Vector3d(
-                sensor->accelerometer.calib[0],
-                sensor->accelerometer.calib[1],
-                sensor->accelerometer.calib[2]
-            )));
+            float accelerometer[3];
+            utils_normalize(sensor->accelerometer.calib, accelerometer, 3);
+            write("update pos.marker.acc transform translation %f %f %f\n",
+                accelerometer[0],
+                accelerometer[1],
+                accelerometer[2]
+            );
         }
 
         if(sensor->valid.magnetometer) {
-            visualizer->SetTransform("pos/marker/mag", RigidTransformd(Eigen::Vector3d(
-                sensor->magnetometer.calib[0],
-                sensor->magnetometer.calib[1],
-                sensor->magnetometer.calib[2]
-            )));
+            float magnetometer[3];
+            utils_normalize(sensor->magnetometer.calib, magnetometer, 3);
+            write("update pos.marker.mag transform translation %f %f %f\n",
+                magnetometer[0],
+                magnetometer[1],
+                magnetometer[2]
+            );
         }
 
         if(sensor->valid.gps) {
             float cartesian[2];
             utils_gps_to_enu(sensor->gps, cartesian);
-
-            visualizer->SetTransform("gps", RigidTransformd(Eigen::Vector3d(cartesian[0], cartesian[1], 0)));
+            write("update gps transform translation %f %f 0\n",
+                cartesian[0],
+                cartesian[1]
+            );
+        } else {
+            write("update gps transform translation 0 0 0\n");
         }
 
         return;
@@ -63,19 +91,48 @@ void Visualizer::receive(const uint8_t id, const QByteArray &payload) {
     if(id==MSG_ID_ESTIMATION && payload.size()==sizeof(msg_frame_estimation_t)) {
         const msg_frame_estimation_t *estimation = reinterpret_cast<const msg_frame_estimation_t *>(payload.data());
 
-        visualizer->SetTransform("pos", RigidTransformd(Eigen::Vector3d(
+        constexpr double alpha = 0.99;
+        cameraPosition[0] = alpha*cameraPosition[0] + (1 - alpha)*estimation->position[0];
+        cameraPosition[1] = alpha*cameraPosition[1] + (1 - alpha)*estimation->position[1];
+        cameraPosition[2] = alpha*cameraPosition[2] + (1 - alpha)*estimation->position[2];
+        write("camera %f %f %f\n", cameraPosition[0], cameraPosition[1], cameraPosition[2]);
+
+        float quaternion[4];
+        utils_normalize(estimation->orientation, quaternion, 4);
+        write("update pos.marker transform quaternion %f %f %f %f\n",
+            quaternion[0],
+            quaternion[1],
+            quaternion[2],
+            quaternion[3]
+        );
+
+        write("update pos transform translation %f %f %f\n",
             estimation->position[0],
             estimation->position[1],
             estimation->position[2]
-        )));
+        );
 
-        visualizer->SetTransform("pos/marker", RigidTransformd(Eigen::Quaternion<double>(
-            estimation->orientation[0],
-            estimation->orientation[1],
-            estimation->orientation[2],
-            estimation->orientation[3]
-        ), Eigen::Vector3d(0, 0, 0)));
+        write("update pos.vel transform translation %f %f %f\n",
+            estimation->velocity[0],
+            estimation->velocity[1],
+            estimation->velocity[2]
+        );
 
         return;
     }
+}
+
+void Visualizer::write(const char *format, ...) {
+    if(socket.state()!=QAbstractSocket::SocketState::ConnectedState) {
+        return;
+    }
+
+    va_list args;
+    va_start(args, format);
+
+	char str[256];
+    const size_t len = vsprintf(str, format, args);
+
+    socket.write(str, len);
+    socket.flush();
 }

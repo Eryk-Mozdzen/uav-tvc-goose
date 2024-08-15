@@ -1,18 +1,23 @@
 #pragma once
 
-#include <QObject>
+#include <QWidget>
+#include <QGroupBox>
+#include <QPushButton>
+#include <QTcpSocket>
 
-#include <drake/geometry/meshcat.h>
-
-class Visualizer : public QObject {
+class Visualizer : public QGroupBox {
     Q_OBJECT
 
-    drake::geometry::Meshcat *visualizer;
+    double cameraPosition[3] = {0, 0, 0};
+
+    QTcpSocket socket;
+    QPushButton *spawnButton;
+
+    void write(const char *format, ...);
 
 public slots:
     void receive(const uint8_t id, const QByteArray &payload);
 
 public:
-    Visualizer(QObject *parent = nullptr);
-    void start();
+    Visualizer(QWidget *parent = nullptr);
 };
