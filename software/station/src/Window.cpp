@@ -15,12 +15,17 @@
 #include <QComboBox>
 #include <QPushButton>
 #include <QSlider>
+#include <QSettings>
+#include <QThread>
 
 #include "common/math/utils.h"
 #include "common/protocol/msg.h"
 #include "common/qt/Serial.h"
 #include "common/qt/Network.h"
 #include "Window.h"
+#include "Form.h"
+#include "LiveChart.h"
+#include "Visualizer.h"
 
 std::ostream & operator<<(std::ostream &stream, const msg_frame_sensor_t sensor) {
 	stream << "press";
@@ -91,28 +96,43 @@ Window::Window(QWidget *parent) : QWidget(parent) {
     QGridLayout *layout = new QGridLayout(this);
 
     {
+        QThread *thread = new QThread();
+
+        visualizer.moveToThread(thread);
+
+        connect(thread, &QThread::started, &visualizer, &Visualizer::start);
+        connect(thread, &QThread::finished, &visualizer, &Visualizer::deleteLater);
+        connect(thread, &QThread::finished, thread, &QThread::deleteLater);
+
+        thread->start();
+    }
+
+    {
+        common::Network *network = new common::Network(this);
         common::Serial *serial = new common::Serial(this);
-	    common::Network *network = new common::Network(this);
 
         connect(serial, &common::Serial::receive, this, &Window::receive);
         connect(network, &common::Network::receive, this, &Window::receive);
         connect(this, &Window::transmit, serial, &common::Serial::transmit);
         connect(this, &Window::transmit, network, &common::Network::transmit);
+        connect(serial, &common::Serial::receive, &visualizer, &Visualizer::receive);
+        connect(network, &common::Network::receive, &visualizer, &Visualizer::receive);
 
-        layout->addWidget(serial, 0, 2);
         layout->addWidget(network, 0, 0, 1, 2);
+        layout->addWidget(serial, 0, 2);
+        layout->addWidget(&gamepad, 0, 3);
     }
 
     {
         others = new Form("Others", {
-            "state",
-            "magnetic inclination",
-            "ground pressure",
-            "pressure",
-            "distance",
-            "rotor velocity",
-            "supply voltage",
-            "supply current"
+            "SM State",
+            "Magnetic inclination",
+            "Ground pressure",
+            "Pressure",
+            "Distance",
+            "Rotor velocity",
+            "Supply voltage",
+            "Supply current"
         });
 
         layout->addWidget(others, 1, 0);
@@ -188,39 +208,6 @@ Window::Window(QWidget *parent) : QWidget(parent) {
         connect(source4, &QRadioButton::clicked, [this]() {
             settings.setValue("terminalSource", 4);
         });
-
-        /*QTimer *timer = new QTimer();
-        connect(timer, &QTimer::timeout, [this]() {
-            comm::Controller::State setpoint;
-
-            setpoint.rpy[0] = -30.f*deg2rad*gamepad.get(Gamepad::Analog::LX);
-            setpoint.rpy[1] = +30.f*deg2rad*gamepad.get(Gamepad::Analog::LY);
-            setpoint.rpy[2] = 0.f;
-            setpoint.w[0] = 0.f;
-            setpoint.w[1] = 0.f;
-            setpoint.w[2] = -90.f*deg2rad*gamepad.get(Gamepad::Analog::RX);
-            setpoint.z = -0.5f*gamepad.get(Gamepad::Analog::RY) + 0.5f;
-            setpoint.vz = 0.f;
-
-            transmit(Transfer::encode(setpoint, Transfer::ID::CONTROL_SETPOINT));
-
-            if(gamepad.get(Gamepad::Button::CROSS_UP)) {
-                transmit(Transfer::encode(comm::Command::START, Transfer::ID::CONTROL_COMMAND));
-            }
-
-            if(gamepad.get(Gamepad::Button::CROSS_DOWN)) {
-                transmit(Transfer::encode(comm::Command::LAND, Transfer::ID::CONTROL_COMMAND));
-            }
-
-            if(gamepad.get(Gamepad::Button::CIRCLE_X)) {
-                transmit(Transfer::encode(comm::Command::ABORT, Transfer::ID::CONTROL_COMMAND));
-            }
-
-            if(gamepad.get(Gamepad::Button::CIRCLE_B)) {
-                widgets::LiveChart::resume();
-            }
-        });
-        timer->start(20);*/
     }
 
     {
@@ -241,36 +228,61 @@ Window::Window(QWidget *parent) : QWidget(parent) {
         manual[3]->setRange(0, 100);
 
         QTimer *timer = new QTimer();
-        timer->setInterval(20);
-        connect(timer, &QTimer::timeout, [this, manual]() {
-            const float mx = manual[0]->value();
-            const float my = manual[1]->value();
-            const float mz = manual[2]->value();
-            const float ur = manual[3]->value();
+        connect(timer, &QTimer::timeout, [this, manual, manual_switch]() {
+            if(manual_switch->checkState()==Qt::CheckState::Checked) {
+                const float mx = manual[0]->value();
+                const float my = manual[1]->value();
+                const float mz = manual[2]->value();
+                const float ur = manual[3]->value();
 
-            constexpr float C = 0.01;
+                constexpr float C = 0.01;
 
-            msg_frame_manual_t frame;
-            frame.is_raw = 0;
-            frame.servos.calibrated[0] = C*(-0.333*mx - 0.577*my - 0.333*mz);
-            frame.servos.calibrated[1] = C*( 0.667*mx            - 0.333*mz);
-            frame.servos.calibrated[2] = C*(-0.333*mx + 0.577*my - 0.333*mz);
-            frame.motor = ur;
+                msg_frame_manual_t frame;
+                frame.is_raw = 0;
+                frame.servos.calibrated[0] = C*(-0.333*mx - 0.577*my - 0.333*mz);
+                frame.servos.calibrated[1] = C*( 0.667*mx            - 0.333*mz);
+                frame.servos.calibrated[2] = C*(-0.333*mx + 0.577*my - 0.333*mz);
+                frame.motor = ur;
 
-            transmit(MSG_ID_MANUAL, QByteArray(reinterpret_cast<const char *>(&frame), sizeof(frame)));
+                transmit(MSG_ID_MANUAL, QByteArray(reinterpret_cast<const char *>(&frame), sizeof(frame)));
+            } else {
+                msg_frame_setpoint_t frame;
+
+                frame.rpy[0] = -30*DEG2RAD*gamepad.get(Gamepad::Analog::LX);
+                frame.rpy[1] = +30*DEG2RAD*gamepad.get(Gamepad::Analog::LY);
+                frame.rpy[2] = 0;
+                frame.omega[0] = 0;
+                frame.omega[1] = 0;
+                frame.omega[2] = -90*DEG2RAD*gamepad.get(Gamepad::Analog::RX);
+                frame.pos[0] = 0;
+                frame.pos[1] = 0;
+                frame.pos[2] = -0.5*gamepad.get(Gamepad::Analog::RY) + 0.5;
+                frame.vel[0] = 0;
+                frame.vel[1] = 0;
+                frame.vel[2] = 0;
+
+                transmit(MSG_ID_SETPOINT, QByteArray(reinterpret_cast<const char *>(&frame), sizeof(frame)));
+
+                if(gamepad.get(Gamepad::Analog::VERTICAL)<0) {
+                    transmit(MSG_ID_COMMAND_START, QByteArray());
+                }
+
+                if(gamepad.get(Gamepad::Button::X)) {
+                    transmit(MSG_ID_COMMAND_ABORT, QByteArray());
+                }
+
+                if(gamepad.get(Gamepad::Button::B)) {
+                    LiveChart::resume();
+                }
+            }
         });
+        timer->start(20);
 
-        connect(manual_switch, &QCheckBox::stateChanged, [timer, manual](int state) {
+        connect(manual_switch, &QCheckBox::stateChanged, [timer, manual]() {
             manual[0]->setValue(0);
             manual[1]->setValue(0);
             manual[2]->setValue(0);
             manual[3]->setValue(0);
-
-            if(state) {
-                timer->start();
-            } else {
-                timer->stop();
-            }
         });
 
         grid->addWidget(manual[0], 0, 0);
@@ -284,7 +296,7 @@ Window::Window(QWidget *parent) : QWidget(parent) {
 
     {
         LiveChart::Config config;
-        config.title = "Motor Throttle";
+        config.title = "Motor throttle";
         config.yLabel = "[%]";
         config.yMin = 0;
         config.yMax = 100;
@@ -338,7 +350,7 @@ Window::Window(QWidget *parent) : QWidget(parent) {
 
     {
         LiveChart::Config config;
-        config.title = "Thrust Vanes";
+        config.title = "Thrust vanes";
         config.yLabel = "[°]";
         config.yMin = -15;
         config.yMax = 15;
@@ -433,8 +445,8 @@ void Window::receive(const uint8_t id, const QByteArray &payload) {
         float rpy[3];
         utils_quaternion_to_rpy(estimation->orientation, rpy);
 
-        others->set("magnetic inclination", "%+6.0f", estimation->theta_d*RAD2DEG);
-        others->set("ground pressure", "%6.0f", estimation->pressure_0);
+        others->set("Magnetic inclination", "%+6.0f", estimation->theta_d*RAD2DEG);
+        others->set("Ground pressure", "%6.0f", estimation->pressure_0);
         position->append("x process", estimation->position[0]);
         position->append("y process", estimation->position[1]);
         position->append("z process", estimation->position[2]);

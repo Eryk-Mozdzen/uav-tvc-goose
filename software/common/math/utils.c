@@ -1,6 +1,12 @@
 #include <stddef.h>
 #include <math.h>
 
+#include "common/math/utils.h"
+
+#define REF_LATITUDE    0.950871f // 54*28'51.2''
+#define REF_LONGITUDE   0.323817f // 18*33'12.1''
+#define EARTH_RADIUS    6371000.f
+
 float utils_length(const float *vec, const size_t dim) {
     float sum = 0;
 
@@ -91,4 +97,35 @@ void utils_quaternion_to_rot_trans(const float *quaternion, float *rot) {
     rot[6] = s*(qx*qz + qw*qy);
     rot[7] = s*(qy*qz - qw*qx);
     rot[8] = 1.f - s*(qx*qx + qy*qy);
+}
+
+void utils_gps_to_enu(const float *position, float *cartesian) {
+    const float lat = position[0]*DEG2RAD;
+    const float lon = position[1]*DEG2RAD;
+
+    const float ecef[3] = {
+        EARTH_RADIUS*cosf(lat)*cosf(lon),
+        EARTH_RADIUS*cosf(lat)*sinf(lon),
+        EARTH_RADIUS*sinf(lat)
+    };
+
+    const float ecef_ref[3] = {
+        EARTH_RADIUS*cosf(REF_LATITUDE)*cosf(REF_LONGITUDE),
+        EARTH_RADIUS*cosf(REF_LATITUDE)*sinf(REF_LONGITUDE),
+        EARTH_RADIUS*sinf(REF_LATITUDE)
+    };
+
+    const float s_phi = sinf(REF_LATITUDE);
+    const float c_phi = cosf(REF_LATITUDE);
+    const float s_lambda = sinf(REF_LONGITUDE);
+    const float c_lambda = cosf(REF_LONGITUDE);
+
+    const float R[9] = {
+        -s_lambda,        c_lambda,       0,
+        -s_phi*c_lambda, -s_phi*s_lambda, c_phi,
+         c_phi*c_lambda,  c_phi*s_lambda, s_phi
+    };
+
+    cartesian[0] = R[0]*(ecef[0] - ecef_ref[0]) + R[1]*(ecef[1] - ecef_ref[1]) + R[2]*(ecef[2] - ecef_ref[2]);
+    cartesian[1] = R[3]*(ecef[0] - ecef_ref[0]) + R[4]*(ecef[1] - ecef_ref[1]) + R[5]*(ecef[2] - ecef_ref[2]);
 }

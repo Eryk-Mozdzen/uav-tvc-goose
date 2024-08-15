@@ -4,6 +4,7 @@ project(station)
 
 set(CMAKE_AUTOMOC ON)
 
+find_package(drake REQUIRED)
 find_package(Qt6 COMPONENTS
 	Widgets
 	Network
@@ -23,15 +24,19 @@ add_executable(${PROJECT_NAME}
 
 	"src/main.cpp"
 	"src/Window.cpp"
-	"src/Gamepad.cpp"
 	"src/Form.cpp"
 	"src/LiveChart.cpp"
+	"src/Gamepad.cpp"
+	"src/Visualizer.cpp"
+)
+
+set_source_files_properties("../third-party/QCustomPlot/qcustomplot/qcustomplot.cpp" PROPERTIES COMPILE_FLAGS
+	"-w"
 )
 
 target_include_directories(${PROJECT_NAME} PRIVATE
 	".."
 	"../third-party"
-
 	"src"
 )
 
@@ -47,6 +52,7 @@ target_compile_options(${PROJECT_NAME} PRIVATE
 )
 
 target_link_libraries(${PROJECT_NAME}
+	drake::drake
 	Qt6::Widgets
 	Qt6::Network
 	Qt6::SerialPort

@@ -9,7 +9,7 @@
 
 namespace common {
 
-Network::Network(QWidget *parent) : AbstractInterface{"Network Interface", parent} {
+Network::Network(QWidget *parent) : AbstractInterface{"Network interface", parent} {
     connect(&socket, &QTcpSocket::readyRead, [&]() {
         receiveBytes(socket.readAll());
     });

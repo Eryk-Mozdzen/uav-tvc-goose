@@ -12,12 +12,20 @@ typedef enum {
     MSG_ID_PASSTHROUGH_GPS,
     MSG_ID_SENSOR,
     MSG_ID_ESTIMATION,
-    MSG_ID_CONTROLLER,
     MSG_ID_CALIBRATION,
+    MSG_ID_SETPOINT,
+    MSG_ID_CONTROLLER,
     MSG_ID_MANUAL,
     MSG_ID_COMMAND_START,
     MSG_ID_COMMAND_ABORT,
 } msg_id_t;
+
+typedef enum {
+    MSG_SM_STATE_ABORT,
+    MSG_SM_STATE_READY,
+    MSG_SM_STATE_ACTIVE,
+    MSG_SM_STATE_MANUAL,
+} msg_sm_state_t;
 
 typedef struct {
     struct {
@@ -75,6 +83,33 @@ typedef struct {
     float gyroscope[3];
     uint16_t servos[9];
 } msg_frame_calibration_t;
+
+typedef struct {
+    float rpy[3];
+    float omega[3];
+    float pos[3];
+    float vel[3];
+} msg_frame_setpoint_t;
+
+typedef struct {
+    struct {
+        float rpy[3];
+        float omega[3];
+        float pos[3];
+        float vel[3];
+    } process;
+    struct {
+        float rpy[3];
+        float omega[3];
+        float pos[3];
+        float vel[3];
+    } setpoint;
+    struct {
+        float throttle;
+        float angles[3];
+    } controls;
+    uint8_t state;
+} msg_frame_controller_t;
 
 typedef struct {
     union {

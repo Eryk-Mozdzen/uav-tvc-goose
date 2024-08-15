@@ -7,7 +7,7 @@
 
 namespace common {
 
-Serial::Serial(QWidget *parent) : AbstractInterface{"Serial Interface", parent} {
+Serial::Serial(QWidget *parent) : AbstractInterface{"Serial interface", parent} {
     connect(&serial, &QSerialPort::readyRead, [&]() {
         receiveBytes(serial.readAll());
     });
