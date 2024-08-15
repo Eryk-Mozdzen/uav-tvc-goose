@@ -9,7 +9,7 @@ namespace common {
 class Serial : public AbstractInterface {
 	QSerialPort serial;
 
-	void transmitBytes(const QByteArray &bytes) override;
+	void transmitBytes(const QByteArray &bytes);
     void scanInput() override;
 	void changeInput(const QString &input) override;
 

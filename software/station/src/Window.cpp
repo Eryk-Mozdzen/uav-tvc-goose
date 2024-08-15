@@ -143,11 +143,11 @@ Window::Window(QWidget *parent) : QWidget(parent) {
         layout->addWidget(group, 2, 0);
 
         connect(cmd_start, &QPushButton::clicked, [this]() {
-            transmit(MSG_ID_COMMAND_START, NULL, 0);
+            transmit(MSG_ID_COMMAND_START, QByteArray());
         });
 
         connect(cmd_abort, &QPushButton::clicked, [this]() {
-            transmit(MSG_ID_COMMAND_ABORT, NULL, 0);
+            transmit(MSG_ID_COMMAND_ABORT, QByteArray());
         });
 
         connect(resume, &QPushButton::clicked, []() {
@@ -257,7 +257,7 @@ Window::Window(QWidget *parent) : QWidget(parent) {
             frame.servos.calibrated[2] = C*(-0.333*mx + 0.577*my - 0.333*mz);
             frame.motor = ur;
 
-            transmit(MSG_ID_MANUAL, &frame, sizeof(frame));
+            transmit(MSG_ID_MANUAL, QByteArray(reinterpret_cast<const char *>(&frame), sizeof(frame)));
         });
 
         connect(manual_switch, &QCheckBox::stateChanged, [timer, manual](int state) {
@@ -288,7 +288,8 @@ Window::Window(QWidget *parent) : QWidget(parent) {
         config.yLabel = "[%]";
         config.yMin = 0;
         config.yMax = 100;
-        config.yFormat = "%3.0f";
+        config.yPrecision = 0;
+        config.yTick = 20;
 
         throttle = new LiveChart(config, this);
         throttle->addSeries("throttle", QPen(Qt::black, 2, Qt::SolidLine));
@@ -302,7 +303,8 @@ Window::Window(QWidget *parent) : QWidget(parent) {
         config.yLabel = "[°]";
         config.yMin = -180;
         config.yMax = 180;
-        config.yFormat = "%3.0f";
+        config.yPrecision = 0;
+        config.yTick = 45;
 
         attitude = new LiveChart(config, this);
         attitude->addSeries("roll setpoint", QPen(Qt::red,      1, Qt::DashLine));
@@ -320,7 +322,8 @@ Window::Window(QWidget *parent) : QWidget(parent) {
         config.yLabel = "[m]";
         config.yMin = -2;
         config.yMax = 2;
-        config.yFormat = "%1.1f";
+        config.yPrecision = 0;
+        config.yTick = 1;
 
         position = new LiveChart(config, this);
         position->addSeries("x setpoint", QPen(Qt::red,    1, Qt::DashLine));
@@ -337,9 +340,10 @@ Window::Window(QWidget *parent) : QWidget(parent) {
         LiveChart::Config config;
         config.title = "Thrust Vanes";
         config.yLabel = "[°]";
-        config.yMin = -20;
-        config.yMax = 20;
-        config.yFormat = "%2.0f";
+        config.yMin = -15;
+        config.yMax = 15;
+        config.yPrecision = 0;
+        config.yTick = 5;
 
         fins = new LiveChart(config, this);
         fins->addSeries("vane 1", QPen(Qt::red,      2, Qt::SolidLine));
@@ -356,7 +360,8 @@ Window::Window(QWidget *parent) : QWidget(parent) {
         config.yLabel = "[°/s]";
         config.yMin = -360;
         config.yMax = 360;
-        config.yFormat = "%3.0f";
+        config.yPrecision = 0;
+        config.yTick = 90;
 
         angular_vel = new LiveChart(config, this);
         angular_vel->addSeries("x setpoint", QPen(Qt::red,   1, Qt::DashLine));
@@ -375,7 +380,8 @@ Window::Window(QWidget *parent) : QWidget(parent) {
         config.yLabel = "[m/s]";
         config.yMin = -2;
         config.yMax = 2;
-        config.yFormat = "%1.0f";
+        config.yPrecision = 0;
+        config.yTick = 1;
 
         linear_vel = new LiveChart(config, this);
         linear_vel->addSeries("x setpoint", QPen(Qt::red,   1, Qt::DashLine));
@@ -389,10 +395,10 @@ Window::Window(QWidget *parent) : QWidget(parent) {
     }
 }
 
-void Window::receive(const uint8_t id, const void *payload, const uint32_t size) {
+void Window::receive(const uint8_t id, const QByteArray &payload) {
     if(id==MSG_ID_LOG) {
         if(settings.value("terminalSource").toInt()==1) {
-            std::cout << std::string(reinterpret_cast<const char *>(payload), size) << std::endl;
+            std::cout << std::string(reinterpret_cast<const char *>(payload.data()), payload.size()) << std::endl;
         }
 
         return;
@@ -400,15 +406,15 @@ void Window::receive(const uint8_t id, const void *payload, const uint32_t size)
 
     if(id==MSG_ID_PASSTHROUGH_GPS) {
         if(settings.value("terminalSource").toInt()==2) {
-            std::cout << std::string(reinterpret_cast<const char *>(payload), size);
+            std::cout << std::string(reinterpret_cast<const char *>(payload.data()), payload.size());
             std::cout.flush();
         }
 
         return;
     }
 
-    if(id==MSG_ID_SENSOR && size==sizeof(msg_frame_sensor_t)) {
-        const msg_frame_sensor_t *sensor = static_cast<const msg_frame_sensor_t *>(payload);
+    if(id==MSG_ID_SENSOR && payload.size()==sizeof(msg_frame_sensor_t)) {
+        const msg_frame_sensor_t *sensor = reinterpret_cast<const msg_frame_sensor_t *>(payload.data());
 
         if(settings.value("terminalSource").toInt()==3) {
             std::cout << *sensor << std::endl;
@@ -417,8 +423,8 @@ void Window::receive(const uint8_t id, const void *payload, const uint32_t size)
         return;
     }
 
-    if(id==MSG_ID_ESTIMATION && size==sizeof(msg_frame_estimation_t)) {
-        const msg_frame_estimation_t *estimation = static_cast<const msg_frame_estimation_t *>(payload);
+    if(id==MSG_ID_ESTIMATION && payload.size()==sizeof(msg_frame_estimation_t)) {
+        const msg_frame_estimation_t *estimation = reinterpret_cast<const msg_frame_estimation_t *>(payload.data());
 
         if(settings.value("terminalSource").toInt()==4) {
             std::cout << *estimation << std::endl;

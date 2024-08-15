@@ -1,36 +1,34 @@
 #pragma once
 
 #include <QWidget>
-#include <QChartView>
-#include <QChart>
-#include <QLineSeries>
-#include <QValueAxis>
 #include <QTimer>
 
-class LiveChart : public QChartView {
+#include "QCustomPlot/qcustomplot/qcustomplot.h"
+
+class LiveChart : public QCustomPlot {
     static qint64 start;
     static bool paused;
-    static QVector<QLineSeries *> series;
+    static QVector<LiveChart *> registered;
 
+    QString title;
+    QVector<QString> series;
     QTimer *timer;
-    QChart *chart;
-    QValueAxis *axisX;
-    QValueAxis *axisY;
 
-    static float getTime();
+    static double getTime();
 
 public:
     struct Config {
         QString title;
         QString yLabel;
-        QString yFormat;
-        float yMin;
-        float yMax;
+        int yPrecision;
+        double yMin;
+        double yMax;
+        double yTick;
     };
 
     LiveChart(const Config &config, QWidget *parent=nullptr);
     void addSeries(const QString name, const QPen pen);
-    void append(const QString name, const float value);
+    void append(const QString name, const double value);
     static void resume();
     static void pause();
     static void save();

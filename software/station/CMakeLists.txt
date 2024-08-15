@@ -8,7 +8,8 @@ find_package(Qt6 COMPONENTS
 	Widgets
 	Network
 	SerialPort
-	Charts
+	PrintSupport
+	OpenGL
 REQUIRED)
 
 add_executable(${PROJECT_NAME}
@@ -17,6 +18,8 @@ add_executable(${PROJECT_NAME}
 	"../common/qt/Serial.cpp"
 	"../common/qt/Network.cpp"
 	"../common/qt/AbstractInterface.cpp"
+	"../common/qt/Protocol.cpp"
+	"../third-party/QCustomPlot/qcustomplot/qcustomplot.cpp"
 
 	"src/main.cpp"
 	"src/Window.cpp"
@@ -27,7 +30,13 @@ add_executable(${PROJECT_NAME}
 
 target_include_directories(${PROJECT_NAME} PRIVATE
 	".."
+	"../third-party"
+
 	"src"
+)
+
+target_compile_definitions(${PROJECT_NAME} PRIVATE
+	QCUSTOMPLOT_USE_OPENGL
 )
 
 target_compile_options(${PROJECT_NAME} PRIVATE
@@ -41,5 +50,6 @@ target_link_libraries(${PROJECT_NAME}
 	Qt6::Widgets
 	Qt6::Network
 	Qt6::SerialPort
-	Qt6::Charts
+	Qt6::PrintSupport
+	Qt6::OpenGL
 )

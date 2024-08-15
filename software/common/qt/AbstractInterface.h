@@ -7,18 +7,14 @@
 #include <QLabel>
 #include <QSettings>
 
-#include "common/protocol/protocol.h"
+#include "common/qt/Protocol.h"
 
 namespace common {
 
 class AbstractInterface : public QGroupBox {
     Q_OBJECT
 
-	uint8_t buffer_tx[10*1024];
-    uint8_t buffer_rx[10*1024];
-    uint8_t buffer_decode[10*1024];
-	protocol_t protocol = PROTOCOL_INIT;
-	qint64 start;
+	Protocol *protocol;
 
 	QSettings settings;
 	QLabel *uiLabels[4];
@@ -36,18 +32,20 @@ protected:
 	QString getDefaultInput() const;
 	void setStatus(const QString &status);
     void receiveBytes(const QByteArray &bytes);
+
+signals:
+	void transmitBytes(const QByteArray &bytes);
 	void transmitAvailable(const bool available);
-    virtual void transmitBytes(const QByteArray &bytes) = 0;
 
 protected slots:
     virtual void scanInput() = 0;
 	virtual void changeInput(const QString &input) = 0;
 
 public slots:
-	void transmit(const uint8_t id, const void *payload, const uint32_t size);
+	void transmit(const uint8_t id, const QByteArray &payload);
 
 signals:
-	void receive(const uint8_t id, const void *payload, const uint32_t size);
+	void receive(const uint8_t id, const QByteArray &payload);
 
 public:
 	AbstractInterface(const QString name, QWidget *parent = nullptr);

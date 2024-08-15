@@ -1,109 +1,86 @@
 #include <cassert>
 
-#include <QChart>
-#include <QChartView>
-#include <QLineSeries>
-#include <QValueAxis>
-#include <QLegend>
-#include <QGraphicsLayout>
-#include <QFont>
-#include <QTimer>
 #include <QDateTime>
 #include <QFileDialog>
-#include <QDebug>
 
+#include "QCustomPlot/qcustomplot/qcustomplot.h"
 #include "LiveChart.h"
 
 qint64 LiveChart::start = QDateTime::currentMSecsSinceEpoch();
 bool LiveChart::paused = false;
-QVector<QLineSeries *> LiveChart::series;
+QVector<LiveChart *> LiveChart::registered;
 
-LiveChart::LiveChart(const Config &config, QWidget *parent) : QChartView{parent} {
-    chart = new QChart();
-    chart->setTitle(config.title);
-    chart->legend()->hide();
-    chart->layout()->setContentsMargins(0, 0, 0, 0);
-    chart->setContentsMargins(-20, -20, -20, -20);
-    chart->setBackgroundRoundness(0);
-    chart->setBackgroundBrush(Qt::transparent);
+LiveChart::LiveChart(const Config &config, QWidget *parent) : QCustomPlot{parent} {
+    registered.append(this);
+    title = config.title;
 
-    setChart(chart);
-    setRenderHint(QPainter::Antialiasing);
-    setMinimumSize(300, 200);
+    QSharedPointer<QCPAxisTickerTime> xTicker(new QCPAxisTickerTime);
+    xTicker->setTimeFormat("%m:%s");
+    xAxis->setTicker(xTicker);
+    QSharedPointer<QCPAxisTickerFixed> yTicker(new QCPAxisTickerFixed);
+    yTicker->setTickStep(config.yTick);
+    yAxis->setTicker(yTicker);
+    yAxis->setRange(config.yMin, config.yMax);
+    yAxis->setLabel(config.yLabel);
+    yAxis->setNumberFormat("f");
+    yAxis->setNumberPrecision(config.yPrecision);
 
-    axisX = new QValueAxis(this);
-    axisX->setLabelFormat("%5.1f");
-    axisX->setTitleFont(QFont());
-    chart->addAxis(axisX, Qt::AlignBottom);
+    plotLayout()->insertRow(0);
+    QCPTextElement *title = new QCPTextElement(this, config.title, QFont());
+    title->setAutoMargins(QCP::msNone);
+    title->setMargins(QMargins(0, 10, 0, -15));
+    plotLayout()->addElement(0, 0, title);
 
-    axisY = new QValueAxis(this);
-    axisY->setTitleText(config.yLabel);
-    axisY->setLabelFormat(config.yFormat);
-    axisY->setRange(config.yMin, config.yMax);
-    axisY->setTitleFont(QFont());
-    chart->addAxis(axisY, Qt::AlignLeft);
+    setMinimumSize(400, 200);
+    setBackground(Qt::transparent);
+    setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
+    setOpenGl(true);
 
-    timer = new QTimer(this);
+    QTimer *timer = new QTimer();
     connect(timer, &QTimer::timeout, [this]() {
-        if(paused) {
-            return;
-        }
-
-        const float t = getTime();
-
-        axisX->setRange(t-10, t);
-
-        for(QLineSeries *s : series) {
-            if(s->chart()==chart) {
-                while(s->count()>0) {
-                    if(s->at(0).x()<t-10) {
-                        s->remove(0);
-                    } else {
-                        break;
-                    }
-                }
+        if(!paused) {
+            const double t = getTime();
+            for(int i=0; i<series.size(); i++) {
+                graph(i)->data()->removeBefore(t-10);
             }
+            xAxis->setRange(t, 10, Qt::AlignRight);
+            replot();
         }
     });
     timer->start(20);
 }
 
 void LiveChart::addSeries(const QString name, const QPen pen) {
-    QLineSeries *s = new QLineSeries(this);
+    addGraph();
+    series.append(name);
 
-    chart->addSeries(s);
+    const int index = series.indexOf(name);
 
-    s->setPen(pen);
-    s->setName(name);
-    s->attachAxis(axisX);
-    s->attachAxis(axisY);
-
-    series.append(s);
+    graph(index)->setPen(pen);
+    graph(index)->setAdaptiveSampling(true);
 }
 
-float LiveChart::getTime() {
-    return static_cast<float>(QDateTime::currentMSecsSinceEpoch() - start)/1000.f;
+double LiveChart::getTime() {
+    return static_cast<double>(QDateTime::currentMSecsSinceEpoch() - start)/1000.f;
 }
 
-void LiveChart::append(const QString name, const float value) {
-    bool found = false;
+void LiveChart::append(const QString name, const double value) {
+    if(!paused) {
+        assert(series.contains(name));
 
-    for(QLineSeries *s : series) {
-        if(s->name()==name && s->chart()==chart) {
-            s->append(getTime(), value);
-            found = true;
-            break;
-        }
+        const int index = series.indexOf(name);
+
+        graph(index)->addData(getTime(), value);
     }
-
-    assert(found);
 }
 
 void LiveChart::resume() {
     paused = false;
 
-    for(QLineSeries *s : series) {
-        s->clear();
+    for(LiveChart *chart : registered) {
+        for(int i=0; i<chart->series.size(); i++) {
+            chart->graph(i)->data()->clear();
+        }
     }
 
     LiveChart::start = QDateTime::currentMSecsSinceEpoch();
@@ -126,23 +103,24 @@ void LiveChart::save() {
 
     QDir().mkdir(basename);
 
-    for(QLineSeries *s : series) {
-        const QString name =  s->chart()->title().replace(" ", "_") + "_" + s->name().replace(" ", "_");
+    for(const LiveChart *chart : registered) {
+        for(int i=0; i<chart->series.size(); i++) {
+            QString name = chart->title + "_" + chart->series[i];
 
-        QFile file(basename + "/" + name + ".csv");
+            QFile file(basename + "/" + name.replace(" ", "_") + ".csv");
 
-        if(!file.open(QFile::WriteOnly | QFile::Text)) {
-            qDebug() << "error during file save for" << name;
-            continue;
+            if(file.open(QFile::WriteOnly | QFile::Text)) {
+                QTextStream output(&file);
+
+                output << "time,value\n";
+
+                const QSharedPointer<QCPGraphDataContainer> data = chart->graph(i)->data();
+                for(const QCPGraphData &point : *data) {
+                    output << point.key << "," << point.value << "\n";
+                }
+
+                file.close();
+            }
         }
-
-        QTextStream output(&file);
-
-        output << "time,value\n";
-        for(const QPointF &point : s->points()) {
-            output << point.x() << "," << point.y() << "\n";
-        }
-
-        file.close();
     }
 }

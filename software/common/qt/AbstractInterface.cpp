@@ -6,7 +6,7 @@
 #include <QPushButton>
 #include <QLabel>
 #include <QSettings>
-#include <QDateTime>
+#include <QThread>
 
 #include "common/protocol/protocol.h"
 #include "common/qt/AbstractInterface.h"
@@ -14,37 +14,22 @@
 namespace common {
 
 AbstractInterface::AbstractInterface(const QString name, QWidget *parent) : QGroupBox{name, parent} {
-    {
-        protocol.user = this;
-        protocol.callback_tx = [](void *user, const void *data, const uint32_t size) {
-            AbstractInterface *self = reinterpret_cast<AbstractInterface *>(user);
-            self->transmitBytes(QByteArray(reinterpret_cast<const char *>(data), size));
-            self->uploadBytes +=size;
-        };
-        protocol.callback_rx = [](void *user, const uint8_t id, const void *payload, const uint32_t size) {
-            AbstractInterface *self = reinterpret_cast<AbstractInterface *>(user);
-            self->receive(id, payload, size);
-        };
-        protocol.callback_err = [](void *user, const protocol_error_t error) {
-            (void)error;
-            AbstractInterface *self = reinterpret_cast<AbstractInterface *>(user);
-            self->errorNum++;
-        };
-        protocol.fifo_tx.buffer = buffer_tx;
-        protocol.fifo_tx.size = sizeof(buffer_tx);
-        protocol.fifo_rx.buffer = buffer_rx;
-        protocol.fifo_rx.size = sizeof(buffer_rx);
-        protocol.decoded = buffer_decode;
-        protocol.max = sizeof(buffer_decode);
+    protocol = new Protocol();
+    QThread *thread = new QThread();
 
-        QTimer *timer = new QTimer();
-        connect(timer, &QTimer::timeout, [&]() {
-            protocol.time = QDateTime::currentMSecsSinceEpoch() - start;
-            protocol_process(&protocol);
-        });
-        start = QDateTime::currentMSecsSinceEpoch();
-        timer->start(1);
-    }
+    protocol->moveToThread(thread);
+
+    connect(thread, &QThread::started, protocol, &Protocol::start);
+    connect(thread, &QThread::finished, protocol, &Protocol::deleteLater);
+    connect(thread, &QThread::finished, thread, &QThread::deleteLater);
+    connect(protocol, &Protocol::tx, [this](const QByteArray &bytes) {
+        transmitBytes(bytes);
+        uploadBytes +=bytes.size();
+    });
+    connect(protocol, &Protocol::receive, this, &AbstractInterface::receive);
+    connect(this, &AbstractInterface::transmitAvailable, protocol, &Protocol::setAvailability);
+
+    thread->start();
 
     QGridLayout *layout = new QGridLayout(this);
     QFormLayout *form = new QFormLayout();
@@ -85,21 +70,12 @@ AbstractInterface::AbstractInterface(const QString name, QWidget *parent) : QGro
     setLayout(layout);
 }
 
-void AbstractInterface::transmit(const uint8_t id, const void *payload, const uint32_t size) {
-    protocol_enqueue(&protocol, id, payload, size);
-}
-
-void AbstractInterface::transmitAvailable(const bool available) {
-    protocol.available = available;
+void AbstractInterface::transmit(const uint8_t id, const QByteArray &payload) {
+    protocol->transmit(id, payload);
 }
 
 void AbstractInterface::receiveBytes(const QByteArray &bytes) {
-    for(const uint8_t byte : bytes) {
-        protocol.fifo_rx.buffer[protocol.fifo_rx.write] = byte;
-        protocol.fifo_rx.write++;
-        protocol.fifo_rx.write %=protocol.fifo_rx.size;
-    }
-
+    protocol->rx(bytes);
     downloadBytes +=bytes.size();
 }
 

@@ -22,10 +22,10 @@ class Window : public QWidget {
     QSettings settings;
 
 signals:
-    void transmit(const uint8_t id, const void *payload, const uint32_t size);
+    void transmit(const uint8_t id, const QByteArray &payload);
 
 private slots:
-    void receive(const uint8_t id, const void *payload, const uint32_t size);
+    void receive(const uint8_t id, const QByteArray &payload);
 
 public:
     Window(QWidget *parent = nullptr);
