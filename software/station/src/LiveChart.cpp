@@ -68,6 +68,7 @@ void LiveChart::synchronize(const double time) {
     for(LiveChart *chart : registered) {
         for(int i=0; i<chart->series.size(); i++) {
             chart->graph(i)->data()->removeBefore(time-10);
+            chart->graph(i)->data()->removeAfter(time);
         }
         chart->xAxis->setRange(time, 10, Qt::AlignRight);
     }
