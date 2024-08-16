@@ -1,20 +1,15 @@
 #pragma once
 
 #include <QWidget>
-#include <QTimer>
 
 #include "QCustomPlot/qcustomplot/qcustomplot.h"
 
 class LiveChart : public QCustomPlot {
-    static qint64 start;
     static bool paused;
     static QVector<LiveChart *> registered;
 
     QString title;
     QVector<QString> series;
-    QTimer *timer;
-
-    static double getTime();
 
 public:
     struct Config {
@@ -28,7 +23,8 @@ public:
 
     LiveChart(const Config &config, QWidget *parent=nullptr);
     void addSeries(const QString name, const QPen pen);
-    void append(const QString name, const double value);
+    void append(const QString name, const double time, const double value);
+    static void synchronize(const double time);
     static void resume();
     static void pause();
     static void save();

@@ -49,7 +49,8 @@ Visualizer::Visualizer(QWidget *parent) : QGroupBox{"Visualization server", pare
     });
 }
 
-void Visualizer::receive(const uint8_t id, const QByteArray &payload) {
+void Visualizer::receive(const uint8_t id, const double time, const QByteArray &payload) {
+    (void)time;
 
     if(id==MSG_ID_SENSOR && payload.size()==sizeof(msg_frame_sensor_t)) {
         const msg_frame_sensor_t *sensor = reinterpret_cast<const msg_frame_sensor_t *>(payload.data());

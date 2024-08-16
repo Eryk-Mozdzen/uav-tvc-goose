@@ -21,6 +21,7 @@
 #include "common/protocol/msg.h"
 #include "common/qt/Serial.h"
 #include "common/qt/Network.h"
+#include "common/qt/Protocol.h"
 #include "Window.h"
 #include "Form.h"
 #include "LiveChart.h"
@@ -113,7 +114,7 @@ Window::Window(QWidget *parent) : QWidget(parent) {
 
     {
         others = new Form("Others", {
-            "SM State",
+            "State machine",
             "Magnetic inclination",
             "Ground pressure",
             "Pressure",
@@ -395,10 +396,19 @@ Window::Window(QWidget *parent) : QWidget(parent) {
     }
 }
 
-void Window::receive(const uint8_t id, const QByteArray &payload) {
+void Window::receive(const uint8_t id, const double time, const QByteArray &payload) {
     if(id==MSG_ID_LOG) {
         if(settings.value("terminalSource").toInt()==1) {
-            std::cout << std::string(reinterpret_cast<const char *>(payload.data()), payload.size()) << std::endl;
+            const int minutes = static_cast<int>(time) / 60;
+            const double seconds = time - 60*minutes;
+
+            std::cout << "[ ";
+            std::cout << std::setfill('0') << std::setw(2) << minutes << ":";
+            std::cout << std::setfill('0') << std::setw(6) << std::setprecision(3) << std::fixed << seconds;
+            std::cout << " ] ";
+
+            std::cout << std::string(reinterpret_cast<const char *>(payload.data()), payload.size());
+            std::cout << std::endl;
         }
 
         return;
@@ -435,18 +445,20 @@ void Window::receive(const uint8_t id, const QByteArray &payload) {
 
         others->set("Magnetic inclination", "%+6.0f", estimation->theta_d*RAD2DEG);
         others->set("Ground pressure", "%6.0f", estimation->pressure_0);
-        position->append("x process", estimation->position[0]);
-        position->append("y process", estimation->position[1]);
-        position->append("z process", estimation->position[2]);
-        linear_vel->append("x process", estimation->velocity[0]);
-        linear_vel->append("y process", estimation->velocity[1]);
-        linear_vel->append("z process", estimation->velocity[2]);
-        attitude->append("roll process", rpy[0]*RAD2DEG);
-        attitude->append("pitch process", rpy[1]*RAD2DEG);
-        attitude->append("yaw process", rpy[2]*RAD2DEG);
-        angular_vel->append("x process", estimation->angular_velocity[0]*RAD2DEG);
-        angular_vel->append("y process", estimation->angular_velocity[1]*RAD2DEG);
-        angular_vel->append("z process", estimation->angular_velocity[2]*RAD2DEG);
+        position->append("x process", time, estimation->position[0]);
+        position->append("y process", time, estimation->position[1]);
+        position->append("z process", time, estimation->position[2]);
+        linear_vel->append("x process", time, estimation->velocity[0]);
+        linear_vel->append("y process", time, estimation->velocity[1]);
+        linear_vel->append("z process", time, estimation->velocity[2]);
+        attitude->append("roll process", time, rpy[0]*RAD2DEG);
+        attitude->append("pitch process", time, rpy[1]*RAD2DEG);
+        attitude->append("yaw process", time, rpy[2]*RAD2DEG);
+        angular_vel->append("x process", time, estimation->angular_velocity[0]*RAD2DEG);
+        angular_vel->append("y process", time, estimation->angular_velocity[1]*RAD2DEG);
+        angular_vel->append("z process", time, estimation->angular_velocity[2]*RAD2DEG);
+
+        LiveChart::synchronize(time);
 
         return;
     }

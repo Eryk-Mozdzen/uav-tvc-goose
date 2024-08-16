@@ -1,12 +1,11 @@
 #include <cassert>
 
-#include <QDateTime>
+#include <QTimer>
 #include <QFileDialog>
 
 #include "QCustomPlot/qcustomplot/qcustomplot.h"
 #include "LiveChart.h"
 
-qint64 LiveChart::start = QDateTime::currentMSecsSinceEpoch();
 bool LiveChart::paused = false;
 QVector<LiveChart *> LiveChart::registered;
 
@@ -39,11 +38,6 @@ LiveChart::LiveChart(const Config &config, QWidget *parent) : QCustomPlot{parent
     QTimer *timer = new QTimer();
     connect(timer, &QTimer::timeout, [this]() {
         if(!paused) {
-            const double t = getTime();
-            for(int i=0; i<series.size(); i++) {
-                graph(i)->data()->removeBefore(t-10);
-            }
-            xAxis->setRange(t, 10, Qt::AlignRight);
             replot();
         }
     });
@@ -60,17 +54,22 @@ void LiveChart::addSeries(const QString name, const QPen pen) {
     graph(index)->setAdaptiveSampling(true);
 }
 
-double LiveChart::getTime() {
-    return static_cast<double>(QDateTime::currentMSecsSinceEpoch() - start)/1000.f;
-}
-
-void LiveChart::append(const QString name, const double value) {
+void LiveChart::append(const QString name, const double time, const double value) {
     if(!paused) {
         assert(series.contains(name));
 
         const int index = series.indexOf(name);
 
-        graph(index)->addData(getTime(), value);
+        graph(index)->addData(time, value);
+    }
+}
+
+void LiveChart::synchronize(const double time) {
+    for(LiveChart *chart : registered) {
+        for(int i=0; i<chart->series.size(); i++) {
+            chart->graph(i)->data()->removeBefore(time-10);
+        }
+        chart->xAxis->setRange(time, 10, Qt::AlignRight);
     }
 }
 
@@ -82,8 +81,6 @@ void LiveChart::resume() {
             chart->graph(i)->data()->clear();
         }
     }
-
-    LiveChart::start = QDateTime::currentMSecsSinceEpoch();
 }
 
 void LiveChart::pause() {

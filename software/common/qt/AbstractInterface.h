@@ -18,9 +18,9 @@ class AbstractInterface : public QGroupBox {
 
 	QSettings settings;
 	QLabel *uiLabels[4];
-	int uploadBytes;
-	int downloadBytes;
-	int errorNum;
+	int uploadBytes = 0;
+	int downloadBytes = 0;
+	int errorNum = 0;
 
 	void updateStats();
 
@@ -45,7 +45,7 @@ public slots:
 	void transmit(const uint8_t id, const QByteArray &payload);
 
 signals:
-	void receive(const uint8_t id, const QByteArray &payload);
+	void receive(const uint8_t id, const double time, const QByteArray &payload);
 
 public:
 	AbstractInterface(const QString name, QWidget *parent = nullptr);

@@ -27,7 +27,7 @@ signals:
     void transmit(const uint8_t id, const QByteArray &payload);
 
 private slots:
-    void receive(const uint8_t id, const QByteArray &payload);
+    void receive(const uint8_t id, const double time, const QByteArray &payload);
 
 public:
     Window(QWidget *parent = nullptr);

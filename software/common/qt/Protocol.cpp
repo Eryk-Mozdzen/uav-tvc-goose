@@ -7,19 +7,25 @@
 
 namespace common {
 
+const qint64 Protocol::startTime = QDateTime::currentMSecsSinceEpoch();
+
 Protocol::Protocol(QObject *parent) : QObject{parent} {
     protocol.user = this;
     protocol.callback_tx = [](void *user, const void *data, const uint32_t size) {
         Protocol *self = reinterpret_cast<Protocol *>(user);
         self->tx(QByteArray(reinterpret_cast<const char *>(data), size));
     };
-    protocol.callback_rx = [](void *user, const uint8_t id, const void *payload, const uint32_t size) {
+    protocol.callback_rx = [](void *user, const uint8_t id, const uint32_t time, const void *payload, const uint32_t size) {
         Protocol *self = reinterpret_cast<Protocol *>(user);
-        self->receive(id, QByteArray(reinterpret_cast<const char *>(payload), size));
+        self->receive(id, time/1000., QByteArray(reinterpret_cast<const char *>(payload), size));
     };
     protocol.callback_err = [](void *user, const protocol_error_t err) {
         Protocol *self = reinterpret_cast<Protocol *>(user);
         self->error(err);
+    };
+    protocol.callback_time = [](void *user) {
+        (void)user;
+        return (uint32_t)(QDateTime::currentMSecsSinceEpoch() - Protocol::startTime);
     };
     protocol.fifo_tx.buffer = buffer_tx;
     protocol.fifo_tx.size = sizeof(buffer_tx);
@@ -42,13 +48,10 @@ void Protocol::rx(const QByteArray &bytes) {
 }
 
 void Protocol::process() {
-    protocol.time = QDateTime::currentMSecsSinceEpoch() - startTime;
     protocol_process(&protocol);
 }
 
 void Protocol::start() {
-    startTime = QDateTime::currentMSecsSinceEpoch();
-
     QTimer *timer = new QTimer(this);
     connect(timer, &QTimer::timeout, this, &Protocol::process);
     timer->start(1);
