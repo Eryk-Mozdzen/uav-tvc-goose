@@ -1,7 +1,5 @@
 #pragma once
 
-#include <thread>
-
 #include <QWidget>
 #include <QGroupBox>
 #include <QComboBox>
@@ -9,27 +7,20 @@
 #include <QLabel>
 #include <QSettings>
 
+#include "Joystick.h"
+
 class Gamepad : public QGroupBox {
     Q_OBJECT
-
-    std::thread thread;
-    bool thread_active;
 
     QComboBox *addressComboBox;
     QSettings settings;
 	QLabel *uiLabels[4];
 
-    int fd;
-    fd_set readfds;
-    struct timeval timeout;
-    double analogs[20];
-    bool buttons[20];
-
-    void process();
+    utils::Joystick *joystick = nullptr;
 
 private slots:
     void scanInput();
-	void changeInput(const QString &input);
+	void changeInput(int index);
 
 public:
     enum Analog {

@@ -4,6 +4,8 @@ project(station)
 
 set(CMAKE_AUTOMOC ON)
 
+find_package(PkgConfig REQUIRED)
+pkg_check_modules(UDEV REQUIRED libudev)
 find_package(Qt6 COMPONENTS
 	Widgets
 	Network
@@ -26,6 +28,7 @@ add_executable(${PROJECT_NAME}
 	"src/Form.cpp"
 	"src/LiveChart.cpp"
 	"src/Gamepad.cpp"
+	"src/Joystick.cpp"
 	"src/Visualizer.cpp"
 )
 
@@ -51,6 +54,7 @@ target_compile_options(${PROJECT_NAME} PRIVATE
 )
 
 target_link_libraries(${PROJECT_NAME}
+	udev
 	Qt6::Widgets
 	Qt6::Network
 	Qt6::SerialPort
