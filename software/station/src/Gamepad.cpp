@@ -45,26 +45,35 @@ Gamepad::Gamepad(QWidget *parent) : QGroupBox{"Controller input", parent} {
 
     QTimer *timer = new QTimer();
     connect(timer, &QTimer::timeout, [this]() {
-        if(joystick) {
-            uiLabels[0]->setText(QString::asprintf("%+5.2f / %+5.2f / %+5.2f", get(Analog::LX), get(Analog::LY), get(Analog::LT)));
-            uiLabels[1]->setText(QString::asprintf("%+5.2f / %+5.2f / %+5.2f", get(Analog::RX), get(Analog::RY), get(Analog::RT)));
-            uiLabels[2]->setText(QString::asprintf("%+5.2f / %+5.2f", get(Analog::HORIZONTAL), get(Analog::VERTICAL)));
-
-            QString text = "";
-            text +=get(Button::X) ? "1" : "0";
-            text +=get(Button::Y) ? "1" : "0";
-            text +=get(Button::B) ? "1" : "0";
-            text +=get(Button::A) ? "1" : "0";
-            text +=get(Button::LB) ? "1" : "0";
-            text +=get(Button::RB) ? "1" : "0";
-            text +=get(Button::LSB) ? "1" : "0";
-            text +=get(Button::RSB) ? "1" : "0";
-            text +=get(Button::SELECT) ? "1" : "0";
-            text +=get(Button::START) ? "1" : "0";
-            text +=get(Button::HOME) ? "1" : "0";
-
-            uiLabels[3]->setText(text);
+        if(!joystick) {
+            return;
         }
+
+        if(!joystick->isAvailable()) {
+            delete joystick;
+            joystick = nullptr;
+            addressComboBox->clear();
+            return;
+        }
+
+        uiLabels[0]->setText(QString::asprintf("%+5.2f / %+5.2f / %+5.2f", get(Analog::LX), get(Analog::LY), get(Analog::LT)));
+        uiLabels[1]->setText(QString::asprintf("%+5.2f / %+5.2f / %+5.2f", get(Analog::RX), get(Analog::RY), get(Analog::RT)));
+        uiLabels[2]->setText(QString::asprintf("%+5.2f / %+5.2f", get(Analog::HORIZONTAL), get(Analog::VERTICAL)));
+
+        QString text = "";
+        text +=get(Button::X) ? "1" : "0";
+        text +=get(Button::Y) ? "1" : "0";
+        text +=get(Button::B) ? "1" : "0";
+        text +=get(Button::A) ? "1" : "0";
+        text +=get(Button::LB) ? "1" : "0";
+        text +=get(Button::RB) ? "1" : "0";
+        text +=get(Button::LSB) ? "1" : "0";
+        text +=get(Button::RSB) ? "1" : "0";
+        text +=get(Button::SELECT) ? "1" : "0";
+        text +=get(Button::START) ? "1" : "0";
+        text +=get(Button::HOME) ? "1" : "0";
+
+        uiLabels[3]->setText(text);
     });
     timer->start(100);
 
