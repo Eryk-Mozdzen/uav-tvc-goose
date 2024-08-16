@@ -4,6 +4,7 @@
 #include <QGroupBox>
 #include <QPushButton>
 #include <QTcpSocket>
+#include <QSettings>
 
 class Visualizer : public QGroupBox {
     Q_OBJECT
@@ -12,6 +13,7 @@ class Visualizer : public QGroupBox {
 
     QTcpSocket socket;
     QPushButton *spawnButton;
+    QSettings settings;
 
     void write(const char *format, ...);
 

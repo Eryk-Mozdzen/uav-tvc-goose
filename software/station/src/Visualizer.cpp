@@ -1,6 +1,7 @@
 #include <QGroupBox>
-#include <QGridLayout>
+#include <QVBoxLayout>
 #include <QPushButton>
+#include <QCheckBox>
 #include <QTcpSocket>
 #include <QProcess>
 #include <QTimer>
@@ -12,14 +13,22 @@
 Visualizer::Visualizer(QWidget *parent) : QGroupBox{"Visualization server", parent} {
     setlocale(LC_NUMERIC, "en_US.UTF-8");
 
-    QGridLayout *layout = new QGridLayout(this);
+    QVBoxLayout *layout = new QVBoxLayout(this);
 
     spawnButton = new QPushButton("Spawn server", this);
+    QCheckBox *lightMode = new QCheckBox("Light mode", this);
 
-    layout->addWidget(spawnButton, 0, 0);
+    layout->addWidget(spawnButton);
+    layout->addWidget(lightMode);
     layout->setAlignment(Qt::AlignCenter);
 
-    connect(spawnButton, &QPushButton::pressed, [this]() {
+    lightMode->setChecked(settings.value("lightMode").toBool());
+
+    connect(lightMode, &QCheckBox::clicked, [this](bool checked) {
+        settings.setValue("lightMode", checked);
+    });
+
+    connect(spawnButton, &QPushButton::pressed, [this, lightMode]() {
         spawnButton->setDisabled(true);
         QProcess *process = new QProcess(this);
 
@@ -30,11 +39,13 @@ Visualizer::Visualizer(QWidget *parent) : QGroupBox{"Visualization server", pare
 
         process->start("../../third-party/visualization-3d/server/build/server");
 
-        QTimer::singleShot(1000, [this]() {
+        QTimer::singleShot(1000, [this, lightMode]() {
             socket.connectToHost("localhost", 8080);
             socket.waitForConnected();
 
-            //write("mode dark\n");
+            if(lightMode->isChecked()) {
+                write("mode light\n");
+            }
             write("clear\n");
             write("create pos            empty\n");
             write("create pos.marker     cuboid material color 255 255 255 geometry 0.25 0.25 0.25\n");
