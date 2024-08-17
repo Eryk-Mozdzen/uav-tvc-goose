@@ -1,7 +1,3 @@
-#include <QGroupBox>
-#include <QVBoxLayout>
-#include <QPushButton>
-#include <QCheckBox>
 #include <QTcpSocket>
 #include <QProcess>
 #include <QTimer>
@@ -10,53 +6,67 @@
 #include "common/protocol/msg.h"
 #include "Visualizer.h"
 
-Visualizer::Visualizer(QWidget *parent) : QGroupBox{"Visualization server", parent} {
+Visualizer::Visualizer(QObject *parent) : QObject{parent} {
     setlocale(LC_NUMERIC, "en_US.UTF-8");
+}
 
-    QVBoxLayout *layout = new QVBoxLayout(this);
+void Visualizer::start() {
+    socket = new QTcpSocket(this);
+}
 
-    spawnButton = new QPushButton("Spawn server", this);
-    QCheckBox *lightMode = new QCheckBox("Light mode", this);
+void Visualizer::spawnLight() {
+    QProcess *process = new QProcess(this);
 
-    layout->addWidget(spawnButton);
-    layout->addWidget(lightMode);
-    layout->setAlignment(Qt::AlignCenter);
-
-    lightMode->setChecked(settings.value("lightMode").toBool());
-
-    connect(lightMode, &QCheckBox::clicked, [this](bool checked) {
-        settings.setValue("lightMode", checked);
+    connect(process, &QProcess::finished, process, [this, process]() {
+        finished();
+        process->deleteLater();
     });
 
-    connect(spawnButton, &QPushButton::pressed, [this, lightMode]() {
-        spawnButton->setDisabled(true);
-        QProcess *process = new QProcess(this);
+    process->start("../../third-party/visualization-3d/server/build/server");
 
-        connect(process, &QProcess::finished, process, [this, process]() {
-            spawnButton->setDisabled(false);
-            process->deleteLater();
-        });
+    QTimer::singleShot(1000, [this]() {
+        socket->connectToHost("localhost", 8080);
+        socket->waitForConnected();
 
-        process->start("../../third-party/visualization-3d/server/build/server");
+        write("mode light\n");
+        write("clear\n");
+        write("create pos            empty\n");
+        write("create pos.marker     cuboid material color 255 255 255 geometry 0.25 0.25 0.25\n");
+        write("create pos.marker.x   cuboid material color 255   0   0 geometry 1.00 0.05 0.05 transform translation 0.5 0 0\n");
+        write("create pos.marker.y   cuboid material color   0 255   0 geometry 0.05 1.00 0.05 transform translation 0 0.5 0\n");
+        write("create pos.marker.z   cuboid material color   0   0 255 geometry 0.05 0.05 1.00 transform translation 0 0 0.5\n");
+        write("create pos.marker.acc sphere material color   0 255   0 geometry 0.05\n");
+        write("create pos.marker.mag sphere material color   0   0 255 geometry 0.05\n");
+        write("create pos.vel        sphere material color 255   0   0 geometry 0.05\n");
+        write("create gps            sphere material color 255   0 255 geometry 0.15\n");
+    });
+}
 
-        QTimer::singleShot(1000, [this, lightMode]() {
-            socket.connectToHost("localhost", 8080);
-            socket.waitForConnected();
+void Visualizer::spawnDark() {
+    QProcess *process = new QProcess(this);
 
-            if(lightMode->isChecked()) {
-                write("mode light\n");
-            }
-            write("clear\n");
-            write("create pos            empty\n");
-            write("create pos.marker     cuboid material color 255 255 255 geometry 0.25 0.25 0.25\n");
-            write("create pos.marker.x   cuboid material color 255   0   0 geometry 1.00 0.05 0.05 transform translation 0.5 0 0\n");
-            write("create pos.marker.y   cuboid material color   0 255   0 geometry 0.05 1.00 0.05 transform translation 0 0.5 0\n");
-            write("create pos.marker.z   cuboid material color   0   0 255 geometry 0.05 0.05 1.00 transform translation 0 0 0.5\n");
-            write("create pos.marker.acc sphere material color   0 255   0 geometry 0.05\n");
-            write("create pos.marker.mag sphere material color   0   0 255 geometry 0.05\n");
-            write("create pos.vel        sphere material color 255   0   0 geometry 0.05\n");
-            write("create gps            sphere material color 255   0 255 geometry 0.15\n");
-        });
+    connect(process, &QProcess::finished, process, [this, process]() {
+        finished();
+        process->deleteLater();
+    });
+
+    process->start("../../third-party/visualization-3d/server/build/server");
+
+    QTimer::singleShot(1000, [this]() {
+        socket->connectToHost("localhost", 8080);
+        socket->waitForConnected();
+
+        write("mode dark\n");
+        write("clear\n");
+        write("create pos            empty\n");
+        write("create pos.marker     cuboid material color 255 255 255 geometry 0.25 0.25 0.25\n");
+        write("create pos.marker.x   cuboid material color 255   0   0 geometry 1.00 0.05 0.05 transform translation 0.5 0 0\n");
+        write("create pos.marker.y   cuboid material color   0 255   0 geometry 0.05 1.00 0.05 transform translation 0 0.5 0\n");
+        write("create pos.marker.z   cuboid material color   0   0 255 geometry 0.05 0.05 1.00 transform translation 0 0 0.5\n");
+        write("create pos.marker.acc sphere material color   0 255   0 geometry 0.05\n");
+        write("create pos.marker.mag sphere material color   0   0 255 geometry 0.05\n");
+        write("create pos.vel        sphere material color 255   0   0 geometry 0.05\n");
+        write("create gps            sphere material color 255   0 255 geometry 0.15\n");
     });
 }
 
@@ -135,7 +145,7 @@ void Visualizer::receive(const uint8_t id, const double time, const QByteArray &
 }
 
 void Visualizer::write(const char *format, ...) {
-    if(socket.state()!=QAbstractSocket::SocketState::ConnectedState) {
+    if(socket->state()!=QAbstractSocket::SocketState::ConnectedState) {
         return;
     }
 
@@ -145,6 +155,6 @@ void Visualizer::write(const char *format, ...) {
 	char str[256];
     const size_t len = vsprintf(str, format, args);
 
-    socket.write(str, len);
-    socket.flush();
+    socket->write(str, len);
+    socket->flush();
 }

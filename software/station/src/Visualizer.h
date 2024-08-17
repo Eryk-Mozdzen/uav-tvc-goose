@@ -1,25 +1,26 @@
 #pragma once
 
-#include <QWidget>
-#include <QGroupBox>
-#include <QPushButton>
+#include <QObject>
 #include <QTcpSocket>
-#include <QSettings>
 
-class Visualizer : public QGroupBox {
+class Visualizer : public QObject {
     Q_OBJECT
 
     double cameraPosition[3] = {0, 0, 0};
 
-    QTcpSocket socket;
-    QPushButton *spawnButton;
-    QSettings settings;
+    QTcpSocket *socket = nullptr;
 
     void write(const char *format, ...);
 
 public slots:
     void receive(const uint8_t id, const double time, const QByteArray &payload);
+    void spawnLight();
+    void spawnDark();
+
+signals:
+    void finished();
 
 public:
-    Visualizer(QWidget *parent = nullptr);
+    Visualizer(QObject *parent = nullptr);
+    void start();
 };

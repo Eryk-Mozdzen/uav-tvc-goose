@@ -96,58 +96,64 @@ std::ostream & operator<<(std::ostream &stream, const msg_frame_estimation_t est
 Window::Window(QWidget *parent) : QWidget(parent) {
     QGridLayout *layout = new QGridLayout(this);
 
-    {
-        common::Serial *serial = new common::Serial();
-	    common::Network *network = new common::Network();
+    common::Serial *serial = new common::Serial();
+    common::Network *network = new common::Network();
+    Visualizer *visualizer = new Visualizer();
 
-        connect(serial, &common::Serial::receive, this, &Window::receive);
-        connect(network, &common::Network::receive, this, &Window::receive);
-        connect(serial, &common::Serial::receive, &visualizer, &Visualizer::receive);
-        connect(network, &common::Network::receive, &visualizer, &Visualizer::receive);
-        connect(this, &Window::transmit, serial, &common::Serial::transmit);
-        connect(this, &Window::transmit, network, &common::Network::transmit);
+    connect(serial, &common::Serial::receive, this, &Window::receive);
+    connect(network, &common::Network::receive, this, &Window::receive);
+    connect(serial, &common::Serial::receive, visualizer, &Visualizer::receive);
+    connect(network, &common::Network::receive, visualizer, &Visualizer::receive);
+    connect(this, &Window::transmit, serial, &common::Serial::transmit);
+    connect(this, &Window::transmit, network, &common::Network::transmit);
 
-        common::InterfaceWidget *serialInterface = new common::InterfaceWidget("Serial interface", this);
-        common::InterfaceWidget *networkInterface = new common::InterfaceWidget("Network interface", this);
+    common::InterfaceWidget *serialInterface = new common::InterfaceWidget("Serial interface", this);
+    common::InterfaceWidget *networkInterface = new common::InterfaceWidget("Network interface", this);
 
-        connect(serial, &common::Serial::stats, serialInterface, &common::InterfaceWidget::stats);
-        connect(serial, &common::Serial::status, serialInterface, &common::InterfaceWidget::status);
-        connect(serial, &common::Serial::scanFinished, serialInterface, &common::InterfaceWidget::scanFinished);
-        connect(serialInterface, &common::InterfaceWidget::scan, serial, &common::Serial::scanPorts);
-        connect(serialInterface, &common::InterfaceWidget::change, serial, &common::Serial::changePort);
+    connect(serial, &common::Serial::stats, serialInterface, &common::InterfaceWidget::stats);
+    connect(serial, &common::Serial::status, serialInterface, &common::InterfaceWidget::status);
+    connect(serial, &common::Serial::scanFinished, serialInterface, &common::InterfaceWidget::scanFinished);
+    connect(serialInterface, &common::InterfaceWidget::scan, serial, &common::Serial::scanPorts);
+    connect(serialInterface, &common::InterfaceWidget::change, serial, &common::Serial::changePort);
 
-        connect(network, &common::Network::stats, networkInterface, &common::InterfaceWidget::stats);
-        connect(network, &common::Network::status, networkInterface, &common::InterfaceWidget::status);
-        connect(network, &common::Network::scanFinished, networkInterface, &common::InterfaceWidget::scanFinished);
-        connect(networkInterface, &common::InterfaceWidget::scan, network, &common::Network::scanHosts);
-        connect(networkInterface, &common::InterfaceWidget::change, network, &common::Network::changeHost);
+    connect(network, &common::Network::stats, networkInterface, &common::InterfaceWidget::stats);
+    connect(network, &common::Network::status, networkInterface, &common::InterfaceWidget::status);
+    connect(network, &common::Network::scanFinished, networkInterface, &common::InterfaceWidget::scanFinished);
+    connect(networkInterface, &common::InterfaceWidget::scan, network, &common::Network::scanHosts);
+    connect(networkInterface, &common::InterfaceWidget::change, network, &common::Network::changeHost);
 
-        QThread *serialThread = new QThread(this);
-        QThread *networkThread = new QThread(this);
+    QThread *serialThread = new QThread(this);
+    QThread *networkThread = new QThread(this);
+    QThread *visualizerThread = new QThread(this);
 
-        serial->moveToThread(serialThread);
-        connect(serialThread, &QThread::started, serial, &common::Serial::start);
-        connect(serialThread, &QThread::finished, serial, &common::Serial::deleteLater);
-        connect(serialThread, &QThread::finished, serialThread, &QThread::deleteLater);
-        connect(this, &QObject::destroyed, serialThread, &QThread::quit);
+    serial->moveToThread(serialThread);
+    connect(serialThread, &QThread::started, serial, &common::Serial::start);
+    connect(serialThread, &QThread::finished, serial, &common::Serial::deleteLater);
+    connect(serialThread, &QThread::finished, serialThread, &QThread::deleteLater);
+    connect(this, &QObject::destroyed, serialThread, &QThread::quit);
 
-        network->moveToThread(networkThread);
-        connect(networkThread, &QThread::started, network, &common::Network::start);
-        connect(networkThread, &QThread::finished, network, &common::Network::deleteLater);
-        connect(networkThread, &QThread::finished, networkThread, &QThread::deleteLater);
-        connect(this, &QObject::destroyed, networkThread, &QThread::quit);
+    network->moveToThread(networkThread);
+    connect(networkThread, &QThread::started, network, &common::Network::start);
+    connect(networkThread, &QThread::finished, network, &common::Network::deleteLater);
+    connect(networkThread, &QThread::finished, networkThread, &QThread::deleteLater);
+    connect(this, &QObject::destroyed, networkThread, &QThread::quit);
 
-        serialThread->start();
-        networkThread->start();
+    visualizer->moveToThread(visualizerThread);
+    connect(visualizerThread, &QThread::started, visualizer, &Visualizer::start);
+    connect(visualizerThread, &QThread::finished, visualizer, &Visualizer::deleteLater);
+    connect(visualizerThread, &QThread::finished, visualizerThread, &QThread::deleteLater);
+    connect(this, &QObject::destroyed, visualizerThread, &QThread::quit);
 
-        serialInterface->forceScan();
-        networkInterface->forceScan();
+    serialThread->start();
+    networkThread->start();
+    visualizerThread->start();
 
-        layout->addWidget(networkInterface, 0, 0, 1, 2);
-        layout->addWidget(serialInterface, 0, 2);
-        layout->addWidget(&gamepad, 0, 3);
-        layout->addWidget(&visualizer, 0, 4);
-    }
+    serialInterface->forceScan();
+    networkInterface->forceScan();
+
+    layout->addWidget(networkInterface, 0, 0, 1, 2);
+    layout->addWidget(serialInterface, 0, 2);
+    layout->addWidget(&gamepad, 0, 3);
 
     {
         others = new Form("Others", {
@@ -168,10 +174,12 @@ Window::Window(QWidget *parent) : QWidget(parent) {
         QGroupBox *group = new QGroupBox("Controls", this);
         QVBoxLayout *inner = new QVBoxLayout(group);
 
-        QPushButton *cmd_start = new QPushButton("Start", this);
-        QPushButton *cmd_abort = new QPushButton("Abort", this);
-        QPushButton *resume = new QPushButton("Resume", this);
-        QPushButton *save = new QPushButton("Save", this);
+        QPushButton *cmd_start = new QPushButton("Start command", this);
+        QPushButton *cmd_abort = new QPushButton("Abort command", this);
+        QPushButton *resume = new QPushButton("Resume plots", this);
+        QPushButton *save = new QPushButton("Save plots", this);
+        QPushButton *spawnDark = new QPushButton("Spawn server (dark)", this);
+        QPushButton *spawnLight = new QPushButton("Spawn server (light)", this);
         QRadioButton *source1 = new QRadioButton("Logger", this);
         QRadioButton *source2 = new QRadioButton("GPS passthrough", this);
         QRadioButton *source3 = new QRadioButton("Sensor readings", this);
@@ -181,6 +189,8 @@ Window::Window(QWidget *parent) : QWidget(parent) {
         inner->addWidget(cmd_abort);
         inner->addWidget(resume);
         inner->addWidget(save);
+        inner->addWidget(spawnDark);
+        inner->addWidget(spawnLight);
         inner->addWidget(source1);
         inner->addWidget(source2);
         inner->addWidget(source3);
@@ -202,6 +212,23 @@ Window::Window(QWidget *parent) : QWidget(parent) {
 
         connect(save, &QPushButton::clicked, []() {
             LiveChart::save();
+        });
+
+        connect(spawnDark, &QPushButton::clicked, visualizer, &Visualizer::spawnDark);
+        connect(spawnDark, &QPushButton::clicked, [spawnLight, spawnDark]() {
+            spawnLight->setDisabled(true);
+            spawnDark->setDisabled(true);
+        });
+
+        connect(spawnLight, &QPushButton::clicked, visualizer, &Visualizer::spawnLight);
+        connect(spawnLight, &QPushButton::clicked, [spawnLight, spawnDark]() {
+            spawnLight->setDisabled(true);
+            spawnDark->setDisabled(true);
+        });
+
+        connect(visualizer, &Visualizer::finished, [spawnLight, spawnDark]() {
+            spawnLight->setDisabled(false);
+            spawnDark->setDisabled(false);
         });
 
         switch(settings.value("terminalSource").toInt()) {

@@ -6,7 +6,6 @@
 #include "Form.h"
 #include "LiveChart.h"
 #include "Gamepad.h"
-#include "Visualizer.h"
 
 class Window : public QWidget {
     Q_OBJECT
@@ -20,7 +19,6 @@ class Window : public QWidget {
     LiveChart *linear_vel;
 
     Gamepad gamepad;
-    Visualizer visualizer;
     QSettings settings;
 
 signals:
