@@ -15,7 +15,7 @@ add_executable(${PROJECT_NAME}
 	"../common/protocol/protocol.c"
 	"../common/qt/Serial.cpp"
 	"../common/qt/Network.cpp"
-	"../common/qt/AbstractInterface.cpp"
+	"../common/qt/InterfaceWidget.cpp"
 
 	"src/main.cpp"
 	"src/Window.cpp"

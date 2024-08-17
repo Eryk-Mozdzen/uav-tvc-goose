@@ -5,7 +5,6 @@ project(station)
 set(CMAKE_AUTOMOC ON)
 
 find_package(PkgConfig REQUIRED)
-pkg_check_modules(UDEV REQUIRED libudev)
 find_package(Qt6 COMPONENTS
 	Widgets
 	Network
@@ -14,13 +13,14 @@ find_package(Qt6 COMPONENTS
 	OpenGL
 REQUIRED)
 
+pkg_check_modules(UDEV REQUIRED libudev)
+
 add_executable(${PROJECT_NAME}
 	"../common/math/utils.c"
 	"../common/protocol/protocol.c"
 	"../common/qt/Serial.cpp"
 	"../common/qt/Network.cpp"
-	"../common/qt/AbstractInterface.cpp"
-	"../common/qt/Protocol.cpp"
+	"../common/qt/InterfaceWidget.cpp"
 	"../third-party/QCustomPlot/qcustomplot/qcustomplot.cpp"
 
 	"src/main.cpp"

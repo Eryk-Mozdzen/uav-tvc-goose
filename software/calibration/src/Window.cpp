@@ -7,15 +7,19 @@
 #include <QVBoxLayout>
 #include <QPushButton>
 #include <QTextEdit>
+#include <QThread>
 
-#include "common/protocol/protocol_data.h"
+#include "common/protocol/msg.h"
+#include "common/qt/Serial.h"
+#include "common/qt/Network.h"
+#include "common/qt/InterfaceWidget.h"
 #include "Window.h"
 #include "Magnetometer.h"
 #include "Accelerometer.h"
 #include "Gyroscope.h"
 #include "Servos.h"
 
-std::ostream & operator<<(std::ostream &stream, const protocol_calibration_t &calibration) {
+std::ostream & operator<<(std::ostream &stream, const msg_frame_calibration_t &calibration) {
     stream << std::setprecision(3) << std::fixed << std::showpos;
 
     stream << "magnetometer\n";
@@ -41,7 +45,6 @@ std::ostream & operator<<(std::ostream &stream, const protocol_calibration_t &ca
     stream << std::setw(8) << calibration.servos[0] << std::setw(8) << calibration.servos[1]  << std::setw(8) << calibration.servos[2]  << "\n";
     stream << std::setw(8) << calibration.servos[3] << std::setw(8) << calibration.servos[4]  << std::setw(8) << calibration.servos[5]  << "\n";
     stream << std::setw(8) << calibration.servos[6] << std::setw(8) << calibration.servos[7]  << std::setw(8) << calibration.servos[8]  << "\n";
-    stream << std::setw(8) << calibration.servos[9] << std::setw(8) << calibration.servos[10] << std::setw(8) << calibration.servos[11] << "\n";
 
     return stream;
 }
@@ -55,16 +58,52 @@ Window::Window(QWidget *parent) : QWidget{parent}, current{nullptr} {
     QGridLayout *grid = new QGridLayout(this);
 
     {
-        common::Serial *serial = new common::Serial(this);
-	    common::Network *network = new common::Network(this);
+        common::Serial *serial = new common::Serial();
+	    common::Network *network = new common::Network();
 
         connect(serial, &common::Serial::receive, this, &Window::receive);
         connect(network, &common::Network::receive, this, &Window::receive);
         connect(this, &Window::transmit, serial, &common::Serial::transmit);
         connect(this, &Window::transmit, network, &common::Network::transmit);
 
-        grid->addWidget(serial, 0, 0);
-        grid->addWidget(network, 1, 0);
+        common::InterfaceWidget *serialInterface = new common::InterfaceWidget("Serial interface", this);
+        common::InterfaceWidget *networkInterface = new common::InterfaceWidget("Network interface", this);
+
+        connect(serial, &common::Serial::stats, serialInterface, &common::InterfaceWidget::stats);
+        connect(serial, &common::Serial::status, serialInterface, &common::InterfaceWidget::status);
+        connect(serial, &common::Serial::scanFinished, serialInterface, &common::InterfaceWidget::scanFinished);
+        connect(serialInterface, &common::InterfaceWidget::scan, serial, &common::Serial::scanPorts);
+        connect(serialInterface, &common::InterfaceWidget::change, serial, &common::Serial::changePort);
+
+        connect(network, &common::Network::stats, networkInterface, &common::InterfaceWidget::stats);
+        connect(network, &common::Network::status, networkInterface, &common::InterfaceWidget::status);
+        connect(network, &common::Network::scanFinished, networkInterface, &common::InterfaceWidget::scanFinished);
+        connect(networkInterface, &common::InterfaceWidget::scan, network, &common::Network::scanHosts);
+        connect(networkInterface, &common::InterfaceWidget::change, network, &common::Network::changeHost);
+
+        QThread *serialThread = new QThread(this);
+        QThread *networkThread = new QThread(this);
+
+        serial->moveToThread(serialThread);
+        connect(serialThread, &QThread::started, serial, &common::Serial::start);
+        connect(serialThread, &QThread::finished, serial, &common::Serial::deleteLater);
+        connect(serialThread, &QThread::finished, serialThread, &QThread::deleteLater);
+        connect(this, &QObject::destroyed, serialThread, &QThread::quit);
+
+        network->moveToThread(networkThread);
+        connect(networkThread, &QThread::started, network, &common::Network::start);
+        connect(networkThread, &QThread::finished, network, &common::Network::deleteLater);
+        connect(networkThread, &QThread::finished, networkThread, &QThread::deleteLater);
+        connect(this, &QObject::destroyed, networkThread, &QThread::quit);
+
+        serialThread->start();
+        networkThread->start();
+
+        serialInterface->forceScan();
+        networkInterface->forceScan();
+
+        grid->addWidget(serialInterface, 1, 0);
+        grid->addWidget(networkInterface, 2, 0);
     }
 
     {
@@ -92,7 +131,7 @@ Window::Window(QWidget *parent) : QWidget{parent}, current{nullptr} {
 
         group->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
 
-        grid->addWidget(group, 1, 1, 2, 1);
+        grid->addWidget(group, 1, 1, 3, 1);
     }
 
     {
@@ -113,7 +152,7 @@ Window::Window(QWidget *parent) : QWidget{parent}, current{nullptr} {
 
         connect(button_read, &QPushButton::clicked, [&]() {
             calibration_text->setText("fetching...");
-            transmit(PROTOCOL_ID_CALIBRATION, NULL, 0);
+            transmit(MSG_ID_CALIBRATION, QByteArray());
         });
 
         connect(button_update, &QPushButton::clicked, [&]() {
@@ -130,7 +169,7 @@ Window::Window(QWidget *parent) : QWidget{parent}, current{nullptr} {
 
         connect(button_set, &QPushButton::clicked, [&]() {
             calibration_text->setText("saving...");
-            transmit(PROTOCOL_ID_CALIBRATION, &calibration, sizeof(calibration));
+            transmit(MSG_ID_CALIBRATION, QByteArray(reinterpret_cast<const char *>(&calibration), sizeof(calibration)));
         });
 
         layout->addWidget(calibration_text);
@@ -138,7 +177,7 @@ Window::Window(QWidget *parent) : QWidget{parent}, current{nullptr} {
         layout->addWidget(button_update);
         layout->addWidget(button_set);
 
-        grid->addWidget(group, 0, 2, 3, 1);
+        grid->addWidget(group, 0, 2, 4, 1);
     }
 }
 
@@ -158,19 +197,21 @@ void Window::setCurrent(Interface *interface) {
     }
 }
 
-void Window::receive(const uint8_t id, const void *payload, const uint32_t size) {
-    if(current && id==PROTOCOL_ID_READINGS && size==sizeof(protocol_readings_t)) {
-        const protocol_readings_t *readings = reinterpret_cast<const protocol_readings_t *>(payload);
+void Window::receive(const uint8_t id, const double time, const QByteArray &payload) {
+    (void)time;
 
-        current->receive(*readings);
+    if(current && id==MSG_ID_SENSOR && payload.size()==sizeof(msg_frame_sensor_t)) {
+        const msg_frame_sensor_t *sensor = reinterpret_cast<const msg_frame_sensor_t *>(payload.data());
+
+        current->receive(*sensor);
 
         update();
 
         return;
     }
 
-    if(id==PROTOCOL_ID_CALIBRATION && size==sizeof(protocol_calibration_t)) {
-        memcpy(&calibration, payload, sizeof(calibration));
+    if(id==MSG_ID_CALIBRATION && payload.size()==sizeof(msg_frame_calibration_t)) {
+        memcpy(&calibration, payload.data(), sizeof(calibration));
 
         std::ostringstream stream;
         stream << calibration;

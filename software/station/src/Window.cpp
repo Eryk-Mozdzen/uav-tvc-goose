@@ -16,12 +16,13 @@
 #include <QPushButton>
 #include <QSlider>
 #include <QSettings>
+#include <QThread>
 
 #include "common/math/utils.h"
 #include "common/protocol/msg.h"
 #include "common/qt/Serial.h"
 #include "common/qt/Network.h"
-#include "common/qt/Protocol.h"
+#include "common/qt/InterfaceWidget.h"
 #include "Window.h"
 #include "Form.h"
 #include "LiveChart.h"
@@ -96,18 +97,54 @@ Window::Window(QWidget *parent) : QWidget(parent) {
     QGridLayout *layout = new QGridLayout(this);
 
     {
-        common::Network *network = new common::Network(this);
-        common::Serial *serial = new common::Serial(this);
+        common::Serial *serial = new common::Serial();
+	    common::Network *network = new common::Network();
 
         connect(serial, &common::Serial::receive, this, &Window::receive);
         connect(network, &common::Network::receive, this, &Window::receive);
-        connect(this, &Window::transmit, serial, &common::Serial::transmit);
-        connect(this, &Window::transmit, network, &common::Network::transmit);
         connect(serial, &common::Serial::receive, &visualizer, &Visualizer::receive);
         connect(network, &common::Network::receive, &visualizer, &Visualizer::receive);
+        connect(this, &Window::transmit, serial, &common::Serial::transmit);
+        connect(this, &Window::transmit, network, &common::Network::transmit);
 
-        layout->addWidget(network, 0, 0, 1, 2);
-        layout->addWidget(serial, 0, 2);
+        common::InterfaceWidget *serialInterface = new common::InterfaceWidget("Serial interface", this);
+        common::InterfaceWidget *networkInterface = new common::InterfaceWidget("Network interface", this);
+
+        connect(serial, &common::Serial::stats, serialInterface, &common::InterfaceWidget::stats);
+        connect(serial, &common::Serial::status, serialInterface, &common::InterfaceWidget::status);
+        connect(serial, &common::Serial::scanFinished, serialInterface, &common::InterfaceWidget::scanFinished);
+        connect(serialInterface, &common::InterfaceWidget::scan, serial, &common::Serial::scanPorts);
+        connect(serialInterface, &common::InterfaceWidget::change, serial, &common::Serial::changePort);
+
+        connect(network, &common::Network::stats, networkInterface, &common::InterfaceWidget::stats);
+        connect(network, &common::Network::status, networkInterface, &common::InterfaceWidget::status);
+        connect(network, &common::Network::scanFinished, networkInterface, &common::InterfaceWidget::scanFinished);
+        connect(networkInterface, &common::InterfaceWidget::scan, network, &common::Network::scanHosts);
+        connect(networkInterface, &common::InterfaceWidget::change, network, &common::Network::changeHost);
+
+        QThread *serialThread = new QThread(this);
+        QThread *networkThread = new QThread(this);
+
+        serial->moveToThread(serialThread);
+        connect(serialThread, &QThread::started, serial, &common::Serial::start);
+        connect(serialThread, &QThread::finished, serial, &common::Serial::deleteLater);
+        connect(serialThread, &QThread::finished, serialThread, &QThread::deleteLater);
+        connect(this, &QObject::destroyed, serialThread, &QThread::quit);
+
+        network->moveToThread(networkThread);
+        connect(networkThread, &QThread::started, network, &common::Network::start);
+        connect(networkThread, &QThread::finished, network, &common::Network::deleteLater);
+        connect(networkThread, &QThread::finished, networkThread, &QThread::deleteLater);
+        connect(this, &QObject::destroyed, networkThread, &QThread::quit);
+
+        serialThread->start();
+        networkThread->start();
+
+        serialInterface->forceScan();
+        networkInterface->forceScan();
+
+        layout->addWidget(networkInterface, 0, 0, 1, 2);
+        layout->addWidget(serialInterface, 0, 2);
         layout->addWidget(&gamepad, 0, 3);
         layout->addWidget(&visualizer, 0, 4);
     }
