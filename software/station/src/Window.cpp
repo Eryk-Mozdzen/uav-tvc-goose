@@ -308,11 +308,11 @@ Window::Window(QWidget *parent) : QWidget(parent) {
         config.yTick = 45;
 
         attitude = new LiveChart(config, this);
-        attitude->addSeries("roll setpoint", QPen(Qt::red,      1, Qt::DashLine));
-        attitude->addSeries("roll process", QPen(Qt::red,       2, Qt::SolidLine));
-        attitude->addSeries("pitch setpoint", QPen(Qt::green,   1, Qt::DashLine));
-        attitude->addSeries("pitch process", QPen(Qt::green,    2, Qt::SolidLine));
-        attitude->addSeries("yaw process", QPen(Qt::blue,       2, Qt::SolidLine));
+        attitude->addSeries("roll setpoint",  QPen(Qt::red,   1, Qt::DashLine));
+        attitude->addSeries("roll process",   QPen(Qt::red,   2, Qt::SolidLine));
+        attitude->addSeries("pitch setpoint", QPen(Qt::green, 1, Qt::DashLine));
+        attitude->addSeries("pitch process",  QPen(Qt::green, 2, Qt::SolidLine));
+        attitude->addSeries("yaw process",    QPen(Qt::blue,  2, Qt::SolidLine));
 
         layout->addWidget(attitude, 1, 3);
     }
@@ -327,12 +327,12 @@ Window::Window(QWidget *parent) : QWidget(parent) {
         config.yTick = 1;
 
         position = new LiveChart(config, this);
-        position->addSeries("x setpoint", QPen(Qt::red,    1, Qt::DashLine));
-        position->addSeries("x process", QPen(Qt::red,     2, Qt::SolidLine));
-        position->addSeries("y setpoint", QPen(Qt::green,  1, Qt::DashLine));
-        position->addSeries("y process", QPen(Qt::green,   2, Qt::SolidLine));
-        position->addSeries("z setpoint", QPen(Qt::blue,   1, Qt::DashLine));
-        position->addSeries("z process", QPen(Qt::blue,    2, Qt::SolidLine));
+        position->addSeries("x setpoint", QPen(Qt::red,   1, Qt::DashLine));
+        position->addSeries("x process",  QPen(Qt::red,   2, Qt::SolidLine));
+        position->addSeries("y setpoint", QPen(Qt::green, 1, Qt::DashLine));
+        position->addSeries("y process",  QPen(Qt::green, 2, Qt::SolidLine));
+        position->addSeries("z setpoint", QPen(Qt::blue,  1, Qt::DashLine));
+        position->addSeries("z process",  QPen(Qt::blue,  2, Qt::SolidLine));
 
         layout->addWidget(position, 1, 4);
     }
@@ -347,10 +347,9 @@ Window::Window(QWidget *parent) : QWidget(parent) {
         config.yTick = 5;
 
         fins = new LiveChart(config, this);
-        fins->addSeries("vane 1", QPen(Qt::red,      2, Qt::SolidLine));
-        fins->addSeries("vane 2", QPen(Qt::green,    2, Qt::SolidLine));
-        fins->addSeries("vane 3", QPen(Qt::blue,     2, Qt::SolidLine));
-        fins->addSeries("vane 4", QPen(Qt::magenta,  2, Qt::SolidLine));
+        fins->addSeries("vane 1", QPen(Qt::red,     2, Qt::SolidLine));
+        fins->addSeries("vane 2", QPen(Qt::green,   2, Qt::SolidLine));
+        fins->addSeries("vane 3", QPen(Qt::blue,    2, Qt::SolidLine));
 
         layout->addWidget(fins, 2, 2);
     }
@@ -430,6 +429,23 @@ void Window::receive(const uint8_t id, const double time, const QByteArray &payl
             std::cout << *sensor << std::endl;
         }
 
+        if(sensor->valid.barometer) {
+            others->set("Pressure", "%.0f", sensor->barometer);
+        }
+
+        if(sensor->valid.rangefinder) {
+            others->set("Distance", "%5.2f", sensor->rangefinder);
+        }
+
+        if(sensor->valid.tachometer) {
+            others->set("Rotor velocity", "%.0f", sensor->tachometer);
+        }
+
+        if(sensor->valid.power) {
+            others->set("Supply voltage", "%5.2f", sensor->power[0]);
+            others->set("Supply current", "%5.2f", sensor->power[1]);
+        }
+
         return;
     }
 
@@ -440,26 +456,61 @@ void Window::receive(const uint8_t id, const double time, const QByteArray &payl
             std::cout << *estimation << std::endl;
         }
 
-        float rpy[3];
-        utils_quaternion_to_rpy(estimation->orientation, rpy);
-
-        others->set("Magnetic inclination", "%+6.0f", estimation->theta_d*RAD2DEG);
-        others->set("Ground pressure", "%6.0f", estimation->pressure_0);
-        position->append("x process", time, estimation->position[0]);
-        position->append("y process", time, estimation->position[1]);
-        position->append("z process", time, estimation->position[2]);
-        linear_vel->append("x process", time, estimation->velocity[0]);
-        linear_vel->append("y process", time, estimation->velocity[1]);
-        linear_vel->append("z process", time, estimation->velocity[2]);
-        attitude->append("roll process", time, rpy[0]*RAD2DEG);
-        attitude->append("pitch process", time, rpy[1]*RAD2DEG);
-        attitude->append("yaw process", time, rpy[2]*RAD2DEG);
-        angular_vel->append("x process", time, estimation->angular_velocity[0]*RAD2DEG);
-        angular_vel->append("y process", time, estimation->angular_velocity[1]*RAD2DEG);
-        angular_vel->append("z process", time, estimation->angular_velocity[2]*RAD2DEG);
-
-        LiveChart::synchronize(time);
+        others->set("Magnetic inclination", "%+4.0f", estimation->theta_d*RAD2DEG);
+        others->set("Ground pressure", "%.0f", estimation->pressure_0);
 
         return;
+    }
+
+    if(id==MSG_ID_CONTROLLER && payload.size()==sizeof(msg_frame_controller_t)) {
+        const msg_frame_controller_t *controller = reinterpret_cast<const msg_frame_controller_t *>(payload.data());
+
+        switch(controller->state) {
+            case MSG_SM_STATE_READY: {
+                others->set("State machine", "ready");
+            } break;
+            case MSG_SM_STATE_ACTIVE: {
+                others->set("State machine", "active");
+            } break;
+            case MSG_SM_STATE_ABORT: {
+                others->set("State machine", "abort");
+            } break;
+            case MSG_SM_STATE_MANUAL: {
+                others->set("State machine", "manual");
+            } break;
+        }
+
+        position->append("x process", time, controller->process.pos[0]);
+        position->append("y process", time, controller->process.pos[1]);
+        position->append("z process", time, controller->process.pos[2]);
+        linear_vel->append("x process", time, controller->process.vel[0]);
+        linear_vel->append("y process", time, controller->process.vel[1]);
+        linear_vel->append("z process", time, controller->process.vel[2]);
+        attitude->append("roll process", time, controller->process.rpy[0]*RAD2DEG);
+        attitude->append("pitch process", time, controller->process.rpy[1]*RAD2DEG);
+        attitude->append("yaw process", time, controller->process.rpy[2]*RAD2DEG);
+        angular_vel->append("x process", time, controller->process.omega[0]*RAD2DEG);
+        angular_vel->append("y process", time, controller->process.omega[1]*RAD2DEG);
+        angular_vel->append("z process", time, controller->process.omega[2]*RAD2DEG);
+
+        position->append("x setpoint", time, controller->setpoint.pos[0]);
+        position->append("y setpoint", time, controller->setpoint.pos[1]);
+        position->append("z setpoint", time, controller->setpoint.pos[2]);
+        linear_vel->append("x setpoint", time, controller->setpoint.vel[0]);
+        linear_vel->append("y setpoint", time, controller->setpoint.vel[1]);
+        linear_vel->append("z setpoint", time, controller->setpoint.vel[2]);
+        attitude->append("roll setpoint", time, controller->setpoint.rpy[0]*RAD2DEG);
+        attitude->append("pitch setpoint", time, controller->setpoint.rpy[1]*RAD2DEG);
+        //attitude->append("yaw setpoint", time, controller->setpoint.rpy[2]*RAD2DEG);
+        angular_vel->append("x setpoint", time, controller->setpoint.omega[0]*RAD2DEG);
+        angular_vel->append("y setpoint", time, controller->setpoint.omega[1]*RAD2DEG);
+        angular_vel->append("z setpoint", time, controller->setpoint.omega[2]*RAD2DEG);
+
+        throttle->append("throttle", time, controller->controls.throttle*100);
+        fins->append("vane 1", time, controller->controls.angles[0]*RAD2DEG);
+        fins->append("vane 2", time, controller->controls.angles[1]*RAD2DEG);
+        fins->append("vane 3", time, controller->controls.angles[2]*RAD2DEG);
+
+        LiveChart::synchronize(time);
     }
 }

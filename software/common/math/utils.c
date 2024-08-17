@@ -1,7 +1,7 @@
 #include <stddef.h>
 #include <math.h>
 
-#include "common/math/utils.h"
+#include "utils.h"
 
 #define REF_LATITUDE    0.950871f // 54*28'51.2''
 #define REF_LONGITUDE   0.323817f // 18*33'12.1''
