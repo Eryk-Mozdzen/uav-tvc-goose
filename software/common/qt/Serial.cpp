@@ -116,10 +116,10 @@ void Serial::changePort(const QString &port) {
         }
 
         serial->setPortName(port);
-        serial->setBaudRate(QSerialPort::Baud115200);
+        serial->setBaudRate(230400);
         serial->setDataBits(QSerialPort::Data8);
         serial->setParity(QSerialPort::NoParity);
-        serial->setStopBits(QSerialPort::TwoStop);
+        serial->setStopBits(QSerialPort::OneStop);
         serial->setFlowControl(QSerialPort::NoFlowControl);
 
         serial->open(QIODevice::ReadWrite);
