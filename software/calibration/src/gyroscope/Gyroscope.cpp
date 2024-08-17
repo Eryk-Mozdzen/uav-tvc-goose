@@ -34,14 +34,14 @@ Interface * Gyroscope::create() const {
     return new Gyroscope();
 }
 
-void Gyroscope::receive(const protocol_readings_t &readings) {
-    if(readings.valid.gyroscope) {
+void Gyroscope::receive(const msg_frame_sensor_t &sensor) {
+    if(sensor.valid.gyroscope) {
         const double w1 = static_cast<double>(n)/static_cast<double>(n + 1);
         const double w2 = 1./static_cast<double>(n + 1);
 
-        mean[0] = w1*mean[0] + w2*readings.raw.gyroscope[0];
-        mean[1] = w1*mean[1] + w2*readings.raw.gyroscope[1];
-        mean[2] = w1*mean[2] + w2*readings.raw.gyroscope[2];
+        mean[0] = w1*mean[0] + w2*sensor.gyroscope.raw[0];
+        mean[1] = w1*mean[1] + w2*sensor.gyroscope.raw[1];
+        mean[2] = w1*mean[2] + w2*sensor.gyroscope.raw[2];
         n++;
 
         line[0]->setText(QString::asprintf("%+7.4f", mean[0]));
@@ -51,7 +51,7 @@ void Gyroscope::receive(const protocol_readings_t &readings) {
     }
 }
 
-void Gyroscope::update(protocol_calibration_t &calibration) const {
+void Gyroscope::update(msg_frame_calibration_t &calibration) const {
     calibration.gyroscope[0] = -mean[0];
     calibration.gyroscope[1] = -mean[1];
     calibration.gyroscope[2] = -mean[2];

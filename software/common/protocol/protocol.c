@@ -67,14 +67,18 @@ static uint8_t * cobs_encode(protocol_fifo_t *fifo, uint8_t *cobs, const void *b
 }
 
 void protocol_enqueue(protocol_t *instance, const uint8_t id, const void *payload, const uint32_t size) {
+    const uint32_t time = instance->callback_time(instance->user);
+
     uint32_t crc = 0;
     crc32(&crc, &id, sizeof(id));
+    crc32(&crc, &time, sizeof(time));
     crc32(&crc, payload, size);
 
     uint8_t *cobs = &instance->fifo_tx.buffer[instance->fifo_tx.write];
     fifo_write(&instance->fifo_tx, 1);
 
     cobs = cobs_encode(&instance->fifo_tx, cobs, &id, sizeof(id));
+    cobs = cobs_encode(&instance->fifo_tx, cobs, &time, sizeof(time));
     cobs = cobs_encode(&instance->fifo_tx, cobs, payload, size);
     cobs = cobs_encode(&instance->fifo_tx, cobs, &crc, sizeof(crc));
 
@@ -82,6 +86,8 @@ void protocol_enqueue(protocol_t *instance, const uint8_t id, const void *payloa
 }
 
 void protocol_process(protocol_t *instance) {
+    const uint32_t time = instance->callback_time(instance->user);
+
     const uint32_t rx_pending = fifo_pending(&instance->fifo_rx);
 
     for(uint32_t i=0; i<RX_LIMIT && i<rx_pending; i++) {
@@ -105,12 +111,13 @@ void protocol_process(protocol_t *instance) {
                 if(!byte) {
                     const uint32_t num = instance->cursor - instance->decoded;
 
-                    if(!instance->crc && num>=5) {
+                    if(!instance->crc && num>=9) {
                         const uint8_t id = instance->decoded[0];
-                        const uint8_t *payload = &instance->decoded[1];
-                        const uint32_t size = num - 5;
+                        const uint32_t *time = (uint32_t *)&instance->decoded[1];
+                        const uint8_t *payload = &instance->decoded[5];
+                        const uint32_t size = num - 9;
 
-                        instance->callback_rx(instance->user, id, payload, size);
+                        instance->callback_rx(instance->user, id, *time, payload, size);
                     } else {
                         instance->callback_err(instance->user, PROTOCOL_ERROR_CRC_MISMATCH);
                     }
@@ -141,7 +148,7 @@ void protocol_process(protocol_t *instance) {
         }
     }
 
-    const uint32_t delta_time = instance->time - instance->time_last;
+    const uint32_t delta_time = time - instance->time_last;
     const uint32_t tx_pending = fifo_pending(&instance->fifo_tx);
 
     if(instance->available && tx_pending && (tx_pending>TX_SIZE_THRESHOLD || delta_time>TX_TIME_THRESHOLD)) {
@@ -151,6 +158,6 @@ void protocol_process(protocol_t *instance) {
         instance->fifo_tx.read +=len;
         instance->fifo_tx.read %=instance->fifo_tx.size;
 
-        instance->time_last = instance->time;
+        instance->time_last = time;
     }
 }

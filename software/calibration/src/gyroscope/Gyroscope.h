@@ -14,6 +14,6 @@ public:
     Gyroscope(QWidget *parent = nullptr);
 
     Interface * create() const;
-    void receive(const protocol_readings_t &readings);
-    void update(protocol_calibration_t &calibration) const;
+    void receive(const msg_frame_sensor_t &sensor);
+    void update(msg_frame_calibration_t &calibration) const;
 };

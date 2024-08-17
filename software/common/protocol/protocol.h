@@ -9,7 +9,7 @@ extern "C" {
 #include <stdint.h>
 #include <stdbool.h>
 
-#define PROTOCOL_INIT {NULL, NULL, NULL, NULL, {NULL, 0, 0, 0}, {NULL, 0, 0, 0}, true, 0, 0, NULL, NULL, 0, 0, 0, 0, 0}
+#define PROTOCOL_INIT {NULL, NULL, NULL, NULL, NULL, {NULL, 0, 0, 0}, {NULL, 0, 0, 0}, true, 0, NULL, NULL, 0, 0, 0, 0, 0}
 
 typedef enum {
     PROTOCOL_ERROR_DOUBLE_ZERO,
@@ -18,8 +18,9 @@ typedef enum {
 } protocol_error_t;
 
 typedef void (*protocol_tx_cb_t)(void *, const void *, const uint32_t);
-typedef void (*protocol_rx_cb_t)(void *, const uint8_t, const void *, const uint32_t);
+typedef void (*protocol_rx_cb_t)(void *, const uint8_t, const uint32_t, const void *, const uint32_t);
 typedef void (*protocol_err_cb_t)(void *, const protocol_error_t);
+typedef uint32_t (*protocol_time_cb_t)(void *);
 
 typedef struct {
     uint8_t *buffer;
@@ -33,10 +34,10 @@ typedef struct {
     protocol_tx_cb_t callback_tx;
     protocol_rx_cb_t callback_rx;
     protocol_err_cb_t callback_err;
+    protocol_time_cb_t callback_time;
     protocol_fifo_t fifo_tx;
     protocol_fifo_t fifo_rx;
     bool available;
-    uint32_t time;
 
     uint32_t time_last;
     uint8_t *decoded;

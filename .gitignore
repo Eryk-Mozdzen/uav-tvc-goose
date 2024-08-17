@@ -24,3 +24,5 @@ Release
 .vscode
 build
 !software/identification/*.csv
+
+test_nucleo

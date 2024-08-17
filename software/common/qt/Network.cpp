@@ -2,29 +2,76 @@
 #include <QNetworkInterface>
 #include <QHostAddress>
 #include <QProcess>
+#include <QComboBox>
+#include <QPushButton>
+#include <QTimer>
+#include <QDateTime>
 #include <QMetaEnum>
 
-#include "common/qt/AbstractInterface.h"
+#include "common/protocol/protocol.h"
 #include "common/qt/Network.h"
 
 namespace common {
 
-Network::Network(QWidget *parent) : AbstractInterface{"Network Interface", parent} {
-    connect(&socket, &QTcpSocket::readyRead, [&]() {
-        receiveBytes(socket.readAll());
+Network::Network(QWidget *parent) : QObject{parent} {
+    protocol.user = this;
+    protocol.callback_tx = [](void *user, const void *data, const uint32_t size) {
+        Network *self = reinterpret_cast<Network *>(user);
+
+        const QByteArray bytes(reinterpret_cast<const char *>(data), size);
+
+        if(self->socket->state()==QAbstractSocket::ConnectedState) {
+            self->protocol.available = false;
+            self->socket->write(bytes);
+            self->socket->flush();
+        }
+    };
+    protocol.callback_rx = [](void *user, const uint8_t id, const uint32_t time, const void *payload, const uint32_t size) {
+        Network *self = reinterpret_cast<Network *>(user);
+        self->receive(id, time/1000., QByteArray(reinterpret_cast<const char *>(payload), size));
+    };
+    protocol.callback_err = [](void *user, const protocol_error_t err) {
+        (void)user;
+        (void)err;
+    };
+    protocol.callback_time = [](void *user) {
+        (void)user;
+        return (uint32_t)QDateTime::currentMSecsSinceEpoch();
+    };
+    protocol.fifo_tx.buffer = buffer_tx;
+    protocol.fifo_tx.size = sizeof(buffer_tx);
+    protocol.fifo_rx.buffer = buffer_rx;
+    protocol.fifo_rx.size = sizeof(buffer_rx);
+    protocol.decoded = buffer_decode;
+    protocol.max = sizeof(buffer_decode);
+}
+
+void Network::start() {
+    socket = new QTcpSocket(this);
+
+    connect(socket, &QTcpSocket::readyRead, [this]() {
+        const QByteArray bytes = socket->readAll();
+
+        for(const uint8_t byte : bytes) {
+            protocol.fifo_rx.buffer[protocol.fifo_rx.write] = byte;
+            protocol.fifo_rx.write++;
+            protocol.fifo_rx.write %=protocol.fifo_rx.size;
+        }
+
+        downloadBytes +=bytes.size();
     });
 
-    connect(&socket, &QTcpSocket::bytesWritten, [&](qint64 bytes) {
-        (void)bytes;
-        transmitAvailable(true);
+    connect(socket, &QTcpSocket::bytesWritten, [this](qint64 bytes) {
+        protocol.available = true;
+        uploadBytes +=bytes;
     });
 
-    connect(&socket, &QTcpSocket::errorOccurred, [&](QAbstractSocket::SocketError error) {
-        setStatus(QString(QMetaEnum::fromType<QAbstractSocket::SocketError>().valueToKey(error)).replace("Error", ""));
+    connect(socket, &QTcpSocket::errorOccurred, [&](QAbstractSocket::SocketError error) {
+        status(QString(QMetaEnum::fromType<QAbstractSocket::SocketError>().valueToKey(error)).replace("Error", ""));
     });
 
-    connect(&socket, &QTcpSocket::stateChanged, [&](QAbstractSocket::SocketState state) {
-        setStatus(QString(QMetaEnum::fromType<QAbstractSocket::SocketState>().valueToKey(state)).replace("State", ""));
+    connect(socket, &QTcpSocket::stateChanged, [&](QAbstractSocket::SocketState state) {
+        status(QString(QMetaEnum::fromType<QAbstractSocket::SocketState>().valueToKey(state)).replace("State", ""));
 
         switch(state) {
             case QAbstractSocket::UnconnectedState:
@@ -33,32 +80,39 @@ Network::Network(QWidget *parent) : AbstractInterface{"Network Interface", paren
             case QAbstractSocket::BoundState:
             case QAbstractSocket::ClosingState:
             case QAbstractSocket::ListeningState: {
-                transmitAvailable(false);
+                protocol.available = false;
             } break;
             case QAbstractSocket::ConnectedState: {
-                transmitAvailable(true);
+                protocol.available = true;
             } break;
         }
     });
 
-    scanInput();
-}
+    {
+        QTimer *timer = new QTimer(this);
+        connect(timer, &QTimer::timeout, [this]() {
+            protocol_process(&protocol);
+        });
+        timer->start(1);
+    }
 
-void Network::transmitBytes(const QByteArray &bytes) {
-    if(socket.state()==QAbstractSocket::ConnectedState) {
-        transmitAvailable(false);
-        socket.write(bytes);
-        socket.flush();
+    {
+        QTimer *timer = new QTimer(this);
+        connect(timer, &QTimer::timeout, [this]() {
+            stats(downloadBytes, uploadBytes, errorNum);
+            downloadBytes = 0;
+            uploadBytes = 0;
+            errorNum = 0;
+        });
+        timer->start(1000);
     }
 }
 
-void Network::scanInput() {
-    addressComboBox->setDisabled(true);
-    scanButton->setDisabled(true);
-    saveButton->setDisabled(true);
-    addressComboBox->clear();
-    scanButton->setText("0/0");
+void Network::transmit(const uint8_t id, const QByteArray &payload) {
+    protocol_enqueue(&protocol, id, payload.data(), payload.size());
+}
 
+void Network::scanHosts() {
     const QList<QNetworkInterface> allInterfaces = QNetworkInterface::allInterfaces();
 
     QList<QHostAddress> localAddresses;
@@ -75,12 +129,13 @@ void Network::scanInput() {
         }
     }
 
-    scanButton->setText(QString("1/%1").arg(localAddresses.size()));
+    QStringList *list = new QStringList();
+    int *finished = new int(0);
 
     for(const QHostAddress &localAddress : localAddresses) {
         QProcess *nmapProcess = new QProcess(this);
 
-        connect(nmapProcess, &QProcess::finished, [this, nmapProcess](int exitCode, QProcess::ExitStatus exitStatus) {
+        connect(nmapProcess, &QProcess::finished, [this, nmapProcess, list, finished, localAddresses](int exitCode, QProcess::ExitStatus exitStatus) {
             (void)exitCode;
             (void)exitStatus;
 
@@ -93,24 +148,14 @@ void Network::scanInput() {
                 const QRegularExpressionMatch match = i.next();
                 const QString address = match.captured(1);
 
-                addressComboBox->addItem(address);
+                list->append(address);
             }
 
-            const QStringList progress = scanButton->text().split("/");
-            const int ready = progress[0].toInt();
-            const int overall = progress[1].toInt();
-            scanButton->setText(QString("%1/%2").arg(ready + 1).arg(overall));
-
-            if(ready==overall) {
-                const int index = addressComboBox->findText(getDefaultInput());
-                if(index != -1) {
-                    addressComboBox->setCurrentIndex(index);
-                }
-
-                addressComboBox->setDisabled(false);
-                scanButton->setDisabled(false);
-                saveButton->setDisabled(false);
-                scanButton->setText("Scan network");
+            (*finished)++;
+            if(*finished==localAddresses.size()) {
+                scanFinished(*list);
+                delete finished;
+                delete list;
             }
 
             nmapProcess->deleteLater();
@@ -128,10 +173,10 @@ void Network::scanInput() {
     }
 }
 
-void Network::changeInput(const QString &input) {
-    if(!input.isEmpty() && (!socket.isOpen() || input!=socket.peerAddress().toString())) {
-        socket.abort();
-        socket.connectToHost(input, 23);
+void Network::changeHost(const QString &host) {
+    if(!host.isEmpty() && (!socket->isOpen() || host!=socket->peerAddress().toString())) {
+        socket->abort();
+        socket->connectToHost(host, 23);
     }
 }
 
