@@ -1,0 +1,46 @@
+#pragma once
+
+#include <QWidget>
+#include <QLineEdit>
+#include <QTextEdit>
+#include <QLabel>
+#include <QTimer>
+
+#include "Average.h"
+
+class Window : public QWidget {
+    Q_OBJECT
+
+    Average load;
+    Average velocity;
+    Average current;
+    Average voltage;
+    int step;
+
+    int start = 0;
+    int stop = 100;
+    int steps = 20;
+    double wait_time = 1;
+    double sample_time = 3;
+
+    QLabel *label[4];
+    QTextEdit *data_text;
+    QTimer timer_step;
+    QTimer timer_zero;
+    QLineEdit *start_line;
+    QLineEdit *stop_line;
+    QLineEdit *steps_line;
+    QLineEdit *wait_line;
+    QLineEdit *sample_line;
+
+    void setThrottle(const int value);
+
+signals:
+    void transmit(const uint8_t id, const QByteArray &payload);
+
+public slots:
+    void receive(const uint8_t id, const double time, const QByteArray &payload);
+
+public:
+    Window(QWidget *parent = nullptr);
+};
