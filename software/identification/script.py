@@ -4,47 +4,36 @@ import pandas as pd
 import scipy.optimize
 import scipy.constants
 
-def objective(params, u1, F, u2, M):
-    K_f, K_m, m = params
-
-    F_pred = K_f*u1**m
-    M_pred = K_m*u2**m
-
-    error_F = np.sum((F - F_pred)**2)
-    error_M = np.sum((M - M_pred)**2)
-
-    return error_F + error_M
-
 F_experiment = pd.read_csv('thrust_data.csv')
 M_experiment = pd.read_csv('torque_data.csv')
 
 F_u = F_experiment['throttle'].values
 load = F_experiment['load'].values
+F_v = 1000*F_u**0.7 # F_experiment['velocity'].values
 F = [(l - min(load))*scipy.constants.g for l in load]
 
 arm = 0.03
 M_u = M_experiment['throttle'].values
 load = M_experiment['load'].values
+M_v = 1000*M_u**0.7 # M_experiment['velocity'].values
 M = [(l - min(load))*scipy.constants.g*arm for l in load]
 
-K_f, K_m, m = scipy.optimize.minimize(
-    fun=objective,
-    x0=[1, 1, 1],
-    args=(F_u, F, M_u, M),
-    bounds=[(0, np.inf), (0, np.inf), (0, np.inf)],
-).x
+[K_w, m], _ = scipy.optimize.curve_fit(lambda u, K, m: K*u**m, np.concatenate([F_u, M_u]), np.concatenate([F_v, M_v]), bounds=(0, np.inf))
+K_f = scipy.optimize.curve_fit(lambda w, K: K*w**2, F_v, F, bounds=(0, np.inf))[0][0]
+K_m = scipy.optimize.curve_fit(lambda w, K: K*w**2, M_v, M, bounds=(0, np.inf))[0][0]
 
-K_mf = K_m/K_f
-
-print(f'F(u) = {K_f:.4f} u ^ {m:.4f}')
-print(f'M(u) = {K_m:.4f} u ^ {m:.4f}')
-print(f'M(u) = {K_mf:.4f} F(u)')
+print(f'w(u) = {K_w:8.3f} u ^ {m:.3f}')
+print(f'F(u) = {K_f*K_w**2:8.3f} u ^ {2*m:.3f}')
+print(f'M(u) = {K_m*K_w**2:8.3f} u ^ {2*m:.3f}')
+print('-------------------------------')
+print(f'F(w) = {K_f:e} w ^ 2')
+print(f'M(w) = {K_m:e} w ^ 2')
 
 plt.figure()
 plt.scatter(100*F_u, F, label='samples', color='black', s=10)
 
 u = np.linspace(min(F_u), max(F_u), 100)
-plt.plot(100*u, K_f*u**m, label='best fit', color='red')
+plt.plot(100*u, K_f*(K_w*u**m)**2, label='best fit', color='red')
 
 plt.xlabel('throttle [%]')
 plt.ylabel('thrust [N]')
@@ -56,7 +45,7 @@ plt.figure()
 plt.scatter(100*M_u, M, label='samples', color='black', s=10)
 
 u = np.linspace(min(M_u), max(M_u), 100)
-plt.plot(100*u, K_m*u**m, label='best fit', color='red')
+plt.plot(100*u, K_m*(K_w*u**m)**2, label='best fit', color='red')
 
 plt.xlabel('throttle [%]')
 plt.ylabel('torque [Nm]')
