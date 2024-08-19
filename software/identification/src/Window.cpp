@@ -82,29 +82,41 @@ Window::Window(QWidget *parent) : QWidget{parent} {
         wait_line = new QLineEdit(QString::asprintf("%.1f", wait_time));
         sample_line = new QLineEdit(QString::asprintf("%.1f", sample_time));
 
-        start_line->setValidator(new QIntValidator(0, 100));
-        stop_line->setValidator(new QIntValidator(0, 100));
-        steps_line->setValidator(new QIntValidator(1, 100));
-        wait_line->setValidator(new QDoubleValidator(0, 10, 1));
-        sample_line->setValidator(new QDoubleValidator(0, 10, 1));
+        QValidator *start_validator = new QIntValidator(0, 100, this);
+        QValidator *stop_validator = new QIntValidator(0, 100, this);
+        QValidator *steps_validator = new QIntValidator(1, 100, this);
+        QValidator *wait_validator = new QDoubleValidator(0, 10, 1, this);
+        QValidator *sample_validator = new QDoubleValidator(0, 10, 1, this);
 
-        connect(start_line, &QLineEdit::returnPressed, [&]() {
+        start_validator->setLocale(QLocale(QLocale::English, QLocale::UnitedStates));
+        stop_validator->setLocale(QLocale(QLocale::English, QLocale::UnitedStates));
+        steps_validator->setLocale(QLocale(QLocale::English, QLocale::UnitedStates));
+        wait_validator->setLocale(QLocale(QLocale::English, QLocale::UnitedStates));
+        sample_validator->setLocale(QLocale(QLocale::English, QLocale::UnitedStates));
+
+        start_line->setValidator(start_validator);
+        stop_line->setValidator(stop_validator);
+        steps_line->setValidator(steps_validator);
+        wait_line->setValidator(wait_validator);
+        sample_line->setValidator(sample_validator);
+
+        connect(start_line, &QLineEdit::returnPressed, [this]() {
             start = start_line->text().toDouble();
         });
 
-        connect(stop_line, &QLineEdit::returnPressed, [&]() {
+        connect(stop_line, &QLineEdit::returnPressed, [this]() {
             stop = stop_line->text().toDouble();
         });
 
-        connect(steps_line, &QLineEdit::returnPressed, [&]() {
+        connect(steps_line, &QLineEdit::returnPressed, [this]() {
             steps = steps_line->text().toDouble();
         });
 
-        connect(wait_line, &QLineEdit::returnPressed, [&]() {
+        connect(wait_line, &QLineEdit::returnPressed, [this]() {
             wait_time = wait_line->text().toDouble();
         });
 
-        connect(sample_line, &QLineEdit::returnPressed, [&]() {
+        connect(sample_line, &QLineEdit::returnPressed, [this]() {
             sample_time = sample_line->text().toDouble();
         });
 
@@ -118,26 +130,49 @@ Window::Window(QWidget *parent) : QWidget{parent} {
     }
 
     {
-        QGroupBox *group = new QGroupBox("Experiment");
+        QGroupBox *group = new QGroupBox("Experiment", this);
         QGridLayout *layout  = new QGridLayout(group);
 
         group->setSizePolicy(QSizePolicy::MinimumExpanding, QSizePolicy::MinimumExpanding);
 
-        load_label = new QLabel("--- g");
+        QLabel *label1 = new QLabel("thrust:", this);
+        QLabel *label2 = new QLabel("velocity:", this);
+        QLabel *label3 = new QLabel("current:", this);
+        QLabel *label4 = new QLabel("voltage:", this);
 
-        QFont font;
-        font.setWeight(QFont::Weight::Bold);
-        font.setPointSize(20);
-        load_label->setFont(font);
-        load_label->setAlignment(Qt::AlignHCenter);
+        label[0] = new QLabel("--- g", this);
+        label[1] = new QLabel("--- rad/s", this);
+        label[2] = new QLabel("--- A", this);
+        label[3] = new QLabel("--- V", this);
 
-        QPushButton *start_button = new QPushButton("Start");
-        QPushButton *stop_button = new QPushButton("Stop");
-        QPushButton *save_button = new QPushButton("Save");
+        label1->setAlignment(Qt::AlignRight);
+        label2->setAlignment(Qt::AlignRight);
+        label3->setAlignment(Qt::AlignRight);
+        label4->setAlignment(Qt::AlignRight);
+
+        label[0]->setAlignment(Qt::AlignLeft);
+        label[1]->setAlignment(Qt::AlignLeft);
+        label[2]->setAlignment(Qt::AlignLeft);
+        label[3]->setAlignment(Qt::AlignLeft);
+
+        layout->addWidget(label1, 0, 0);
+        layout->addWidget(label2, 1, 0);
+        layout->addWidget(label3, 2, 0);
+        layout->addWidget(label4, 3, 0);
+
+        layout->addWidget(label[0], 0, 1);
+        layout->addWidget(label[1], 1, 1);
+        layout->addWidget(label[2], 2, 1);
+        layout->addWidget(label[3], 3, 1);
+
+        QPushButton *start_button = new QPushButton("Start", this);
+        QPushButton *stop_button = new QPushButton("Stop", this);
+        QPushButton *save_button = new QPushButton("Save", this);
         data_text = new QTextEdit();
         data_text->setReadOnly(true);
+        data_text->setMinimumWidth(300);
 
-        connect(start_button, &QPushButton::clicked, [&]() {
+        connect(start_button, &QPushButton::clicked, [this]() {
             timer_step.stop();
             timer_zero.stop();
             timer_step.setSingleShot(true);
@@ -148,19 +183,19 @@ Window::Window(QWidget *parent) : QWidget{parent} {
             step = 0;
             setThrottle(start);
             data_text->clear();
-            data_text->append("throttle,load");
+            data_text->append("throttle,load,velocity,current,voltage");
 
             timer_step.start();
             timer_zero.start();
         });
 
-        connect(stop_button, &QPushButton::clicked, [&]() {
+        connect(stop_button, &QPushButton::clicked, [this]() {
             setThrottle(0);
             timer_step.stop();
             timer_zero.stop();
         });
 
-        connect(save_button, &QPushButton::clicked, [&]() {
+        connect(save_button, &QPushButton::clicked, [this]() {
             const QString filepath = QFileDialog::getSaveFileName(this, "Save CSV File", "", "CSV Files (*.csv);;All Files (*)");
 
             if(!filepath.isEmpty()) {
@@ -170,20 +205,25 @@ Window::Window(QWidget *parent) : QWidget{parent} {
             }
         });
 
-        layout->addWidget(load_label, 0, 0, 1, 2);
-        layout->addWidget(start_button, 1, 0);
-        layout->addWidget(stop_button, 1, 1);
-        layout->addWidget(data_text, 2, 0, 1, 2);
-        layout->addWidget(save_button, 3, 0, 1, 2);
+        layout->addWidget(start_button, 4, 0);
+        layout->addWidget(stop_button, 4, 1);
+        layout->addWidget(data_text, 5, 0, 1, 2);
+        layout->addWidget(save_button, 6, 0, 1, 2);
 
         grid->addWidget(group, 0, 1, 3, 1);
     }
 
-    connect(&timer_step, &QTimer::timeout, [&]() {
+    connect(&timer_step, &QTimer::timeout, [this]() {
         const double s = (((double)stop) - ((double)start))/((double)steps);
         const double throttle = step*s + start;
 
-        data_text->append(QString::asprintf("%.3f,%.4f", throttle/100, avg_load));
+        data_text->append(QString::asprintf("%.3f,%.4f,%.0f,%.2f,%.2f",
+            throttle/100,
+            load.get(),
+            velocity.get(),
+            current.get(),
+            voltage.get()
+        ));
 
         if(step>=steps) {
             setThrottle(0);
@@ -200,8 +240,11 @@ Window::Window(QWidget *parent) : QWidget{parent} {
         timer_step.start();
     });
 
-    connect(&timer_zero, &QTimer::timeout, [&]() {
-        avg_num = 0;
+    connect(&timer_zero, &QTimer::timeout, [this]() {
+        load.reset();
+        velocity.reset();
+        current.reset();
+        voltage.reset();
 
         timer_zero.setSingleShot(true);
         timer_zero.setInterval(1000*(wait_time + sample_time));
@@ -216,13 +259,23 @@ void Window::receive(const uint8_t id, const double time, const QByteArray &payl
         const msg_frame_sensor_t *sensor = reinterpret_cast<const msg_frame_sensor_t *>(payload.data());
 
         if(sensor->valid.load) {
-            const double w1 = static_cast<double>(avg_num)/static_cast<double>(avg_num + 1);
-            const double w2 = 1./static_cast<double>(avg_num + 1);
+            load.append(sensor->load.calib);
 
-            avg_load = w1*avg_load + w2*sensor->load.calib;
-            avg_num++;
+            label[0]->setText(QString::asprintf("%5.3f kg", load.get()));
+        }
 
-            load_label->setText(QString::asprintf("%5.3f kg", sensor->load.calib));
+        if(sensor->valid.tachometer) {
+            velocity.append(sensor->tachometer);
+
+            label[1]->setText(QString::asprintf("%4.0f rad/s", velocity.get()));
+        }
+
+        if(sensor->valid.power) {
+            voltage.append(sensor->power[0]);
+            current.append(sensor->power[1]);
+
+            label[2]->setText(QString::asprintf("%5.2f A", current.get()));
+            label[3]->setText(QString::asprintf("%5.2f V", voltage.get()));
         }
     }
 }

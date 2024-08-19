@@ -6,11 +6,15 @@
 #include <QLabel>
 #include <QTimer>
 
+#include "Average.h"
+
 class Window : public QWidget {
     Q_OBJECT
 
-    double avg_load;
-    int avg_num = 0;
+    Average load;
+    Average velocity;
+    Average current;
+    Average voltage;
     int step;
 
     int start = 0;
@@ -19,7 +23,7 @@ class Window : public QWidget {
     double wait_time = 1;
     double sample_time = 3;
 
-    QLabel *load_label;
+    QLabel *label[4];
     QTextEdit *data_text;
     QTimer timer_step;
     QTimer timer_zero;
