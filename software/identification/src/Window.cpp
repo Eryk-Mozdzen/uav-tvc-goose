@@ -10,14 +10,68 @@
 #include <QTimer>
 #include <QIntValidator>
 #include <QDoubleValidator>
+#include <QThread>
 
+#include "common/protocol/msg.h"
+#include "common/qt/Serial.h"
+#include "common/qt/Network.h"
+#include "common/qt/InterfaceWidget.h"
 #include "Window.h"
 
 Window::Window(QWidget *parent) : QWidget{parent} {
     QGridLayout *grid = new QGridLayout(this);
 
     {
-        QGroupBox *group = new QGroupBox("settings");
+        common::Serial *serial = new common::Serial();
+	    common::Network *network = new common::Network();
+
+        connect(serial, &common::Serial::receive, this, &Window::receive);
+        connect(network, &common::Network::receive, this, &Window::receive);
+        connect(this, &Window::transmit, serial, &common::Serial::transmit);
+        connect(this, &Window::transmit, network, &common::Network::transmit);
+
+        common::InterfaceWidget *serialInterface = new common::InterfaceWidget("Serial interface", this);
+        common::InterfaceWidget *networkInterface = new common::InterfaceWidget("Network interface", this);
+
+        connect(serial, &common::Serial::stats, serialInterface, &common::InterfaceWidget::stats);
+        connect(serial, &common::Serial::status, serialInterface, &common::InterfaceWidget::status);
+        connect(serial, &common::Serial::scanFinished, serialInterface, &common::InterfaceWidget::scanFinished);
+        connect(serialInterface, &common::InterfaceWidget::scan, serial, &common::Serial::scanPorts);
+        connect(serialInterface, &common::InterfaceWidget::change, serial, &common::Serial::changePort);
+
+        connect(network, &common::Network::stats, networkInterface, &common::InterfaceWidget::stats);
+        connect(network, &common::Network::status, networkInterface, &common::InterfaceWidget::status);
+        connect(network, &common::Network::scanFinished, networkInterface, &common::InterfaceWidget::scanFinished);
+        connect(networkInterface, &common::InterfaceWidget::scan, network, &common::Network::scanHosts);
+        connect(networkInterface, &common::InterfaceWidget::change, network, &common::Network::changeHost);
+
+        QThread *serialThread = new QThread(this);
+        QThread *networkThread = new QThread(this);
+
+        serial->moveToThread(serialThread);
+        connect(serialThread, &QThread::started, serial, &common::Serial::start);
+        connect(serialThread, &QThread::finished, serial, &common::Serial::deleteLater);
+        connect(serialThread, &QThread::finished, serialThread, &QThread::deleteLater);
+        connect(this, &QObject::destroyed, serialThread, &QThread::quit);
+
+        network->moveToThread(networkThread);
+        connect(networkThread, &QThread::started, network, &common::Network::start);
+        connect(networkThread, &QThread::finished, network, &common::Network::deleteLater);
+        connect(networkThread, &QThread::finished, networkThread, &QThread::deleteLater);
+        connect(this, &QObject::destroyed, networkThread, &QThread::quit);
+
+        serialThread->start();
+        networkThread->start();
+
+        serialInterface->forceScan();
+        networkInterface->forceScan();
+
+        grid->addWidget(serialInterface, 0, 0);
+        grid->addWidget(networkInterface, 1, 0);
+    }
+
+    {
+        QGroupBox *group = new QGroupBox("Settings");
         QFormLayout *layout = new QFormLayout(group);
 
         group->setSizePolicy(QSizePolicy::Minimum, QSizePolicy::Minimum);
@@ -54,17 +108,17 @@ Window::Window(QWidget *parent) : QWidget{parent} {
             sample_time = sample_line->text().toDouble();
         });
 
-        layout->addRow("throttle start [%]", start_line);
-        layout->addRow("throttle stop [%]", stop_line);
-        layout->addRow("number of steps", steps_line);
-        layout->addRow("wait time [s]", wait_line);
-        layout->addRow("sample time [s]", sample_line);
+        layout->addRow("Throttle start [%]", start_line);
+        layout->addRow("Throttle stop [%]", stop_line);
+        layout->addRow("Number of steps", steps_line);
+        layout->addRow("Wait time [s]", wait_line);
+        layout->addRow("Sample time [s]", sample_line);
 
-        grid->addWidget(group, 0, 0);
+        grid->addWidget(group, 2, 0);
     }
 
     {
-        QGroupBox *group = new QGroupBox("experiment");
+        QGroupBox *group = new QGroupBox("Experiment");
         QGridLayout *layout  = new QGridLayout(group);
 
         group->setSizePolicy(QSizePolicy::MinimumExpanding, QSizePolicy::MinimumExpanding);
@@ -77,9 +131,9 @@ Window::Window(QWidget *parent) : QWidget{parent} {
         load_label->setFont(font);
         load_label->setAlignment(Qt::AlignHCenter);
 
-        QPushButton *start_button = new QPushButton("start");
-        QPushButton *stop_button = new QPushButton("stop");
-        QPushButton *save_button = new QPushButton("save");
+        QPushButton *start_button = new QPushButton("Start");
+        QPushButton *stop_button = new QPushButton("Stop");
+        QPushButton *save_button = new QPushButton("Save");
         data_text = new QTextEdit();
         data_text->setReadOnly(true);
 
@@ -122,7 +176,7 @@ Window::Window(QWidget *parent) : QWidget{parent} {
         layout->addWidget(data_text, 2, 0, 1, 2);
         layout->addWidget(save_button, 3, 0, 1, 2);
 
-        grid->addWidget(group, 0, 1);
+        grid->addWidget(group, 0, 1, 3, 1);
     }
 
     connect(&timer_step, &QTimer::timeout, [&]() {
@@ -153,30 +207,22 @@ Window::Window(QWidget *parent) : QWidget{parent} {
         timer_zero.setInterval(1000*(wait_time + sample_time));
         timer_zero.start();
     });
-
-    // remove this
-    QTimer *timer = new QTimer(this);
-    connect(timer, &QTimer::timeout, [&]() {
-        protocol_message_t message;
-        message.id = PROTOCOL_ID_LOG;
-        message.size = 0;
-        transmit(message);
-    });
-    timer->start(100);
 }
 
-void Window::receive(const protocol_message_t &frame) {
-    if(frame.id==PROTOCOL_ID_READINGS) {
-        protocol_readings_t *readings = reinterpret_cast<protocol_readings_t *>(frame.payload);
+void Window::receive(const uint8_t id, const double time, const QByteArray &payload) {
+    (void)time;
 
-        if(readings->valid.load) {
+    if(id==MSG_ID_SENSOR) {
+        const msg_frame_sensor_t *sensor = reinterpret_cast<const msg_frame_sensor_t *>(payload.data());
+
+        if(sensor->valid.load) {
             const double w1 = static_cast<double>(avg_num)/static_cast<double>(avg_num + 1);
             const double w2 = 1./static_cast<double>(avg_num + 1);
 
-            avg_load = w1*avg_load + w2*readings->calibrated.load;
+            avg_load = w1*avg_load + w2*sensor->load.calib;
             avg_num++;
 
-            load_label->setText(QString::asprintf("%5.3f kg", readings->calibrated.load));
+            load_label->setText(QString::asprintf("%5.3f kg", sensor->load.calib));
         }
     }
 }
@@ -184,13 +230,8 @@ void Window::receive(const protocol_message_t &frame) {
 void Window::setThrottle(const int value) {
     const int constrained = (value>100) ? 100 : (value<0) ? 0 : value;
 
-    protocol_control_t control;
-    control.motor = 10*constrained + 1000;
+    msg_frame_manual_t manual;
+    manual.motor = 10*constrained + 1000;
 
-    protocol_message_t message;
-    message.payload =&control;
-    message.size = sizeof(control);
-    message.id = PROTOCOL_ID_CONTROL;
-
-    transmit(message);
+    transmit(MSG_ID_MANUAL, QByteArray(reinterpret_cast<const char *>(&manual), sizeof(manual)));
 }

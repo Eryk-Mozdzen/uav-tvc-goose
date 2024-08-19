@@ -13,14 +13,15 @@ REQUIRED)
 add_executable(${PROJECT_NAME}
 	"../common/protocol/protocol.c"
 	"../common/qt/Serial.cpp"
-	"../common/qt/Telnet.cpp"
+	"../common/qt/Network.cpp"
+	"../common/qt/InterfaceWidget.cpp"
 
 	"src/main.cpp"
 	"src/Window.cpp"
 )
 
 target_include_directories(${PROJECT_NAME} PRIVATE
-	"../common"
+	".."
 	"src"
 )
 
