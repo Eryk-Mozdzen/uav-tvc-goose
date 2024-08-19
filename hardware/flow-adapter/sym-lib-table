@@ -1,0 +1,4 @@
+(sym_lib_table
+  (version 7)
+  (lib (name "goose")(type "KiCad")(uri "${KICAD_GOOSE}/goose.kicad_sym")(options "")(descr ""))
+)

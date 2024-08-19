@@ -70,17 +70,17 @@ Interface * Accelerometer::create() const {
     return new Accelerometer();
 }
 
-void Accelerometer::receive(const protocol_readings_t &readings) {
-    if(readings.valid.accelerometer) {
+void Accelerometer::receive(const msg_frame_sensor_t &sensor) {
+    if(sensor.valid.accelerometer) {
         current = Eigen::Vector3d(
-            readings.raw.accelerometer[0],
-            readings.raw.accelerometer[1],
-            readings.raw.accelerometer[2]
+            sensor.accelerometer.raw[0],
+            sensor.accelerometer.raw[1],
+            sensor.accelerometer.raw[2]
         );
     }
 }
 
-void Accelerometer::update(protocol_calibration_t &calibration) const {
+void Accelerometer::update(msg_frame_calibration_t &calibration) const {
     calibration.accelerometer[0] = scale(0, 0);
     calibration.accelerometer[1] = scale(0, 1);
     calibration.accelerometer[2] = scale(0, 2);

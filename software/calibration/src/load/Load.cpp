@@ -59,17 +59,17 @@ Interface * Load::create() const {
     return new Load();
 }
 
-void Load::receive(const protocol_readings_t &readings) {
-    if(readings.valid.load) {
+void Load::receive(const msg_frame_sensor_t &sensor) {
+    if(sensor.valid.load) {
         sum -=data[counter];
-        data[counter] = readings.raw.load;
+        data[counter] = sensor.load.raw;
         sum +=data[counter];
 
         counter++;
         counter %=num;
 
-        load_line->setText(QString::asprintf("%.3f", readings.calibrated.load));
-        raw_line->setText(QString::asprintf("%d", readings.raw.load));
+        load_line->setText(QString::asprintf("%.3f", sensor.load.calib));
+        raw_line->setText(QString::asprintf("%d", sensor.load.raw));
 
         const int avg = static_cast<double>(sum)/static_cast<double>(num);
 
@@ -77,7 +77,7 @@ void Load::receive(const protocol_readings_t &readings) {
     }
 }
 
-void Load::update(protocol_calibration_t &calibration) const {
+void Load::update(msg_frame_calibration_t &calibration) const {
     calibration.load[0] = min;
     calibration.load[1] = max;
 }

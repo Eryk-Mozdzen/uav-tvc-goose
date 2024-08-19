@@ -87,15 +87,15 @@ Params polyToParams3D(const Eigen::VectorXd &vec) {
     return params;
 }
 
-void Magnetometer::receive(const protocol_readings_t &readings) {
-    if(!readings.valid.magnetometer) {
+void Magnetometer::receive(const msg_frame_sensor_t &sensor) {
+    if(!sensor.valid.magnetometer) {
         return;
     }
 
     const Sample s = {
-        readings.raw.magnetometer[0],
-        readings.raw.magnetometer[1],
-        readings.raw.magnetometer[2]
+        sensor.magnetometer.raw[0],
+        sensor.magnetometer.raw[1],
+        sensor.magnetometer.raw[2]
     };
 
     samples.push_back(s);
@@ -109,7 +109,7 @@ void Magnetometer::receive(const protocol_readings_t &readings) {
     calibrated.set(params);
 }
 
-void Magnetometer::update(protocol_calibration_t &calibration) const {
+void Magnetometer::update(msg_frame_calibration_t &calibration) const {
     calibration.magnetometer[0] = scale(0, 0);
     calibration.magnetometer[1] = scale(0, 1);
     calibration.magnetometer[2] = scale(0, 2);

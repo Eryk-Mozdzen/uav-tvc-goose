@@ -1,27 +1,41 @@
 #pragma once
 
+#include <QObject>
 #include <QSerialPort>
+#include <QComboBox>
+#include <QPushButton>
 
-#include "protocol/protocol.h"
+#include "common/protocol/protocol.h"
 
-namespace shared {
+namespace common {
 
 class Serial : public QObject {
-    Q_OBJECT
+	Q_OBJECT
 
-	uint8_t decoder_buffer[1024];
-	protocol_decoder_t decoder;
-	QSerialPort serial;
+	uint8_t buffer_tx[10*1024];
+    uint8_t buffer_rx[10*1024];
+    uint8_t buffer_decode[10*1024];
+	protocol_t protocol = PROTOCOL_INIT;
+
+	QSerialPort *serial;
+	int uploadBytes = 0;
+	int downloadBytes = 0;
+	int errorNum = 0;
 
 public slots:
-	void transmit(const protocol_message_t &message);
+	void transmit(const uint8_t id, const QByteArray &payload);
+	void scanPorts();
+	void changePort(const QString &port);
+	void start();
 
 signals:
-	void receive(const protocol_message_t &message);
+	void receive(const uint8_t id, const double time, const QByteArray &payload);
+	void status(const QString status);
+	void stats(const int download, const int upload, const int errors);
+	void scanFinished(const QStringList &list);
 
 public:
-	Serial(const char *port="/dev/ttyACM0", QObject *parent = nullptr);
-	~Serial();
+	Serial(QWidget *parent = nullptr);
 };
 
 }

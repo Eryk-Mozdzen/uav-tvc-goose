@@ -1,0 +1,171 @@
+(kicad_sch
+	(version 20231120)
+	(generator "eeschema")
+	(generator_version "8.0")
+	(uuid "52d2474d-2865-43c6-846b-d5f8a367c5f4")
+	(paper "A4")
+	(title_block
+		(title "UAV TVC Goose II: Flight Controller")
+		(date "2024-08-05")
+		(rev "V2.1")
+		(comment 4 "Author: Eryk Możdżeń")
+	)
+	(lib_symbols)
+	(sheet
+		(at 143.51 59.69)
+		(size 38.1 67.31)
+		(fields_autoplaced yes)
+		(stroke
+			(width 0.1524)
+			(type solid)
+		)
+		(fill
+			(color 0 0 0 0.0000)
+		)
+		(uuid "33ee6dd5-762c-4c0c-85b1-322db5527c00")
+		(property "Sheetname" "microcontroller"
+			(at 143.51 58.9784 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left bottom)
+			)
+		)
+		(property "Sheetfile" "microcontroller.kicad_sch"
+			(at 143.51 127.5846 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left top)
+			)
+		)
+		(instances
+			(project "flight-controller"
+				(path "/52d2474d-2865-43c6-846b-d5f8a367c5f4"
+					(page "3")
+				)
+			)
+		)
+	)
+	(sheet
+		(at 100.33 59.69)
+		(size 38.1 67.31)
+		(fields_autoplaced yes)
+		(stroke
+			(width 0.1524)
+			(type solid)
+		)
+		(fill
+			(color 0 0 0 0.0000)
+		)
+		(uuid "422eb0b5-2ec1-41a7-81d9-981a304088f5")
+		(property "Sheetname" "sensors"
+			(at 100.33 58.9784 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left bottom)
+			)
+		)
+		(property "Sheetfile" "sensors.kicad_sch"
+			(at 100.33 127.5846 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left top)
+			)
+		)
+		(instances
+			(project "flight-controller"
+				(path "/52d2474d-2865-43c6-846b-d5f8a367c5f4"
+					(page "4")
+				)
+			)
+		)
+	)
+	(sheet
+		(at 186.69 59.69)
+		(size 40.64 67.31)
+		(fields_autoplaced yes)
+		(stroke
+			(width 0.1524)
+			(type solid)
+		)
+		(fill
+			(color 0 0 0 0.0000)
+		)
+		(uuid "d9c0588f-daf7-400c-b697-bf3dc495626c")
+		(property "Sheetname" "connectors"
+			(at 186.69 58.9784 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left bottom)
+			)
+		)
+		(property "Sheetfile" "connectors.kicad_sch"
+			(at 186.69 127.5846 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left top)
+			)
+		)
+		(instances
+			(project "flight-controller"
+				(path "/52d2474d-2865-43c6-846b-d5f8a367c5f4"
+					(page "6")
+				)
+			)
+		)
+	)
+	(sheet
+		(at 54.61 59.69)
+		(size 40.64 67.31)
+		(fields_autoplaced yes)
+		(stroke
+			(width 0.1524)
+			(type solid)
+		)
+		(fill
+			(color 0 0 0 0.0000)
+		)
+		(uuid "fe40f7d2-7686-4d32-90d9-42c3b8d4fba5")
+		(property "Sheetname" "power"
+			(at 54.61 58.9784 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left bottom)
+			)
+		)
+		(property "Sheetfile" "power.kicad_sch"
+			(at 54.61 127.5846 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left top)
+			)
+		)
+		(instances
+			(project "flight-controller"
+				(path "/52d2474d-2865-43c6-846b-d5f8a367c5f4"
+					(page "2")
+				)
+			)
+		)
+	)
+	(sheet_instances
+		(path "/"
+			(page "1")
+		)
+	)
+)
