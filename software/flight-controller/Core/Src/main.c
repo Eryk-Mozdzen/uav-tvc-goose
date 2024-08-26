@@ -79,6 +79,8 @@ static void MX_ICACHE_Init(void);
 /* Private user code ---------------------------------------------------------*/
 /* USER CODE BEGIN 0 */
 
+extern void app_main();
+
 /* USER CODE END 0 */
 
 /**
@@ -124,6 +126,8 @@ int main(void)
   MX_UART5_Init();
   MX_ICACHE_Init();
   /* USER CODE BEGIN 2 */
+
+  app_main();
 
   /* USER CODE END 2 */
 
