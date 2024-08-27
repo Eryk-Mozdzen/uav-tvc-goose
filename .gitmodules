@@ -1,3 +1,9 @@
 [submodule "software/third-party/visualization-3d"]
 	path = software/third-party/visualization-3d
 	url = git@github.com:Eryk-Mozdzen/visualization-3d.git
+[submodule "software/third-party/CMSIS-DSP"]
+	path = software/cmsis-dsp/CMSIS-DSP
+	url = git@github.com:ARM-software/CMSIS-DSP.git
+[submodule "software/cmsis-dsp/CMSIS_5"]
+	path = software/cmsis-dsp/CMSIS_5
+	url = git@github.com:ARM-software/CMSIS_5.git

@@ -31,4 +31,21 @@
 		<nature>org.eclipse.cdt.managedbuilder.core.managedBuildNature</nature>
 		<nature>org.eclipse.cdt.managedbuilder.core.ScannerConfigNature</nature>
 	</natures>
+	<linkedResources>
+		<link>
+			<name>cmsis-dsp</name>
+			<type>2</type>
+			<locationURI>WORKSPACE_LOC/cmsis-dsp</locationURI>
+		</link>
+		<link>
+			<name>math</name>
+			<type>2</type>
+			<locationURI>WORKSPACE_LOC/common/math</locationURI>
+		</link>
+		<link>
+			<name>protocol</name>
+			<type>2</type>
+			<locationURI>WORKSPACE_LOC/common/protocol</locationURI>
+		</link>
+	</linkedResources>
 </projectDescription>

@@ -22,6 +22,23 @@
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
 
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <stdarg.h>
+#include <math.h>
+
+#include "protocol.h"
+#include "msg.h"
+#include "nvm.h"
+#include "nmea.h"
+#include "mpu6050_regs.h"
+#include "qmc5883l_regs.h"
+#include "bmp280_regs.h"
+#include "bmp280_compensate.h"
+#include "ina226_regs.h"
+#include "ekf.h"
+
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -44,6 +61,12 @@
 I2C_HandleTypeDef hi2c1;
 I2C_HandleTypeDef hi2c3;
 I2C_HandleTypeDef hi2c4;
+DMA_HandleTypeDef handle_GPDMA1_Channel3;
+DMA_HandleTypeDef handle_GPDMA1_Channel2;
+DMA_HandleTypeDef handle_GPDMA1_Channel5;
+DMA_HandleTypeDef handle_GPDMA1_Channel4;
+DMA_HandleTypeDef handle_GPDMA1_Channel7;
+DMA_HandleTypeDef handle_GPDMA1_Channel6;
 
 SPI_HandleTypeDef hspi1;
 
@@ -53,6 +76,10 @@ TIM_HandleTypeDef htim8;
 
 UART_HandleTypeDef huart4;
 UART_HandleTypeDef huart5;
+DMA_HandleTypeDef handle_GPDMA1_Channel1;
+DMA_NodeTypeDef Node_GPDMA1_Channel0;
+DMA_QListTypeDef List_GPDMA1_Channel0;
+DMA_HandleTypeDef handle_GPDMA1_Channel0;
 
 /* USER CODE BEGIN PV */
 
@@ -62,6 +89,8 @@ UART_HandleTypeDef huart5;
 void SystemClock_Config(void);
 static void SystemPower_Config(void);
 static void MX_GPIO_Init(void);
+static void MX_GPDMA1_Init(void);
+static void MX_ICACHE_Init(void);
 static void MX_I2C1_Init(void);
 static void MX_I2C3_Init(void);
 static void MX_I2C4_Init(void);
@@ -69,9 +98,8 @@ static void MX_SPI1_Init(void);
 static void MX_TIM1_Init(void);
 static void MX_TIM2_Init(void);
 static void MX_TIM8_Init(void);
-static void MX_UART4_Init(void);
 static void MX_UART5_Init(void);
-static void MX_ICACHE_Init(void);
+static void MX_UART4_Init(void);
 /* USER CODE BEGIN PFP */
 
 /* USER CODE END PFP */
@@ -79,7 +107,309 @@ static void MX_ICACHE_Init(void);
 /* Private user code ---------------------------------------------------------*/
 /* USER CODE BEGIN 0 */
 
-extern void app_main();
+typedef enum {
+	SENSOR_MISC_NONE,
+	SENSOR_MISC_BAR,
+	SENSOR_MISC_PWR_VOLTAGE,
+	SENSOR_MISC_PWR_CURRENT,
+} sensor_misc_t;
+
+static protocol_t protocol = PROTOCOL_INIT;
+
+static uint8_t imu_buffer[14];
+static uint8_t mag_buffer[6];
+static uint8_t misc_buffer[6];
+
+static volatile bool imu_ready = false;
+static volatile bool mag_ready = false;
+static volatile bool misc_ready = false;
+static volatile bool pwr_int = false;
+
+static bool send_calibration = false;
+static sensor_misc_t misc_busy = SENSOR_MISC_NONE;
+
+static void qmc5883l_write(uint8_t address, uint8_t value) {
+	HAL_I2C_Mem_Write(&hi2c3, QMC5883L_ADDR<<1, address, 1, &value, 1, 100);
+}
+
+static void qmc5883l_init() {
+	qmc5883l_write(QMC5883L_REG_CONTROL_2,
+		QMC5883L_CONFIG_2_SOFT_RST
+	);
+
+	HAL_Delay(100);
+
+    qmc5883l_write(QMC5883L_REG_SET_RESET,
+		QMC5883L_SET_RESET_RECOMMENDED
+	);
+
+    qmc5883l_write(QMC5883L_REG_CONTROL_2,
+		QMC5883L_CONFIG_2_INT_ENB_ENABLE
+	);
+
+	qmc5883l_write(QMC5883L_REG_CONTROL_1,
+        QMC5883L_CONFIG_1_OSR_512 |
+        QMC5883L_CONFIG_1_RNG_8G |
+		QMC5883L_CONFIG_1_ODR_200HZ |
+        QMC5883L_CONFIG_1_MODE_CONTINOUS
+	);
+}
+
+static void qmc5883l_read(float *mag, const uint8_t *buffer) {
+	const int16_t raw_x = (((int16_t)buffer[1])<<8) | buffer[0];
+	const int16_t raw_y = (((int16_t)buffer[3])<<8) | buffer[2];
+	const int16_t raw_z = (((int16_t)buffer[5])<<8) | buffer[4];
+
+	const float gain = 1.f/3000.f;
+
+	mag[0] = -raw_z*gain;
+	mag[1] = +raw_x*gain;
+	mag[2] = -raw_y*gain;
+}
+
+static void mpu6050_write(uint8_t address, uint8_t value) {
+	HAL_I2C_Mem_Write(&hi2c1, MPU6050_ADDR<<1, address, 1, &value, 1, 100);
+}
+
+static void mpu6050_init() {
+	mpu6050_write(MPU6050_REG_PWR_MGMT_1,
+		MPU6050_PWR_MGMT_1_DEVICE_RESET
+	);
+
+	HAL_Delay(100);
+
+	mpu6050_write(MPU6050_REG_SIGNAL_PATH_RESET,
+		MPU6050_SIGNAL_PATH_RESET_GYRO |
+		MPU6050_SIGNAL_PATH_RESET_ACCEL |
+		MPU6050_SIGNAL_PATH_RESET_TEMP
+	);
+
+	HAL_Delay(100);
+
+	mpu6050_write(MPU6050_REG_INT_ENABLE,
+		MPU6050_INT_ENABLE_FIFO_OVERLOW_DISABLE |
+		MPU6050_INT_ENABLE_I2C_MST_INT_DISABLE |
+		MPU6050_INT_ENABLE_DATA_RDY_ENABLE
+	);
+
+	mpu6050_write(MPU6050_REG_INT_PIN_CFG,
+		MPU6050_INT_PIN_CFG_LEVEL_ACTIVE_HIGH |
+		MPU6050_INT_PIN_CFG_PUSH_PULL |
+		MPU6050_INT_PIN_CFG_PULSE |
+		MPU6050_INT_PIN_CFG_STATUS_CLEAR_AFTER_ANY |
+		MPU6050_INT_PIN_CFG_FSYNC_DISABLE |
+		MPU6050_INT_PIN_CFG_I2C_BYPASS_DISABLE
+	);
+
+	mpu6050_write(MPU6050_REG_PWR_MGMT_1,
+		MPU6050_PWR_MGMT_1_TEMP_DIS |
+		MPU6050_PWR_MGMT_1_CLOCK_INTERNAL
+	);
+
+	mpu6050_write(MPU6050_REG_CONFIG,
+		MPU6050_CONFIG_EXT_SYNC_DISABLED |
+		MPU6050_CONFIG_DLPF_SETTING_6
+	);
+
+	mpu6050_write(MPU6050_REG_ACCEL_CONFIG,
+		MPU6050_ACCEL_CONFIG_RANGE_4G
+	);
+
+	mpu6050_write(MPU6050_REG_GYRO_CONFIG,
+		MPU6050_GYRO_CONFIG_RANGE_500DPS
+	);
+
+	mpu6050_write(MPU6050_REG_SMPLRT_DIV, 4);
+}
+
+static void mpu6050_read(float *acc, float *gyr, const uint8_t *buffer) {
+	{
+		const int16_t raw_x = (((int16_t)buffer[8])<<8) | buffer[9];
+		const int16_t raw_y = (((int16_t)buffer[10])<<8) | buffer[11];
+		const int16_t raw_z = (((int16_t)buffer[12])<<8) | buffer[13];
+
+		const float gain = 65.5f;
+		const float dps_to_rads = 0.017453292519943f;
+
+		gyr[0] = +raw_z*dps_to_rads/gain;
+		gyr[1] = +raw_y*dps_to_rads/gain;
+		gyr[2] = -raw_x*dps_to_rads/gain;
+	}
+
+	{
+		const int16_t raw_x = (((int16_t)buffer[0])<<8) | buffer[1];
+		const int16_t raw_y = (((int16_t)buffer[2])<<8) | buffer[3];
+		const int16_t raw_z = (((int16_t)buffer[4])<<8) | buffer[5];
+
+		const float gain = 8192.f;
+		const float g_to_ms2 = 9.80665f;
+
+		acc[0] = -raw_z*g_to_ms2/gain;
+		acc[1] = -raw_y*g_to_ms2/gain;
+		acc[2] = +raw_x*g_to_ms2/gain;
+	}
+}
+
+void bmp280_write(uint8_t address, uint8_t value) {
+	HAL_I2C_Mem_Write(&hi2c4, BMP280_ADDR<<1, address, 1, &value, 1, 100);
+}
+
+void bmp280_init() {
+	bmp280_write(BMP280_REG_RESET,
+		BMP280_RESET_VALUE
+	);
+
+	HAL_Delay(100);
+
+	bmp280_write(BMP280_REG_CTRL_MEAS,
+		BMP280_CTRL_TEMP_OVERSAMPLING_2 |
+		BMP280_CTRL_PRESS_OVERSAMPLING_16 |
+		BMP280_CTRL_MODE_NORMAL
+	);
+
+	bmp280_write(BMP280_REG_CONFIG,
+		BMP280_CONFIG_STANDBY_0_5MS |
+		BMP280_CONFIG_FILTER_X16 |
+		BMP280_CONFIG_SPI_3WIRE_DISABLE
+	);
+
+	uint8_t buffer[24] = {0};
+
+	HAL_I2C_Mem_Read(&hi2c4, BMP280_ADDR<<1, BMP280_REG_CALIB00, 1, buffer, sizeof(buffer), 100);
+
+	dig_T1 = (((uint16_t)buffer[1])<<8) | buffer[0];
+	dig_T2 = (((int16_t)buffer[3])<<8) | buffer[2];
+	dig_T3 = (((int16_t)buffer[5])<<8) | buffer[4];
+	dig_P1 = (((uint16_t)buffer[7])<<8) | buffer[6];
+	dig_P2 = (((int16_t)buffer[9])<<8) | buffer[8];
+	dig_P3 = (((int16_t)buffer[11])<<8) | buffer[10];
+	dig_P4 = (((int16_t)buffer[13])<<8) | buffer[12];
+	dig_P5 = (((int16_t)buffer[15])<<8) | buffer[14];
+	dig_P6 = (((int16_t)buffer[17])<<8) | buffer[16];
+	dig_P7 = (((int16_t)buffer[19])<<8) | buffer[18];
+	dig_P8 = (((int16_t)buffer[21])<<8) | buffer[20];
+	dig_P9 = (((int16_t)buffer[23])<<8) | buffer[22];
+}
+
+void bmp280_read(float *pressure, const uint8_t *buffer) {
+	const int32_t raw_temperature  = (((int32_t)buffer[3])<<12) | (((int32_t)buffer[4])<<4) | (((int32_t)buffer[5])>>4);
+	const int32_t raw_pressure     = (((int32_t)buffer[0])<<12) | (((int32_t)buffer[1])<<4) | (((int32_t)buffer[2])>>4);
+
+	float temp = bmp280_compensate_T_int32(raw_temperature)/100.f;	// *C
+	*pressure  = bmp280_compensate_P_int64(raw_pressure)/256.f;		// Pa
+
+	(void)temp;
+}
+
+#define PWR_R_SHUNT		0.002f
+#define PWR_MAX_CURRENT	20.f
+
+void ina226_write(uint8_t address, uint16_t value) {
+	uint8_t reverse[2] = {
+		(uint8_t)(value>>8),
+		(uint8_t)(value)
+	};
+
+	HAL_I2C_Mem_Write(&hi2c4, INA226_ADDR<<1, address, 1, reverse, 2, 100);
+}
+
+void ina226_init() {
+	ina226_write(INA226_REG_CONFIGURATION,
+		INA226_CONFIGURATION_RESET
+	);
+
+	HAL_Delay(100);
+
+	ina226_write(INA226_REG_CONFIGURATION,
+		INA226_CONFIGURATION_AVERAGE_1 |
+		INA226_CONFIGURATION_BUS_VOLTAGE_CONV_1_1MS |
+		INA226_CONFIGURATION_SHUNT_VOLTAGE_CONV_1_1MS |
+		INA226_CONFIGURATION_MODE_CONTINUOUS_SHUNT_BUS
+	);
+
+	ina226_write(INA226_REG_MASK_ENABLE,
+		INA226_MASK_ENABLE_CONVERSION_READY
+	);
+
+	const uint16_t calib = INA226_CALIBRATION_VALUE(PWR_MAX_CURRENT, PWR_R_SHUNT);
+
+	ina226_write(INA226_REG_CALIBRATION, calib);
+}
+
+void ina226_read(float *power, const uint8_t *buffer) {
+	{
+		const int16_t raw = (((uint16_t)buffer[0])<<8) | buffer[1];
+		power[0] = raw*INA226_LSB_BUS_VOLTAGE;
+	}
+	{
+		const int16_t raw = (((uint16_t)buffer[2])<<8) | buffer[3];
+		power[1] = raw*INA226_LSB_CURRENT(PWR_MAX_CURRENT);
+	}
+}
+
+static void comm_transmit(void *user, const void *data, const uint32_t size) {
+    (void)user;
+    HAL_UART_Transmit_DMA(&huart4, data, size);
+}
+
+static void comm_receive(void *user, const uint8_t id, const uint32_t time, const void *payload, const uint32_t size) {
+    (void)user;
+    (void)time;
+
+    switch(id) {
+        case MSG_ID_CALIBRATION: {
+            if(size==sizeof(msg_frame_calibration_t)) {
+                nvm_write(0, payload, size);
+            }
+
+            send_calibration = true;
+        } break;
+    }
+}
+
+static void comm_error(void *user, const protocol_error_t error) {
+    (void)user;
+    (void)error;
+}
+
+static uint32_t comm_time(void *user) {
+	(void)user;
+	return HAL_GetTick();
+}
+
+static void logger(const char *format, ...) {
+    va_list args;
+    va_start(args, format);
+
+	char buffer[256];
+    const uint16_t len = vsprintf(buffer, format, args);
+
+    protocol_enqueue(&protocol, MSG_ID_LOG, buffer, len);
+}
+
+void HAL_GPIO_EXTI_Rising_Callback(uint16_t GPIO_Pin) {
+	if(GPIO_Pin==IMU_INT_Pin) {
+		HAL_I2C_Mem_Read_DMA(&hi2c1, MPU6050_ADDR<<1, MPU6050_REG_ACCEL_XOUT_H, 1, imu_buffer, sizeof(imu_buffer));
+	} else if(GPIO_Pin==MAG_INT_Pin) {
+		HAL_I2C_Mem_Read_DMA(&hi2c3, QMC5883L_ADDR<<1, QMC5883L_REG_DATA_OUTPUT_X_LSB, 1, mag_buffer, sizeof(mag_buffer));
+	}
+}
+
+void HAL_GPIO_EXTI_Falling_Callback(uint16_t GPIO_Pin) {
+	if(GPIO_Pin==PWR_INT_Pin) {
+		pwr_int = true;
+	}
+}
+
+void HAL_I2C_MemRxCpltCallback(I2C_HandleTypeDef *hi2c) {
+	if(hi2c==&hi2c1) {
+		imu_ready = true;
+	} else if(hi2c==&hi2c3) {
+		mag_ready = true;
+	} else if(hi2c==&hi2c4) {
+		misc_ready = true;
+	}
+}
 
 /* USER CODE END 0 */
 
@@ -115,6 +445,8 @@ int main(void)
 
   /* Initialize all configured peripherals */
   MX_GPIO_Init();
+  MX_GPDMA1_Init();
+  MX_ICACHE_Init();
   MX_I2C1_Init();
   MX_I2C3_Init();
   MX_I2C4_Init();
@@ -122,19 +454,150 @@ int main(void)
   MX_TIM1_Init();
   MX_TIM2_Init();
   MX_TIM8_Init();
-  MX_UART4_Init();
   MX_UART5_Init();
-  MX_ICACHE_Init();
+  MX_UART4_Init();
   /* USER CODE BEGIN 2 */
-
-  app_main();
 
   /* USER CODE END 2 */
 
   /* Infinite loop */
   /* USER CODE BEGIN WHILE */
-  while (1)
-  {
+
+  uint8_t buffer_tx[10*1024];
+  uint8_t buffer_rx[10*1024];
+  uint8_t buffer_decode[10*1024];
+
+  protocol.callback_tx = comm_transmit;
+  protocol.callback_rx = comm_receive;
+  protocol.callback_err = comm_error;
+  protocol.callback_time = comm_time;
+  protocol.fifo_tx.buffer = buffer_tx;
+  protocol.fifo_tx.size = sizeof(buffer_tx);
+  protocol.fifo_rx.buffer = buffer_rx;
+  protocol.fifo_rx.size = sizeof(buffer_rx);
+  protocol.decoded = buffer_decode;
+  protocol.max = sizeof(buffer_decode);
+
+  HAL_UART_Receive_DMA(&huart4, protocol.fifo_rx.buffer, protocol.fifo_rx.size);
+
+  logger("system reset");
+
+  qmc5883l_init();
+  mpu6050_init();
+  bmp280_init();
+  ina226_init();
+
+  uint32_t last_blink = 0;
+  uint32_t last_barometer = 0;
+  uint32_t last_sensor = 0;
+  uint32_t last_estimation = 0;
+  uint32_t last_controller = 0;
+
+  msg_frame_sensor_t sensor = {0};
+  msg_frame_estimation_t estimation = {0};
+  msg_frame_controller_t controller = {0};
+  msg_frame_calibration_t calibration = {0};
+
+  while(1) {
+	  const uint32_t time = HAL_GetTick();
+
+	  protocol.fifo_rx.write = protocol.fifo_rx.size - __HAL_DMA_GET_COUNTER(huart4.hdmarx);
+	  protocol.available = (HAL_DMA_GetState(huart4.hdmatx)==HAL_DMA_STATE_READY);
+	  protocol_process(&protocol);
+
+	  if(imu_ready) {
+		  imu_ready = false;
+		  mpu6050_read(sensor.accelerometer.raw, sensor.gyroscope.raw, imu_buffer);
+
+		  nvm_read(0, &calibration, sizeof(calibration));
+		  sensor.accelerometer.calib[0] = calibration.accelerometer[0]*sensor.accelerometer.raw[0] + calibration.accelerometer[1]*sensor.accelerometer.raw[1] + calibration.accelerometer[2]*sensor.accelerometer.raw[2] + calibration.accelerometer[9];
+		  sensor.accelerometer.calib[1] = calibration.accelerometer[3]*sensor.accelerometer.raw[0] + calibration.accelerometer[4]*sensor.accelerometer.raw[1] + calibration.accelerometer[5]*sensor.accelerometer.raw[2] + calibration.accelerometer[10];
+		  sensor.accelerometer.calib[2] = calibration.accelerometer[6]*sensor.accelerometer.raw[0] + calibration.accelerometer[7]*sensor.accelerometer.raw[1] + calibration.accelerometer[8]*sensor.accelerometer.raw[2] + calibration.accelerometer[11];
+		  sensor.gyroscope.calib[0] = sensor.gyroscope.raw[0] + calibration.gyroscope[0];
+		  sensor.gyroscope.calib[1] = sensor.gyroscope.raw[1] + calibration.gyroscope[1];
+		  sensor.gyroscope.calib[2] = sensor.gyroscope.raw[2] + calibration.gyroscope[2];
+
+		  sensor.valid.accelerometer = 1;
+		  sensor.valid.gyroscope = 1;
+	  }
+
+	  if(mag_ready) {
+		  mag_ready = false;
+		  qmc5883l_read(sensor.magnetometer.raw, mag_buffer);
+
+		  nvm_read(0, &calibration, sizeof(calibration));
+		  sensor.magnetometer.calib[0] = calibration.magnetometer[0]*sensor.magnetometer.raw[0] + calibration.magnetometer[1]*sensor.magnetometer.raw[1] + calibration.magnetometer[2]*sensor.magnetometer.raw[2] + calibration.magnetometer[9];
+		  sensor.magnetometer.calib[1] = calibration.magnetometer[3]*sensor.magnetometer.raw[0] + calibration.magnetometer[4]*sensor.magnetometer.raw[1] + calibration.magnetometer[5]*sensor.magnetometer.raw[2] + calibration.magnetometer[10];
+		  sensor.magnetometer.calib[2] = calibration.magnetometer[6]*sensor.magnetometer.raw[0] + calibration.magnetometer[7]*sensor.magnetometer.raw[1] + calibration.magnetometer[8]*sensor.magnetometer.raw[2] + calibration.magnetometer[11];
+
+		  sensor.valid.magnetometer = 1;
+	  }
+
+	  if((time - last_barometer)>=100 && misc_busy==SENSOR_MISC_NONE) {
+		  last_barometer = time;
+		  misc_ready = false;
+		  misc_busy = SENSOR_MISC_BAR;
+		  HAL_I2C_Mem_Read_DMA(&hi2c4, BMP280_ADDR<<1, BMP280_REG_PRESS_MSB, 1, misc_buffer, 6);
+	  }
+
+	  if(pwr_int && misc_busy==SENSOR_MISC_NONE) {
+		  pwr_int = false;
+		  misc_ready = false;
+		  misc_busy = SENSOR_MISC_PWR_VOLTAGE;
+		  HAL_I2C_Mem_Read_DMA(&hi2c4, INA226_ADDR<<1, INA226_REG_BUS_VOLTAGE, 1, &misc_buffer[0], 2);
+	  }
+
+	  if(misc_ready) {
+		  misc_ready = false;
+
+		  switch(misc_busy) {
+			  case SENSOR_MISC_NONE: {
+
+			  } break;
+			  case SENSOR_MISC_BAR: {
+				  misc_busy = SENSOR_MISC_NONE;
+				  bmp280_read(&sensor.barometer, misc_buffer);
+				  sensor.valid.barometer = 1;
+			  } break;
+			  case SENSOR_MISC_PWR_VOLTAGE: {
+				  misc_busy = SENSOR_MISC_PWR_CURRENT;
+				  HAL_I2C_Mem_Read_DMA(&hi2c4, INA226_ADDR<<1, INA226_REG_CURRENT, 1, &misc_buffer[2], 2);
+			  } break;
+			  case SENSOR_MISC_PWR_CURRENT: {
+				  misc_busy = SENSOR_MISC_NONE;
+				  ina226_read(sensor.power, misc_buffer);
+				  sensor.valid.power = 1;
+			  } break;
+		  }
+	  }
+
+	  if((time - last_blink)>=500) {
+		  last_blink = time;
+		  HAL_GPIO_TogglePin(LED_B_GPIO_Port, LED_B_Pin);
+	  }
+
+	  if((time - last_sensor)>=50) {
+		  last_sensor = time;
+		  protocol_enqueue(&protocol, MSG_ID_SENSOR, &sensor, sizeof(sensor));
+		  sensor.valid_all = 0;
+	  }
+
+	  if((time - last_estimation)>=20) {
+		  last_estimation = time;
+		  protocol_enqueue(&protocol, MSG_ID_ESTIMATION, &estimation, sizeof(estimation));
+	  }
+
+	  if((time - last_controller)>=20) {
+		  last_controller = time;
+		  protocol_enqueue(&protocol, MSG_ID_CONTROLLER, &controller, sizeof(controller));
+	  }
+
+	  if(send_calibration) {
+		  send_calibration = false;
+		  nvm_read(0, &calibration, sizeof(calibration));
+		  protocol_enqueue(&protocol, MSG_ID_CALIBRATION, &calibration, sizeof(calibration));
+	  }
+
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
@@ -210,6 +673,48 @@ static void SystemPower_Config(void)
 }
 
 /**
+  * @brief GPDMA1 Initialization Function
+  * @param None
+  * @retval None
+  */
+static void MX_GPDMA1_Init(void)
+{
+
+  /* USER CODE BEGIN GPDMA1_Init 0 */
+
+  /* USER CODE END GPDMA1_Init 0 */
+
+  /* Peripheral clock enable */
+  __HAL_RCC_GPDMA1_CLK_ENABLE();
+
+  /* GPDMA1 interrupt Init */
+    HAL_NVIC_SetPriority(GPDMA1_Channel0_IRQn, 0, 0);
+    HAL_NVIC_EnableIRQ(GPDMA1_Channel0_IRQn);
+    HAL_NVIC_SetPriority(GPDMA1_Channel1_IRQn, 0, 0);
+    HAL_NVIC_EnableIRQ(GPDMA1_Channel1_IRQn);
+    HAL_NVIC_SetPriority(GPDMA1_Channel2_IRQn, 0, 0);
+    HAL_NVIC_EnableIRQ(GPDMA1_Channel2_IRQn);
+    HAL_NVIC_SetPriority(GPDMA1_Channel3_IRQn, 0, 0);
+    HAL_NVIC_EnableIRQ(GPDMA1_Channel3_IRQn);
+    HAL_NVIC_SetPriority(GPDMA1_Channel4_IRQn, 0, 0);
+    HAL_NVIC_EnableIRQ(GPDMA1_Channel4_IRQn);
+    HAL_NVIC_SetPriority(GPDMA1_Channel5_IRQn, 0, 0);
+    HAL_NVIC_EnableIRQ(GPDMA1_Channel5_IRQn);
+    HAL_NVIC_SetPriority(GPDMA1_Channel6_IRQn, 0, 0);
+    HAL_NVIC_EnableIRQ(GPDMA1_Channel6_IRQn);
+    HAL_NVIC_SetPriority(GPDMA1_Channel7_IRQn, 0, 0);
+    HAL_NVIC_EnableIRQ(GPDMA1_Channel7_IRQn);
+
+  /* USER CODE BEGIN GPDMA1_Init 1 */
+
+  /* USER CODE END GPDMA1_Init 1 */
+  /* USER CODE BEGIN GPDMA1_Init 2 */
+
+  /* USER CODE END GPDMA1_Init 2 */
+
+}
+
+/**
   * @brief I2C1 Initialization Function
   * @param None
   * @retval None
@@ -225,7 +730,7 @@ static void MX_I2C1_Init(void)
 
   /* USER CODE END I2C1_Init 1 */
   hi2c1.Instance = I2C1;
-  hi2c1.Init.Timing = 0x30909DEC;
+  hi2c1.Init.Timing = 0x00F07BFF;
   hi2c1.Init.OwnAddress1 = 0;
   hi2c1.Init.AddressingMode = I2C_ADDRESSINGMODE_7BIT;
   hi2c1.Init.DualAddressMode = I2C_DUALADDRESS_DISABLE;
@@ -273,7 +778,7 @@ static void MX_I2C3_Init(void)
 
   /* USER CODE END I2C3_Init 1 */
   hi2c3.Instance = I2C3;
-  hi2c3.Init.Timing = 0x30909DEC;
+  hi2c3.Init.Timing = 0x00F07BFF;
   hi2c3.Init.OwnAddress1 = 0;
   hi2c3.Init.AddressingMode = I2C_ADDRESSINGMODE_7BIT;
   hi2c3.Init.DualAddressMode = I2C_DUALADDRESS_DISABLE;
@@ -321,7 +826,7 @@ static void MX_I2C4_Init(void)
 
   /* USER CODE END I2C4_Init 1 */
   hi2c4.Instance = I2C4;
-  hi2c4.Init.Timing = 0x30909DEC;
+  hi2c4.Init.Timing = 0x00F07BFF;
   hi2c4.Init.OwnAddress1 = 0;
   hi2c4.Init.AddressingMode = I2C_ADDRESSINGMODE_7BIT;
   hi2c4.Init.DualAddressMode = I2C_DUALADDRESS_DISABLE;
@@ -662,7 +1167,7 @@ static void MX_UART4_Init(void)
 
   /* USER CODE END UART4_Init 1 */
   huart4.Instance = UART4;
-  huart4.Init.BaudRate = 115200;
+  huart4.Init.BaudRate = 230400;
   huart4.Init.WordLength = UART_WORDLENGTH_8B;
   huart4.Init.StopBits = UART_STOPBITS_1;
   huart4.Init.Parity = UART_PARITY_NONE;
@@ -802,11 +1307,33 @@ static void MX_GPIO_Init(void)
   GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
   HAL_GPIO_Init(GPIOB, &GPIO_InitStruct);
 
-  /*Configure GPIO pins : RANGE_ECHO_Pin IMU_INT_Pin PWR_INT_Pin */
-  GPIO_InitStruct.Pin = RANGE_ECHO_Pin|IMU_INT_Pin|PWR_INT_Pin;
+  /*Configure GPIO pins : RANGE_ECHO_Pin IMU_INT_Pin */
+  GPIO_InitStruct.Pin = RANGE_ECHO_Pin|IMU_INT_Pin;
   GPIO_InitStruct.Mode = GPIO_MODE_IT_RISING;
   GPIO_InitStruct.Pull = GPIO_NOPULL;
   HAL_GPIO_Init(GPIOB, &GPIO_InitStruct);
+
+  /*Configure GPIO pin : PWR_INT_Pin */
+  GPIO_InitStruct.Pin = PWR_INT_Pin;
+  GPIO_InitStruct.Mode = GPIO_MODE_IT_FALLING;
+  GPIO_InitStruct.Pull = GPIO_NOPULL;
+  HAL_GPIO_Init(PWR_INT_GPIO_Port, &GPIO_InitStruct);
+
+  /* EXTI interrupt init*/
+  HAL_NVIC_SetPriority(EXTI2_IRQn, 0, 0);
+  HAL_NVIC_EnableIRQ(EXTI2_IRQn);
+
+  HAL_NVIC_SetPriority(EXTI3_IRQn, 0, 0);
+  HAL_NVIC_EnableIRQ(EXTI3_IRQn);
+
+  HAL_NVIC_SetPriority(EXTI4_IRQn, 0, 0);
+  HAL_NVIC_EnableIRQ(EXTI4_IRQn);
+
+  HAL_NVIC_SetPriority(EXTI5_IRQn, 0, 0);
+  HAL_NVIC_EnableIRQ(EXTI5_IRQn);
+
+  HAL_NVIC_SetPriority(EXTI15_IRQn, 0, 0);
+  HAL_NVIC_EnableIRQ(EXTI15_IRQn);
 
 /* USER CODE BEGIN MX_GPIO_Init_2 */
 /* USER CODE END MX_GPIO_Init_2 */

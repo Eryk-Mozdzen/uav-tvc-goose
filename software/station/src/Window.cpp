@@ -30,38 +30,44 @@
 
 std::ostream & operator<<(std::ostream &stream, const msg_frame_sensor_t sensor) {
 	stream << "press";
-	stream << std::setprecision(0) << std::fixed << std::noshowpos << std::setw(7);
+	stream << std::setprecision(0) << std::fixed << std::noshowpos << std::setfill(' ') << std::setw(7);
 	stream << (sensor.valid.barometer ? sensor.barometer : std::nan(""));
 
 	stream << "   range";
-	stream << std::setprecision(2) << std::fixed << std::noshowpos << std::setw(5);
+	stream << std::setprecision(2) << std::fixed << std::noshowpos << std::setfill(' ') << std::setw(5);
 	stream << (sensor.valid.rangefinder ? sensor.rangefinder : std::nan(""));
 
 	stream << "   mag [";
-	stream << std::setprecision(2) << std::fixed << std::showpos;
+	stream << std::setprecision(2) << std::fixed << std::showpos << std::setfill(' ');
 	stream << std::setw(6) << (sensor.valid.magnetometer ? sensor.magnetometer.calib[0] : std::nan(""));
 	stream << std::setw(6) << (sensor.valid.magnetometer ? sensor.magnetometer.calib[1] : std::nan(""));
 	stream << std::setw(6) << (sensor.valid.magnetometer ? sensor.magnetometer.calib[2] : std::nan(""));
 	stream << "]";
 
 	stream << "   accel [";
-	stream << std::setprecision(2) << std::fixed << std::showpos;
+	stream << std::setprecision(2) << std::fixed << std::showpos << std::setfill(' ');
 	stream << std::setw(6) << (sensor.valid.accelerometer ? sensor.accelerometer.calib[0] : std::nan(""));
 	stream << std::setw(6) << (sensor.valid.accelerometer ? sensor.accelerometer.calib[1] : std::nan(""));
 	stream << std::setw(6) << (sensor.valid.accelerometer ? sensor.accelerometer.calib[2] : std::nan(""));
 	stream << "]";
 
 	stream << "   gyro [";
-	stream << std::setprecision(2) << std::fixed << std::showpos;
+	stream << std::setprecision(2) << std::fixed << std::showpos << std::setfill(' ');
 	stream << std::setw(6) << (sensor.valid.gyroscope ? sensor.gyroscope.calib[0] : std::nan(""));
 	stream << std::setw(6) << (sensor.valid.gyroscope ? sensor.gyroscope.calib[1] : std::nan(""));
 	stream << std::setw(6) << (sensor.valid.gyroscope ? sensor.gyroscope.calib[2] : std::nan(""));
 	stream << "]";
 
 	stream << "   gps [";
-	stream << std::setprecision(6) << std::fixed << std::noshowpos;
+	stream << std::setprecision(6) << std::fixed << std::noshowpos << std::setfill(' ');
 	stream << std::setw(10) << (sensor.valid.gps ? sensor.gps[0] : std::nan(""));
 	stream << std::setw(10) << (sensor.valid.gps ? sensor.gps[1] : std::nan(""));
+	stream << "]";
+
+    stream << "   power [";
+	stream << std::setprecision(2) << std::fixed << std::noshowpos << std::setfill(' ');
+	stream << std::setw(6) << (sensor.valid.power ? sensor.power[0] : std::nan("")) << "V";
+	stream << std::setw(6) << (sensor.valid.power ? sensor.power[1] : std::nan("")) << "A";
 	stream << "]";
 
 	return stream;
@@ -69,7 +75,7 @@ std::ostream & operator<<(std::ostream &stream, const msg_frame_sensor_t sensor)
 
 std::ostream & operator<<(std::ostream &stream, const msg_frame_estimation_t estimation) {
 	stream << "qua [";
-	stream << std::setprecision(2) << std::fixed << std::showpos;
+	stream << std::setprecision(2) << std::fixed << std::showpos << std::setfill(' ');
 	stream << std::setw(6) << estimation.orientation[0];
 	stream << std::setw(6) << estimation.orientation[1];
 	stream << std::setw(6) << estimation.orientation[2];
@@ -77,14 +83,14 @@ std::ostream & operator<<(std::ostream &stream, const msg_frame_estimation_t est
 	stream << "]";
 
 	stream << "   pos [";
-	stream << std::setprecision(2) << std::fixed << std::showpos;
+	stream << std::setprecision(2) << std::fixed << std::showpos << std::setfill(' ');
 	stream << std::setw(6) << estimation.position[0];
 	stream << std::setw(6) << estimation.position[1];
 	stream << std::setw(6) << estimation.position[2];
 	stream << "]";
 
 	stream << "   vel [";
-	stream << std::setprecision(2) << std::fixed << std::showpos;
+	stream << std::setprecision(2) << std::fixed << std::showpos << std::setfill(' ');
 	stream << std::setw(6) << estimation.velocity[0];
 	stream << std::setw(6) << estimation.velocity[1];
 	stream << std::setw(6) << estimation.velocity[2];

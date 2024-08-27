@@ -55,6 +55,23 @@ void SVC_Handler(void);
 void DebugMon_Handler(void);
 void PendSV_Handler(void);
 void SysTick_Handler(void);
+void EXTI2_IRQHandler(void);
+void EXTI3_IRQHandler(void);
+void EXTI4_IRQHandler(void);
+void EXTI5_IRQHandler(void);
+void EXTI15_IRQHandler(void);
+void GPDMA1_Channel0_IRQHandler(void);
+void GPDMA1_Channel1_IRQHandler(void);
+void GPDMA1_Channel2_IRQHandler(void);
+void GPDMA1_Channel3_IRQHandler(void);
+void GPDMA1_Channel4_IRQHandler(void);
+void GPDMA1_Channel5_IRQHandler(void);
+void GPDMA1_Channel6_IRQHandler(void);
+void GPDMA1_Channel7_IRQHandler(void);
+void I2C1_EV_IRQHandler(void);
+void UART4_IRQHandler(void);
+void I2C3_EV_IRQHandler(void);
+void I2C4_ER_IRQHandler(void);
 /* USER CODE BEGIN EFP */
 
 /* USER CODE END EFP */

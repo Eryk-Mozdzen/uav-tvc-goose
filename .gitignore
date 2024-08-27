@@ -19,10 +19,9 @@ flight-controller.step
 .settings
 Debug
 Release
+*.launch
 
 # vscode
 .vscode
 build
 !software/identification/*.csv
-
-test_nucleo
