@@ -112,6 +112,7 @@ typedef enum {
 	SENSOR_MISC_BAR,
 	SENSOR_MISC_PWR_VOLTAGE,
 	SENSOR_MISC_PWR_CURRENT,
+	SENSOR_MISC_PWR_MASK,
 } sensor_misc_t;
 
 static protocol_t protocol = PROTOCOL_INIT;
@@ -219,7 +220,7 @@ static void mpu6050_init() {
 		MPU6050_GYRO_CONFIG_RANGE_500DPS
 	);
 
-	mpu6050_write(MPU6050_REG_SMPLRT_DIV, 4);
+	mpu6050_write(MPU6050_REG_SMPLRT_DIV, 0);
 }
 
 static void mpu6050_read(float *acc, float *gyr, const uint8_t *buffer) {
@@ -328,7 +329,9 @@ void ina226_init() {
 	);
 
 	ina226_write(INA226_REG_MASK_ENABLE,
-		INA226_MASK_ENABLE_CONVERSION_READY
+		INA226_MASK_ENABLE_CONVERSION_READY |
+		INA226_MASK_ENABLE_ALERT_POLARITY_ACTIVE_LOW |
+		INA226_MASK_ENABLE_ALERT_LATCH_TRANSPARENT
 	);
 
 	const uint16_t calib = INA226_CALIBRATION_VALUE(PWR_MAX_CURRENT, PWR_R_SHUNT);
@@ -482,6 +485,13 @@ int main(void)
 
   logger("system reset");
 
+  for(uint8_t i=0; i<128; i++) {
+	  uint8_t byte;
+	  if(HAL_I2C_Mem_Read(&hi2c4, i<<1, 0x00, 1, &byte, 1, 10)==HAL_OK) {
+		  logger("device 0x%02X found!", i);
+	  }
+  }
+
   qmc5883l_init();
   mpu6050_init();
   bmp280_init();
@@ -533,7 +543,7 @@ int main(void)
 		  sensor.valid.magnetometer = 1;
 	  }
 
-	  if((time - last_barometer)>=100 && misc_busy==SENSOR_MISC_NONE) {
+	  if((time - last_barometer)>=50 && misc_busy==SENSOR_MISC_NONE) {
 		  last_barometer = time;
 		  misc_ready = false;
 		  misc_busy = SENSOR_MISC_BAR;
@@ -564,6 +574,10 @@ int main(void)
 				  HAL_I2C_Mem_Read_DMA(&hi2c4, INA226_ADDR<<1, INA226_REG_CURRENT, 1, &misc_buffer[2], 2);
 			  } break;
 			  case SENSOR_MISC_PWR_CURRENT: {
+				  misc_busy = SENSOR_MISC_PWR_MASK;
+				  HAL_I2C_Mem_Read_DMA(&hi2c4, INA226_ADDR<<1, INA226_REG_MASK_ENABLE, 1, &misc_buffer[4], 2);
+			  } break;
+			  case SENSOR_MISC_PWR_MASK: {
 				  misc_busy = SENSOR_MISC_NONE;
 				  ina226_read(sensor.power, misc_buffer);
 				  sensor.valid.power = 1;
