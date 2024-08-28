@@ -80,6 +80,9 @@ DMA_HandleTypeDef handle_GPDMA1_Channel1;
 DMA_NodeTypeDef Node_GPDMA1_Channel0;
 DMA_QListTypeDef List_GPDMA1_Channel0;
 DMA_HandleTypeDef handle_GPDMA1_Channel0;
+DMA_NodeTypeDef Node_GPDMA1_Channel8;
+DMA_QListTypeDef List_GPDMA1_Channel8;
+DMA_HandleTypeDef handle_GPDMA1_Channel8;
 
 /* USER CODE BEGIN PV */
 
@@ -115,6 +118,12 @@ typedef enum {
 	SENSOR_MISC_PWR_MASK,
 } sensor_misc_t;
 
+typedef enum {
+	BUFFER_EVENT_NONE,
+	BUFFER_EVENT_HALF_COMPLETE,
+	BUFFER_EVENT_COMPLETE,
+} buffer_event_t;
+
 static protocol_t protocol = PROTOCOL_INIT;
 
 static uint8_t imu_buffer[14];
@@ -125,6 +134,7 @@ static volatile bool imu_ready = false;
 static volatile bool mag_ready = false;
 static volatile bool misc_ready = false;
 static volatile bool pwr_int = false;
+static volatile buffer_event_t gps_event = BUFFER_EVENT_NONE;
 
 static bool send_calibration = false;
 static sensor_misc_t misc_busy = SENSOR_MISC_NONE;
@@ -414,6 +424,18 @@ void HAL_I2C_MemRxCpltCallback(I2C_HandleTypeDef *hi2c) {
 	}
 }
 
+void HAL_UART_RxHalfCpltCallback(UART_HandleTypeDef *huart) {
+	if(huart==&huart5) {
+		gps_event = BUFFER_EVENT_HALF_COMPLETE;
+	}
+}
+
+void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart) {
+	if(huart==&huart5) {
+		gps_event = BUFFER_EVENT_COMPLETE;
+	}
+}
+
 /* USER CODE END 0 */
 
 /**
@@ -483,14 +505,10 @@ int main(void)
 
   HAL_UART_Receive_DMA(&huart4, protocol.fifo_rx.buffer, protocol.fifo_rx.size);
 
-  logger("system reset");
+  uint8_t gps_buffer[16];
+  HAL_UART_Receive_DMA(&huart5, gps_buffer, sizeof(gps_buffer));
 
-  for(uint8_t i=0; i<128; i++) {
-	  uint8_t byte;
-	  if(HAL_I2C_Mem_Read(&hi2c4, i<<1, 0x00, 1, &byte, 1, 10)==HAL_OK) {
-		  logger("device 0x%02X found!", i);
-	  }
-  }
+  logger("system reset");
 
   qmc5883l_init();
   mpu6050_init();
@@ -507,6 +525,7 @@ int main(void)
   msg_frame_estimation_t estimation = {0};
   msg_frame_controller_t controller = {0};
   msg_frame_calibration_t calibration = {0};
+  nmea_messaage_t nmea_message = {0};
 
   while(1) {
 	  const uint32_t time = HAL_GetTick();
@@ -585,12 +604,49 @@ int main(void)
 		  }
 	  }
 
+	  if(gps_event!=BUFFER_EVENT_NONE) {
+		  const uint8_t size = sizeof(gps_buffer)/2;
+		  const uint8_t *src = (gps_event==BUFFER_EVENT_HALF_COMPLETE) ? gps_buffer : &gps_buffer[size];
+		  gps_event = BUFFER_EVENT_NONE;
+
+		  protocol_enqueue(&protocol, MSG_ID_PASSTHROUGH_GPS, src, size);
+
+		  for(size_t s=0; s<size; s++) {
+			  const char c = src[s];
+
+			  if(nmea_consume(&nmea_message, c)) {
+				  if(strcmp(nmea_message.argv[0], "GPRMC")==0 && strcmp(nmea_message.argv[2], "A")==0) {
+					  float latitude = 0;
+					  float longitude = 0;
+
+					  {
+						  const float minutes = atof(&nmea_message.argv[3][2]);
+						  nmea_message.argv[3][2] = '\0';
+						  const int degree = atoi(nmea_message.argv[3]);
+						  latitude = degree + minutes/60.f;
+					  }
+
+					  {
+						  const float minutes = atof(&nmea_message.argv[5][3]);
+						  nmea_message.argv[5][3] = '\0';
+						  const int degree = atoi(nmea_message.argv[5]);
+						  longitude = degree + minutes/60.f;
+					  }
+
+					  sensor.gps[0] = latitude;
+					  sensor.gps[1] = longitude;
+					  sensor.valid.gps = 1;
+				  }
+			  }
+		  }
+	  }
+
 	  if((time - last_blink)>=500) {
 		  last_blink = time;
 		  HAL_GPIO_TogglePin(LED_B_GPIO_Port, LED_B_Pin);
 	  }
 
-	  if((time - last_sensor)>=50) {
+	  if((time - last_sensor)>=100) {
 		  last_sensor = time;
 		  protocol_enqueue(&protocol, MSG_ID_SENSOR, &sensor, sizeof(sensor));
 		  sensor.valid_all = 0;
@@ -718,6 +774,8 @@ static void MX_GPDMA1_Init(void)
     HAL_NVIC_EnableIRQ(GPDMA1_Channel6_IRQn);
     HAL_NVIC_SetPriority(GPDMA1_Channel7_IRQn, 0, 0);
     HAL_NVIC_EnableIRQ(GPDMA1_Channel7_IRQn);
+    HAL_NVIC_SetPriority(GPDMA1_Channel8_IRQn, 0, 0);
+    HAL_NVIC_EnableIRQ(GPDMA1_Channel8_IRQn);
 
   /* USER CODE BEGIN GPDMA1_Init 1 */
 
@@ -1229,11 +1287,11 @@ static void MX_UART5_Init(void)
 
   /* USER CODE END UART5_Init 1 */
   huart5.Instance = UART5;
-  huart5.Init.BaudRate = 115200;
+  huart5.Init.BaudRate = 9600;
   huart5.Init.WordLength = UART_WORDLENGTH_8B;
   huart5.Init.StopBits = UART_STOPBITS_1;
   huart5.Init.Parity = UART_PARITY_NONE;
-  huart5.Init.Mode = UART_MODE_TX_RX;
+  huart5.Init.Mode = UART_MODE_RX;
   huart5.Init.HwFlowCtl = UART_HWCONTROL_NONE;
   huart5.Init.OverSampling = UART_OVERSAMPLING_16;
   huart5.Init.OneBitSampling = UART_ONE_BIT_SAMPLE_DISABLE;

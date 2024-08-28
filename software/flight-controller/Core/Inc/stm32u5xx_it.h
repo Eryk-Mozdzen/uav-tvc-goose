@@ -71,6 +71,8 @@ void GPDMA1_Channel7_IRQHandler(void);
 void I2C1_EV_IRQHandler(void);
 void I2C1_ER_IRQHandler(void);
 void UART4_IRQHandler(void);
+void UART5_IRQHandler(void);
+void GPDMA1_Channel8_IRQHandler(void);
 void I2C3_EV_IRQHandler(void);
 void I2C3_ER_IRQHandler(void);
 void I2C4_ER_IRQHandler(void);
