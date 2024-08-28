@@ -133,8 +133,10 @@ static uint8_t misc_buffer[6];
 static volatile bool imu_ready = false;
 static volatile bool mag_ready = false;
 static volatile bool misc_ready = false;
+static volatile bool range_ready = false;
 static volatile bool pwr_int = false;
 static volatile buffer_event_t gps_event = BUFFER_EVENT_NONE;
+static volatile uint32_t range_duration = 0;
 
 static bool send_calibration = false;
 static sensor_misc_t misc_busy = SENSOR_MISC_NONE;
@@ -405,12 +407,17 @@ void HAL_GPIO_EXTI_Rising_Callback(uint16_t GPIO_Pin) {
 		HAL_I2C_Mem_Read_DMA(&hi2c1, MPU6050_ADDR<<1, MPU6050_REG_ACCEL_XOUT_H, 1, imu_buffer, sizeof(imu_buffer));
 	} else if(GPIO_Pin==MAG_INT_Pin) {
 		HAL_I2C_Mem_Read_DMA(&hi2c3, QMC5883L_ADDR<<1, QMC5883L_REG_DATA_OUTPUT_X_LSB, 1, mag_buffer, sizeof(mag_buffer));
+	} else if(GPIO_Pin==RANGE_ECHO_Pin) {
+		range_duration = __HAL_TIM_GET_COUNTER(&htim8);
 	}
 }
 
 void HAL_GPIO_EXTI_Falling_Callback(uint16_t GPIO_Pin) {
 	if(GPIO_Pin==PWR_INT_Pin) {
 		pwr_int = true;
+	} else if(GPIO_Pin==RANGE_ECHO_Pin) {
+		range_duration = __HAL_TIM_GET_COUNTER(&htim8) - range_duration;
+		range_ready = true;
 	}
 }
 
@@ -507,6 +514,9 @@ int main(void)
 
   uint8_t gps_buffer[16];
   HAL_UART_Receive_DMA(&huart5, gps_buffer, sizeof(gps_buffer));
+
+  HAL_TIM_Base_Start(&htim8);
+  HAL_TIM_PWM_Start(&htim8, TIM_CHANNEL_1);
 
   logger("system reset");
 
@@ -638,6 +648,17 @@ int main(void)
 					  sensor.valid.gps = 1;
 				  }
 			  }
+		  }
+	  }
+
+	  if(range_ready) {
+		  range_ready = false;
+		  const float speed_of_sound = 343.f;
+		  const float duration = range_duration*0.00001f;
+		  const float range = duration*speed_of_sound/2.f;
+		  if(range<2.f) {
+			  sensor.rangefinder = range;
+			  sensor.valid.rangefinder = 1;
 		  }
 	  }
 
@@ -1171,9 +1192,9 @@ static void MX_TIM8_Init(void)
 
   /* USER CODE END TIM8_Init 1 */
   htim8.Instance = TIM8;
-  htim8.Init.Prescaler = 0;
+  htim8.Init.Prescaler = 1600-1;
   htim8.Init.CounterMode = TIM_COUNTERMODE_UP;
-  htim8.Init.Period = 65535;
+  htim8.Init.Period = 9999;
   htim8.Init.ClockDivision = TIM_CLOCKDIVISION_DIV1;
   htim8.Init.RepetitionCounter = 0;
   htim8.Init.AutoReloadPreload = TIM_AUTORELOAD_PRELOAD_DISABLE;
@@ -1189,7 +1210,7 @@ static void MX_TIM8_Init(void)
     Error_Handler();
   }
   sConfigOC.OCMode = TIM_OCMODE_PWM1;
-  sConfigOC.Pulse = 0;
+  sConfigOC.Pulse = 1;
   sConfigOC.OCPolarity = TIM_OCPOLARITY_HIGH;
   sConfigOC.OCNPolarity = TIM_OCNPOLARITY_HIGH;
   sConfigOC.OCFastMode = TIM_OCFAST_DISABLE;
@@ -1379,11 +1400,17 @@ static void MX_GPIO_Init(void)
   GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
   HAL_GPIO_Init(GPIOB, &GPIO_InitStruct);
 
-  /*Configure GPIO pins : RANGE_ECHO_Pin IMU_INT_Pin */
-  GPIO_InitStruct.Pin = RANGE_ECHO_Pin|IMU_INT_Pin;
+  /*Configure GPIO pin : RANGE_ECHO_Pin */
+  GPIO_InitStruct.Pin = RANGE_ECHO_Pin;
+  GPIO_InitStruct.Mode = GPIO_MODE_IT_RISING_FALLING;
+  GPIO_InitStruct.Pull = GPIO_NOPULL;
+  HAL_GPIO_Init(RANGE_ECHO_GPIO_Port, &GPIO_InitStruct);
+
+  /*Configure GPIO pin : IMU_INT_Pin */
+  GPIO_InitStruct.Pin = IMU_INT_Pin;
   GPIO_InitStruct.Mode = GPIO_MODE_IT_RISING;
   GPIO_InitStruct.Pull = GPIO_NOPULL;
-  HAL_GPIO_Init(GPIOB, &GPIO_InitStruct);
+  HAL_GPIO_Init(IMU_INT_GPIO_Port, &GPIO_InitStruct);
 
   /*Configure GPIO pin : PWR_INT_Pin */
   GPIO_InitStruct.Pin = PWR_INT_Pin;
