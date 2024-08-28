@@ -630,6 +630,7 @@ int main(void)
   uint8_t gps_buffer[16];
   HAL_UART_Receive_DMA(&huart5, gps_buffer, sizeof(gps_buffer));
 
+  HAL_TIM_Base_Start(&htim2);
   HAL_TIM_Base_Start(&htim8);
   HAL_TIM_PWM_Start(&htim8, TIM_CHANNEL_1);
 
@@ -644,6 +645,7 @@ int main(void)
   uint32_t last_blink = 0;
   uint32_t last_barometer = 0;
   uint32_t last_flow = 0;
+  uint32_t last_tachometer = 0;
   uint32_t last_sensor = 0;
   uint32_t last_estimation = 0;
   uint32_t last_controller = 0;
@@ -792,6 +794,15 @@ int main(void)
 		  sensor.flow[0] = delta_x/(dt*PMW3901_FOCAL_LENGTH);
 		  sensor.flow[1] = delta_y/(dt*PMW3901_FOCAL_LENGTH);
 		  sensor.valid.flow = 1;
+	  }
+
+	  if((time - last_tachometer)>=1000) {
+		  last_tachometer = time;
+		  const uint32_t counter = __HAL_TIM_GET_COUNTER(&htim2);
+		  __HAL_TIM_SET_COUNTER(&htim2, 0);
+		  const float pole_pairs = 7.f;
+		  sensor.tachometer = (2.f*PI*counter)/pole_pairs;
+		  sensor.valid.tachometer = 1;
 	  }
 
 	  if((time - last_blink)>=500) {
