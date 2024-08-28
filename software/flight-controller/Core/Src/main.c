@@ -37,6 +37,7 @@
 #include "bmp280_regs.h"
 #include "bmp280_compensate.h"
 #include "ina226_regs.h"
+#include "pmw3901_regs.h"
 #include "ekf.h"
 
 /* USER CODE END Includes */
@@ -362,6 +363,120 @@ void ina226_read(float *power, const uint8_t *buffer) {
 	}
 }
 
+void pmw3901_write(const uint8_t address, const uint8_t value) {
+	uint8_t tx[] = {address | 0x80, value};
+
+	HAL_GPIO_WritePin(FLOW_CS_GPIO_Port, FLOW_CS_Pin, GPIO_PIN_RESET);
+	HAL_Delay(1);
+	HAL_SPI_Transmit(&hspi1, tx, sizeof(tx), HAL_MAX_DELAY);
+	HAL_Delay(1);
+	HAL_GPIO_WritePin(FLOW_CS_GPIO_Port, FLOW_CS_Pin, GPIO_PIN_SET);
+	HAL_Delay(1);
+}
+
+void pmw3901_read(const uint8_t address, uint8_t *buffer, const uint8_t len) {
+	uint8_t tx[32] = {0};
+	uint8_t rx[32] = {0};
+
+	for(uint8_t i=0; i<len; i++) {
+		tx[2*i] = (address + i) & ~0x80;
+	}
+
+	HAL_GPIO_WritePin(FLOW_CS_GPIO_Port, FLOW_CS_Pin, GPIO_PIN_RESET);
+	HAL_Delay(1);
+	HAL_SPI_TransmitReceive(&hspi1, tx, rx, 2*len, HAL_MAX_DELAY);
+	HAL_Delay(1);
+	HAL_GPIO_WritePin(FLOW_CS_GPIO_Port, FLOW_CS_Pin, GPIO_PIN_SET);
+	HAL_Delay(1);
+
+	for(uint8_t i=0; i<len; i++) {
+		buffer[i] = rx[2*i + 1];
+	}
+}
+
+void pmw3901_init() {
+	pmw3901_write(0x3A, 0x5A);
+
+	HAL_Delay(5);
+
+	pmw3901_write(0x7F, 0x00);
+	pmw3901_write(0x61, 0xAD);
+	pmw3901_write(0x7F, 0x03);
+	pmw3901_write(0x40, 0x00);
+	pmw3901_write(0x7F, 0x05);
+	pmw3901_write(0x41, 0xB3);
+	pmw3901_write(0x43, 0xF1);
+	pmw3901_write(0x45, 0x14);
+	pmw3901_write(0x5B, 0x32);
+	pmw3901_write(0x5F, 0x34);
+	pmw3901_write(0x7B, 0x08);
+	pmw3901_write(0x7F, 0x06);
+	pmw3901_write(0x44, 0x1B);
+	pmw3901_write(0x40, 0xBF);
+	pmw3901_write(0x4E, 0x3F);
+	pmw3901_write(0x7F, 0x08);
+	pmw3901_write(0x65, 0x20);
+	pmw3901_write(0x6A, 0x18);
+	pmw3901_write(0x7F, 0x09);
+	pmw3901_write(0x4F, 0xAF);
+	pmw3901_write(0x5F, 0x40);
+	pmw3901_write(0x48, 0x80);
+	pmw3901_write(0x49, 0x80);
+	pmw3901_write(0x57, 0x77);
+	pmw3901_write(0x60, 0x78);
+	pmw3901_write(0x61, 0x78);
+	pmw3901_write(0x62, 0x08);
+	pmw3901_write(0x63, 0x50);
+	pmw3901_write(0x7F, 0x0A);
+	pmw3901_write(0x45, 0x60);
+	pmw3901_write(0x7F, 0x00);
+	pmw3901_write(0x4D, 0x11);
+	pmw3901_write(0x55, 0x80);
+	pmw3901_write(0x74, 0x1F);
+	pmw3901_write(0x75, 0x1F);
+	pmw3901_write(0x4A, 0x78);
+	pmw3901_write(0x4B, 0x78);
+	pmw3901_write(0x44, 0x08);
+	pmw3901_write(0x45, 0x50);
+	pmw3901_write(0x64, 0xFF);
+	pmw3901_write(0x65, 0x1F);
+	pmw3901_write(0x7F, 0x14);
+	pmw3901_write(0x65, 0x60);
+	pmw3901_write(0x66, 0x08);
+	pmw3901_write(0x63, 0x78);
+	pmw3901_write(0x7F, 0x15);
+	pmw3901_write(0x48, 0x58);
+	pmw3901_write(0x7F, 0x07);
+	pmw3901_write(0x41, 0x0D);
+	pmw3901_write(0x43, 0x14);
+	pmw3901_write(0x4B, 0x0E);
+	pmw3901_write(0x45, 0x0F);
+	pmw3901_write(0x44, 0x42);
+	pmw3901_write(0x4C, 0x80);
+	pmw3901_write(0x7F, 0x10);
+	pmw3901_write(0x5B, 0x02);
+	pmw3901_write(0x7F, 0x07);
+	pmw3901_write(0x40, 0x41);
+	pmw3901_write(0x70, 0x00);
+
+	HAL_Delay(100);
+
+	pmw3901_write(0x32, 0x44);
+	pmw3901_write(0x7F, 0x07);
+	pmw3901_write(0x40, 0x40);
+	pmw3901_write(0x7F, 0x06);
+	pmw3901_write(0x62, 0xf0);
+	pmw3901_write(0x63, 0x00);
+	pmw3901_write(0x7F, 0x0D);
+	pmw3901_write(0x48, 0xC0);
+	pmw3901_write(0x6F, 0xd5);
+	pmw3901_write(0x7F, 0x00);
+	pmw3901_write(0x5B, 0xa0);
+	pmw3901_write(0x4E, 0xA8);
+	pmw3901_write(0x5A, 0x50);
+	pmw3901_write(0x40, 0x80);
+}
+
 static void comm_transmit(void *user, const void *data, const uint32_t size) {
     (void)user;
     HAL_UART_Transmit_DMA(&huart4, data, size);
@@ -524,9 +639,11 @@ int main(void)
   mpu6050_init();
   bmp280_init();
   ina226_init();
+  pmw3901_init();
 
   uint32_t last_blink = 0;
   uint32_t last_barometer = 0;
+  uint32_t last_flow = 0;
   uint32_t last_sensor = 0;
   uint32_t last_estimation = 0;
   uint32_t last_controller = 0;
@@ -660,6 +777,21 @@ int main(void)
 			  sensor.rangefinder = range;
 			  sensor.valid.rangefinder = 1;
 		  }
+	  }
+
+	  if((time - last_flow)>=20) {
+		  const float dt = (time - last_flow)*0.001f;
+
+		  last_flow = time;
+
+		  uint8_t motion[5] = {0};
+		  pmw3901_read(PMW3901_REG_MOTION, motion, sizeof(motion));
+		  const int16_t delta_x = (((int16_t)motion[2])<<8) | motion[1];
+		  const int16_t delta_y = (((int16_t)motion[4])<<8) | motion[3];
+
+		  sensor.flow[0] = delta_x/(dt*PMW3901_FOCAL_LENGTH);
+		  sensor.flow[1] = delta_y/(dt*PMW3901_FOCAL_LENGTH);
+		  sensor.valid.flow = 1;
 	  }
 
 	  if((time - last_blink)>=500) {
@@ -1004,11 +1136,11 @@ static void MX_SPI1_Init(void)
   hspi1.Instance = SPI1;
   hspi1.Init.Mode = SPI_MODE_MASTER;
   hspi1.Init.Direction = SPI_DIRECTION_2LINES;
-  hspi1.Init.DataSize = SPI_DATASIZE_4BIT;
+  hspi1.Init.DataSize = SPI_DATASIZE_8BIT;
   hspi1.Init.CLKPolarity = SPI_POLARITY_LOW;
   hspi1.Init.CLKPhase = SPI_PHASE_1EDGE;
   hspi1.Init.NSS = SPI_NSS_SOFT;
-  hspi1.Init.BaudRatePrescaler = SPI_BAUDRATEPRESCALER_2;
+  hspi1.Init.BaudRatePrescaler = SPI_BAUDRATEPRESCALER_256;
   hspi1.Init.FirstBit = SPI_FIRSTBIT_MSB;
   hspi1.Init.TIMode = SPI_TIMODE_DISABLE;
   hspi1.Init.CRCCalculation = SPI_CRCCALCULATION_DISABLE;

@@ -55,6 +55,11 @@ std::ostream & operator<<(std::ostream &stream, const msg_frame_sensor_t sensor)
 	stream << std::setw(5) << (sensor.valid.gyroscope ? sensor.gyroscope.calib[1] : std::nan("")) << " ";
 	stream << std::setw(5) << (sensor.valid.gyroscope ? sensor.gyroscope.calib[2] : std::nan("")) << "]";
 
+    stream << "   flow [";
+	stream << std::setprecision(3) << std::fixed << std::showpos << std::setfill(' ');
+	stream << std::setw(6) << (sensor.valid.flow ? sensor.flow[0] : std::nan("")) << " ";
+	stream << std::setw(6) << (sensor.valid.flow ? sensor.flow[1] : std::nan("")) << "]";
+
 	stream << "   gps [";
 	stream << std::setprecision(6) << std::fixed << std::noshowpos << std::setfill(' ');
 	stream << std::setw(10) << (sensor.valid.gps ? sensor.gps[0] : std::nan("")) << "lat ";
