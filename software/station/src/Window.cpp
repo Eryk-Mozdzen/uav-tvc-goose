@@ -62,13 +62,17 @@ std::ostream & operator<<(std::ostream &stream, const msg_frame_sensor_t sensor)
 
 	stream << "   gps [";
 	stream << std::setprecision(6) << std::fixed << std::noshowpos << std::setfill(' ');
-	stream << std::setw(10) << (sensor.valid.gps ? sensor.gps[0] : std::nan("")) << "lat ";
-	stream << std::setw(9) << (sensor.valid.gps ? sensor.gps[1] : std::nan("")) << "lon]";
+	stream << std::setw(10) << (sensor.valid.gps ? sensor.gps[0] : std::nan("")) << " ";
+	stream << std::setw(9) << (sensor.valid.gps ? sensor.gps[1] : std::nan("")) << "]";
 
     stream << "   power [";
 	stream << std::setprecision(2) << std::fixed << std::noshowpos << std::setfill(' ');
-	stream << std::setw(5) << (sensor.valid.power ? sensor.power[0] : std::nan("")) << "V ";
-	stream << std::setw(5) << (sensor.valid.power ? sensor.power[1] : std::nan("")) << "A]";
+	stream << std::setw(5) << (sensor.valid.power ? sensor.power[0] : std::nan("")) << " ";
+	stream << std::setw(5) << (sensor.valid.power ? sensor.power[1] : std::nan("")) << "]";
+
+    stream << "   load ";
+	stream << std::setprecision(3) << std::fixed << std::showpos << std::setfill(' ');
+	stream << std::setw(6) << (sensor.valid.load ? sensor.load.calib : std::nan(""));
 
 	return stream;
 }
@@ -509,8 +513,8 @@ void Window::receive(const uint8_t id, const double time, const QByteArray &payl
         }
 
         if(sensor->valid.power) {
-            others->set("Supply voltage", "%5.2f", sensor->power[0]);
-            others->set("Supply current", "%5.2f", sensor->power[1]);
+            others->set("Supply voltage", "%.2f", sensor->power[0]);
+            others->set("Supply current", "%.3f", sensor->power[1]);
         }
 
         return;

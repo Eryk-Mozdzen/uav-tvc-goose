@@ -477,6 +477,47 @@ void pmw3901_init() {
 	pmw3901_write(0x40, 0x80);
 }
 
+void hx711_init() {
+	HAL_GPIO_WritePin(LOAD_RATE_GPIO_Port, LOAD_RATE_Pin, GPIO_PIN_RESET);
+
+	HAL_GPIO_WritePin(LOAD_SCK_GPIO_Port, LOAD_SCK_Pin, GPIO_PIN_SET);
+	HAL_Delay(10);
+	HAL_GPIO_WritePin(LOAD_SCK_GPIO_Port, LOAD_SCK_Pin, GPIO_PIN_RESET);
+	HAL_Delay(10);
+}
+
+bool hx711_read(int32_t *data, const uint32_t timeout) {
+	uint32_t start_time = HAL_GetTick();
+
+	while(HAL_GPIO_ReadPin(LOAD_DOUT_GPIO_Port, LOAD_DOUT_Pin) == GPIO_PIN_SET) {
+		if((HAL_GetTick() - start_time)>=timeout) {
+			return false;
+		}
+	}
+
+	for(uint8_t i=0; i<24; i++) {
+		HAL_GPIO_WritePin(LOAD_SCK_GPIO_Port, LOAD_SCK_Pin, GPIO_PIN_SET);
+		for(volatile uint32_t i=0; i<100; i++) {}
+		HAL_GPIO_WritePin(LOAD_SCK_GPIO_Port, LOAD_SCK_Pin, GPIO_PIN_RESET);
+		for(volatile uint32_t i=0; i<100; i++) {}
+
+		*data <<=1;
+
+		if(HAL_GPIO_ReadPin(LOAD_DOUT_GPIO_Port, LOAD_DOUT_Pin) == GPIO_PIN_SET) {
+			*data |=0x01;
+		}
+	}
+
+	*data ^=0x800000;
+
+	HAL_GPIO_WritePin(LOAD_SCK_GPIO_Port, LOAD_SCK_Pin, GPIO_PIN_SET);
+	for(volatile uint32_t i=0; i<100; i++) {}
+	HAL_GPIO_WritePin(LOAD_SCK_GPIO_Port, LOAD_SCK_Pin, GPIO_PIN_RESET);
+	for(volatile uint32_t i=0; i<100; i++) {}
+
+	return true;
+}
+
 static void comm_transmit(void *user, const void *data, const uint32_t size) {
     (void)user;
     HAL_UART_Transmit_DMA(&huart4, data, size);
@@ -641,11 +682,13 @@ int main(void)
   bmp280_init();
   ina226_init();
   pmw3901_init();
+  hx711_init();
 
   uint32_t last_blink = 0;
   uint32_t last_barometer = 0;
   uint32_t last_flow = 0;
   uint32_t last_tachometer = 0;
+  uint32_t last_load = 0;
   uint32_t last_sensor = 0;
   uint32_t last_estimation = 0;
   uint32_t last_controller = 0;
@@ -803,6 +846,22 @@ int main(void)
 		  const float pole_pairs = 7.f;
 		  sensor.tachometer = (2.f*PI*counter)/pole_pairs;
 		  sensor.valid.tachometer = 1;
+	  }
+
+	  if((time - last_load)>=100) {
+		  last_load = time;
+
+		  int32_t raw = 0;
+		  if(hx711_read(&raw, 1)) {
+			  nvm_read(0, &calibration, sizeof(calibration));
+
+			  const float min = calibration.load[0];
+			  const float max = calibration.load[1];
+
+			  sensor.load.raw = raw;
+			  sensor.load.calib = (raw - min)/(max - min);
+			  sensor.valid.load = 1;
+		  }
 	  }
 
 	  if((time - last_blink)>=500) {
