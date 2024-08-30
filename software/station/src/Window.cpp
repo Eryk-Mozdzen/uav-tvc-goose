@@ -165,6 +165,7 @@ Window::Window(QWidget *parent) : QWidget(parent) {
     {
         others = new Form("Others", {
             "State machine",
+            "Core load",
             "Magnetic inclination",
             "Ground pressure",
             "Pressure",
@@ -473,8 +474,9 @@ void Window::receive(const uint8_t id, const double time, const QByteArray &payl
             const double seconds = time - 60*minutes;
 
             std::cout << "[ ";
-            std::cout << std::setfill('0') << std::setw(2) << minutes << ":";
-            std::cout << std::setfill('0') << std::setw(6) << std::setprecision(3) << std::fixed << seconds;
+            std::cout << std::noshowpos << std::setfill('0') << std::setw(2) << minutes;
+            std::cout << ":";
+            std::cout << std::noshowpos << std::setfill('0') << std::setw(6) << std::setprecision(3) << std::fixed << seconds;
             std::cout << " ] ";
 
             std::cout << std::string(reinterpret_cast<const char *>(payload.data()), payload.size());
@@ -550,6 +552,8 @@ void Window::receive(const uint8_t id, const double time, const QByteArray &payl
                 others->set("State machine", "manual");
             } break;
         }
+
+        others->set("Core load", "%6.2f", controller->core_load);
 
         position->append("x process", time, controller->process.pos[0]);
         position->append("y process", time, controller->process.pos[1]);

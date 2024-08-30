@@ -70,9 +70,12 @@ DMA_HandleTypeDef handle_GPDMA1_Channel7;
 DMA_HandleTypeDef handle_GPDMA1_Channel6;
 
 SPI_HandleTypeDef hspi1;
+DMA_HandleTypeDef handle_GPDMA1_Channel10;
+DMA_HandleTypeDef handle_GPDMA1_Channel9;
 
 TIM_HandleTypeDef htim1;
 TIM_HandleTypeDef htim2;
+TIM_HandleTypeDef htim5;
 TIM_HandleTypeDef htim8;
 
 UART_HandleTypeDef huart4;
@@ -104,12 +107,22 @@ static void MX_TIM2_Init(void);
 static void MX_TIM8_Init(void);
 static void MX_UART5_Init(void);
 static void MX_UART4_Init(void);
+static void MX_TIM5_Init(void);
 /* USER CODE BEGIN PFP */
 
 /* USER CODE END PFP */
 
 /* Private user code ---------------------------------------------------------*/
 /* USER CODE BEGIN 0 */
+
+#define STATS_MEASURE_START() \
+	do { \
+		__HAL_TIM_SET_COUNTER(&htim5, 0); \
+		stats_work = 0; \
+	} while(0)
+#define STATS_BLOCK_BEGIN()		stats_begin = __HAL_TIM_GET_COUNTER(&htim5)
+#define STATS_BLOCK_END()		stats_work +=(__HAL_TIM_GET_COUNTER(&htim5) - stats_begin)
+#define STATS_MEASURE_GET()		(((float)stats_work)/((float)__HAL_TIM_GET_COUNTER(&htim5)))
 
 typedef enum {
 	SENSOR_MISC_NONE,
@@ -126,15 +139,20 @@ typedef enum {
 } buffer_event_t;
 
 static protocol_t protocol = PROTOCOL_INIT;
+static uint32_t stats_begin;
+static uint32_t stats_work;
 
 static uint8_t imu_buffer[14];
 static uint8_t mag_buffer[6];
 static uint8_t misc_buffer[6];
+static uint8_t flow_buffer_tx[32];
+static uint8_t flow_buffer_rx[32];
 
 static volatile bool imu_ready = false;
 static volatile bool mag_ready = false;
 static volatile bool misc_ready = false;
 static volatile bool range_ready = false;
+static volatile bool flow_ready = false;
 static volatile bool pwr_int = false;
 static volatile buffer_event_t gps_event = BUFFER_EVENT_NONE;
 static volatile uint32_t range_duration = 0;
@@ -374,26 +392,6 @@ void pmw3901_write(const uint8_t address, const uint8_t value) {
 	HAL_Delay(1);
 }
 
-void pmw3901_read(const uint8_t address, uint8_t *buffer, const uint8_t len) {
-	uint8_t tx[32] = {0};
-	uint8_t rx[32] = {0};
-
-	for(uint8_t i=0; i<len; i++) {
-		tx[2*i] = (address + i) & ~0x80;
-	}
-
-	HAL_GPIO_WritePin(FLOW_CS_GPIO_Port, FLOW_CS_Pin, GPIO_PIN_RESET);
-	HAL_Delay(1);
-	HAL_SPI_TransmitReceive(&hspi1, tx, rx, 2*len, HAL_MAX_DELAY);
-	HAL_Delay(1);
-	HAL_GPIO_WritePin(FLOW_CS_GPIO_Port, FLOW_CS_Pin, GPIO_PIN_SET);
-	HAL_Delay(1);
-
-	for(uint8_t i=0; i<len; i++) {
-		buffer[i] = rx[2*i + 1];
-	}
-}
-
 void pmw3901_init() {
 	pmw3901_write(0x3A, 0x5A);
 
@@ -475,6 +473,14 @@ void pmw3901_init() {
 	pmw3901_write(0x4E, 0xA8);
 	pmw3901_write(0x5A, 0x50);
 	pmw3901_write(0x40, 0x80);
+}
+
+void pmw3901_read(float *flow, const uint8_t *buffer, const float dt) {
+	const int16_t delta_x = (((int16_t)buffer[2])<<8) | buffer[1];
+	const int16_t delta_y = (((int16_t)buffer[4])<<8) | buffer[3];
+
+	flow[0] = delta_x/(dt*PMW3901_FOCAL_LENGTH);
+	flow[1] = delta_y/(dt*PMW3901_FOCAL_LENGTH);
 }
 
 void hx711_init() {
@@ -599,6 +605,12 @@ void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart) {
 	}
 }
 
+void HAL_SPI_TxRxCpltCallback(SPI_HandleTypeDef *hspi) {
+	if(hspi==&hspi1) {
+		flow_ready = true;
+	}
+}
+
 /* USER CODE END 0 */
 
 /**
@@ -644,6 +656,7 @@ int main(void)
   MX_TIM8_Init();
   MX_UART5_Init();
   MX_UART4_Init();
+  MX_TIM5_Init();
   /* USER CODE BEGIN 2 */
 
   /* USER CODE END 2 */
@@ -672,6 +685,7 @@ int main(void)
   HAL_UART_Receive_DMA(&huart5, gps_buffer, sizeof(gps_buffer));
 
   HAL_TIM_Base_Start(&htim2);
+  HAL_TIM_Base_Start(&htim5);
   HAL_TIM_Base_Start(&htim8);
   HAL_TIM_PWM_Start(&htim8, TIM_CHANNEL_1);
 
@@ -684,6 +698,7 @@ int main(void)
   pmw3901_init();
   hx711_init();
 
+  uint32_t last_protocol = 0;
   uint32_t last_blink = 0;
   uint32_t last_barometer = 0;
   uint32_t last_flow = 0;
@@ -692,6 +707,7 @@ int main(void)
   uint32_t last_sensor = 0;
   uint32_t last_estimation = 0;
   uint32_t last_controller = 0;
+  uint32_t last_stats = 0;
 
   msg_frame_sensor_t sensor = {0};
   msg_frame_estimation_t estimation = {0};
@@ -699,14 +715,22 @@ int main(void)
   msg_frame_calibration_t calibration = {0};
   nmea_messaage_t nmea_message = {0};
 
+  STATS_MEASURE_START();
+
   while(1) {
 	  const uint32_t time = HAL_GetTick();
 
-	  protocol.fifo_rx.write = protocol.fifo_rx.size - __HAL_DMA_GET_COUNTER(huart4.hdmarx);
-	  protocol.available = (HAL_DMA_GetState(huart4.hdmatx)==HAL_DMA_STATE_READY);
-	  protocol_process(&protocol);
+	  if((time - last_protocol)>=1) {
+		  STATS_BLOCK_BEGIN();
+		  last_protocol = time;
+		  protocol.fifo_rx.write = protocol.fifo_rx.size - __HAL_DMA_GET_COUNTER(huart4.hdmarx);
+		  protocol.available = (HAL_DMA_GetState(huart4.hdmatx)==HAL_DMA_STATE_READY);
+		  protocol_process(&protocol);
+		  STATS_BLOCK_END();
+	  }
 
 	  if(imu_ready) {
+		  STATS_BLOCK_BEGIN();
 		  imu_ready = false;
 		  mpu6050_read(sensor.accelerometer.raw, sensor.gyroscope.raw, imu_buffer);
 
@@ -717,12 +741,13 @@ int main(void)
 		  sensor.gyroscope.calib[0] = sensor.gyroscope.raw[0] + calibration.gyroscope[0];
 		  sensor.gyroscope.calib[1] = sensor.gyroscope.raw[1] + calibration.gyroscope[1];
 		  sensor.gyroscope.calib[2] = sensor.gyroscope.raw[2] + calibration.gyroscope[2];
-
 		  sensor.valid.accelerometer = 1;
 		  sensor.valid.gyroscope = 1;
+		  STATS_BLOCK_END();
 	  }
 
 	  if(mag_ready) {
+		  STATS_BLOCK_BEGIN();
 		  mag_ready = false;
 		  qmc5883l_read(sensor.magnetometer.raw, mag_buffer);
 
@@ -730,25 +755,30 @@ int main(void)
 		  sensor.magnetometer.calib[0] = calibration.magnetometer[0]*sensor.magnetometer.raw[0] + calibration.magnetometer[1]*sensor.magnetometer.raw[1] + calibration.magnetometer[2]*sensor.magnetometer.raw[2] + calibration.magnetometer[9];
 		  sensor.magnetometer.calib[1] = calibration.magnetometer[3]*sensor.magnetometer.raw[0] + calibration.magnetometer[4]*sensor.magnetometer.raw[1] + calibration.magnetometer[5]*sensor.magnetometer.raw[2] + calibration.magnetometer[10];
 		  sensor.magnetometer.calib[2] = calibration.magnetometer[6]*sensor.magnetometer.raw[0] + calibration.magnetometer[7]*sensor.magnetometer.raw[1] + calibration.magnetometer[8]*sensor.magnetometer.raw[2] + calibration.magnetometer[11];
-
 		  sensor.valid.magnetometer = 1;
+		  STATS_BLOCK_END();
 	  }
 
 	  if((time - last_barometer)>=50 && misc_busy==SENSOR_MISC_NONE) {
+		  STATS_BLOCK_BEGIN();
 		  last_barometer = time;
 		  misc_ready = false;
 		  misc_busy = SENSOR_MISC_BAR;
 		  HAL_I2C_Mem_Read_DMA(&hi2c4, BMP280_ADDR<<1, BMP280_REG_PRESS_MSB, 1, misc_buffer, 6);
+		  STATS_BLOCK_END();
 	  }
 
 	  if(pwr_int && misc_busy==SENSOR_MISC_NONE) {
+		  STATS_BLOCK_BEGIN();
 		  pwr_int = false;
 		  misc_ready = false;
 		  misc_busy = SENSOR_MISC_PWR_VOLTAGE;
 		  HAL_I2C_Mem_Read_DMA(&hi2c4, INA226_ADDR<<1, INA226_REG_BUS_VOLTAGE, 1, &misc_buffer[0], 2);
+		  STATS_BLOCK_END();
 	  }
 
 	  if(misc_ready) {
+		  STATS_BLOCK_BEGIN();
 		  misc_ready = false;
 
 		  switch(misc_busy) {
@@ -774,9 +804,11 @@ int main(void)
 				  sensor.valid.power = 1;
 			  } break;
 		  }
+		  STATS_BLOCK_END();
 	  }
 
 	  if(gps_event!=BUFFER_EVENT_NONE) {
+		  STATS_BLOCK_BEGIN();
 		  const uint8_t size = sizeof(gps_buffer)/2;
 		  const uint8_t *src = (gps_event==BUFFER_EVENT_HALF_COMPLETE) ? gps_buffer : &gps_buffer[size];
 		  gps_event = BUFFER_EVENT_NONE;
@@ -811,9 +843,11 @@ int main(void)
 				  }
 			  }
 		  }
+		  STATS_BLOCK_END();
 	  }
 
 	  if(range_ready) {
+		  STATS_BLOCK_BEGIN();
 		  range_ready = false;
 		  const float speed_of_sound = 343.f;
 		  const float duration = range_duration*0.00001f;
@@ -822,37 +856,51 @@ int main(void)
 			  sensor.rangefinder = range;
 			  sensor.valid.rangefinder = 1;
 		  }
+		  STATS_BLOCK_END();
 	  }
 
 	  if((time - last_flow)>=20) {
-		  const float dt = (time - last_flow)*0.001f;
-
+		  STATS_BLOCK_BEGIN();
 		  last_flow = time;
+		  for(uint8_t i=0; i<5; i++) {
+			  flow_buffer_tx[2*i] = (PMW3901_REG_MOTION + i) & ~0x80;
+		  }
+		  HAL_GPIO_WritePin(FLOW_CS_GPIO_Port, FLOW_CS_Pin, GPIO_PIN_RESET);
+		  HAL_SPI_TransmitReceive_DMA(&hspi1, flow_buffer_tx, flow_buffer_rx, 10);
+		  STATS_BLOCK_END();
+	  }
 
-		  uint8_t motion[5] = {0};
-		  pmw3901_read(PMW3901_REG_MOTION, motion, sizeof(motion));
-		  const int16_t delta_x = (((int16_t)motion[2])<<8) | motion[1];
-		  const int16_t delta_y = (((int16_t)motion[4])<<8) | motion[3];
+	  if(flow_ready) {
+		  STATS_BLOCK_BEGIN();
+		  flow_ready = false;
+		  HAL_GPIO_WritePin(FLOW_CS_GPIO_Port, FLOW_CS_Pin, GPIO_PIN_SET);
 
-		  sensor.flow[0] = delta_x/(dt*PMW3901_FOCAL_LENGTH);
-		  sensor.flow[1] = delta_y/(dt*PMW3901_FOCAL_LENGTH);
+		  uint8_t motion[5];
+		  for(uint8_t i=0; i<sizeof(motion); i++) {
+			  motion[i] = flow_buffer_rx[2*i + 1];
+		  }
+		  pmw3901_read(sensor.flow, motion, 0.02f);
 		  sensor.valid.flow = 1;
+		  STATS_BLOCK_END();
 	  }
 
 	  if((time - last_tachometer)>=1000) {
+		  STATS_BLOCK_BEGIN();
 		  last_tachometer = time;
 		  const uint32_t counter = __HAL_TIM_GET_COUNTER(&htim2);
 		  __HAL_TIM_SET_COUNTER(&htim2, 0);
 		  const float pole_pairs = 7.f;
 		  sensor.tachometer = (2.f*PI*counter)/pole_pairs;
 		  sensor.valid.tachometer = 1;
+		  STATS_BLOCK_END();
 	  }
 
 	  if((time - last_load)>=100) {
+		  STATS_BLOCK_BEGIN();
 		  last_load = time;
 
 		  int32_t raw = 0;
-		  if(hx711_read(&raw, 1)) {
+		  if(hx711_read(&raw, 1000)) {
 			  nvm_read(0, &calibration, sizeof(calibration));
 
 			  const float min = calibration.load[0];
@@ -862,33 +910,50 @@ int main(void)
 			  sensor.load.calib = (raw - min)/(max - min);
 			  sensor.valid.load = 1;
 		  }
+		  STATS_BLOCK_END();
 	  }
 
 	  if((time - last_blink)>=500) {
+		  STATS_BLOCK_BEGIN();
 		  last_blink = time;
 		  HAL_GPIO_TogglePin(LED_B_GPIO_Port, LED_B_Pin);
+		  STATS_BLOCK_END();
 	  }
 
 	  if((time - last_sensor)>=100) {
+		  STATS_BLOCK_BEGIN();
 		  last_sensor = time;
 		  protocol_enqueue(&protocol, MSG_ID_SENSOR, &sensor, sizeof(sensor));
 		  sensor.valid_all = 0;
+		  STATS_BLOCK_END();
 	  }
 
 	  if((time - last_estimation)>=20) {
+		  STATS_BLOCK_BEGIN();
 		  last_estimation = time;
 		  protocol_enqueue(&protocol, MSG_ID_ESTIMATION, &estimation, sizeof(estimation));
+		  STATS_BLOCK_END();
 	  }
 
 	  if((time - last_controller)>=20) {
+		  STATS_BLOCK_BEGIN();
 		  last_controller = time;
 		  protocol_enqueue(&protocol, MSG_ID_CONTROLLER, &controller, sizeof(controller));
+		  STATS_BLOCK_END();
 	  }
 
 	  if(send_calibration) {
+		  STATS_BLOCK_BEGIN();
 		  send_calibration = false;
 		  nvm_read(0, &calibration, sizeof(calibration));
 		  protocol_enqueue(&protocol, MSG_ID_CALIBRATION, &calibration, sizeof(calibration));
+		  STATS_BLOCK_END();
+	  }
+
+	  if((time - last_stats)>=1000) {
+		  last_stats = time;
+		  controller.core_load = 100.f*STATS_MEASURE_GET();
+		  STATS_MEASURE_START();
 	  }
 
     /* USER CODE END WHILE */
@@ -999,6 +1064,10 @@ static void MX_GPDMA1_Init(void)
     HAL_NVIC_EnableIRQ(GPDMA1_Channel7_IRQn);
     HAL_NVIC_SetPriority(GPDMA1_Channel8_IRQn, 0, 0);
     HAL_NVIC_EnableIRQ(GPDMA1_Channel8_IRQn);
+    HAL_NVIC_SetPriority(GPDMA1_Channel9_IRQn, 0, 0);
+    HAL_NVIC_EnableIRQ(GPDMA1_Channel9_IRQn);
+    HAL_NVIC_SetPriority(GPDMA1_Channel10_IRQn, 0, 0);
+    HAL_NVIC_EnableIRQ(GPDMA1_Channel10_IRQn);
 
   /* USER CODE BEGIN GPDMA1_Init 1 */
 
@@ -1371,6 +1440,51 @@ static void MX_TIM2_Init(void)
   /* USER CODE BEGIN TIM2_Init 2 */
 
   /* USER CODE END TIM2_Init 2 */
+
+}
+
+/**
+  * @brief TIM5 Initialization Function
+  * @param None
+  * @retval None
+  */
+static void MX_TIM5_Init(void)
+{
+
+  /* USER CODE BEGIN TIM5_Init 0 */
+
+  /* USER CODE END TIM5_Init 0 */
+
+  TIM_ClockConfigTypeDef sClockSourceConfig = {0};
+  TIM_MasterConfigTypeDef sMasterConfig = {0};
+
+  /* USER CODE BEGIN TIM5_Init 1 */
+
+  /* USER CODE END TIM5_Init 1 */
+  htim5.Instance = TIM5;
+  htim5.Init.Prescaler = 160-1;
+  htim5.Init.CounterMode = TIM_COUNTERMODE_UP;
+  htim5.Init.Period = 4294967295;
+  htim5.Init.ClockDivision = TIM_CLOCKDIVISION_DIV1;
+  htim5.Init.AutoReloadPreload = TIM_AUTORELOAD_PRELOAD_DISABLE;
+  if (HAL_TIM_Base_Init(&htim5) != HAL_OK)
+  {
+    Error_Handler();
+  }
+  sClockSourceConfig.ClockSource = TIM_CLOCKSOURCE_INTERNAL;
+  if (HAL_TIM_ConfigClockSource(&htim5, &sClockSourceConfig) != HAL_OK)
+  {
+    Error_Handler();
+  }
+  sMasterConfig.MasterOutputTrigger = TIM_TRGO_RESET;
+  sMasterConfig.MasterSlaveMode = TIM_MASTERSLAVEMODE_DISABLE;
+  if (HAL_TIMEx_MasterConfigSynchronization(&htim5, &sMasterConfig) != HAL_OK)
+  {
+    Error_Handler();
+  }
+  /* USER CODE BEGIN TIM5_Init 2 */
+
+  /* USER CODE END TIM5_Init 2 */
 
 }
 

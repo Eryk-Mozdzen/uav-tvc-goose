@@ -109,6 +109,7 @@ typedef struct {
         float throttle;
         float angles[3];
     } controls;
+    float core_load;
     uint8_t state;
 } msg_frame_controller_t;
 
