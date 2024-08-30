@@ -7,7 +7,9 @@ extern "C" {
 
 #include <stddef.h>
 
-#define PI        3.14159265359f
+#ifndef PI
+    #define PI    3.14159265359f
+#endif
 #define RAD2DEG   57.2957795131f
 #define DEG2RAD   0.01745329251f
 

@@ -25,3 +25,4 @@ Release
 .vscode
 build
 !software/identification/*.csv
+estimator-docs

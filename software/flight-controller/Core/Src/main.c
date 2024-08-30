@@ -39,6 +39,8 @@
 #include "ina226_regs.h"
 #include "pmw3901_regs.h"
 #include "ekf.h"
+#include "estimator.h"
+#include "utils.h"
 
 /* USER CODE END Includes */
 
@@ -97,7 +99,6 @@ void SystemClock_Config(void);
 static void SystemPower_Config(void);
 static void MX_GPIO_Init(void);
 static void MX_GPDMA1_Init(void);
-static void MX_ICACHE_Init(void);
 static void MX_I2C1_Init(void);
 static void MX_I2C3_Init(void);
 static void MX_I2C4_Init(void);
@@ -108,6 +109,7 @@ static void MX_TIM8_Init(void);
 static void MX_UART5_Init(void);
 static void MX_UART4_Init(void);
 static void MX_TIM5_Init(void);
+static void MX_ICACHE_Init(void);
 /* USER CODE BEGIN PFP */
 
 /* USER CODE END PFP */
@@ -194,9 +196,9 @@ static void qmc5883l_read(float *mag, const uint8_t *buffer) {
 
 	const float gain = 1.f/3000.f;
 
-	mag[0] = -raw_z*gain;
-	mag[1] = +raw_x*gain;
-	mag[2] = -raw_y*gain;
+	mag[0] = +raw_x*gain;
+	mag[1] = -raw_y*gain;
+	mag[2] = -raw_z*gain;
 }
 
 static void mpu6050_write(uint8_t address, uint8_t value) {
@@ -263,9 +265,9 @@ static void mpu6050_read(float *acc, float *gyr, const uint8_t *buffer) {
 		const float gain = 65.5f;
 		const float dps_to_rads = 0.017453292519943f;
 
-		gyr[0] = +raw_z*dps_to_rads/gain;
-		gyr[1] = +raw_y*dps_to_rads/gain;
-		gyr[2] = -raw_x*dps_to_rads/gain;
+		gyr[0] = +raw_y*dps_to_rads/gain;
+		gyr[1] = +raw_x*dps_to_rads/gain;
+		gyr[2] = -raw_z*dps_to_rads/gain;
 	}
 
 	{
@@ -276,9 +278,9 @@ static void mpu6050_read(float *acc, float *gyr, const uint8_t *buffer) {
 		const float gain = 8192.f;
 		const float g_to_ms2 = 9.80665f;
 
-		acc[0] = -raw_z*g_to_ms2/gain;
-		acc[1] = -raw_y*g_to_ms2/gain;
-		acc[2] = +raw_x*g_to_ms2/gain;
+		acc[0] = -raw_y*g_to_ms2/gain;
+		acc[1] = -raw_x*g_to_ms2/gain;
+		acc[2] = +raw_z*g_to_ms2/gain;
 	}
 }
 
@@ -646,7 +648,6 @@ int main(void)
   /* Initialize all configured peripherals */
   MX_GPIO_Init();
   MX_GPDMA1_Init();
-  MX_ICACHE_Init();
   MX_I2C1_Init();
   MX_I2C3_Init();
   MX_I2C4_Init();
@@ -657,6 +658,7 @@ int main(void)
   MX_UART5_Init();
   MX_UART4_Init();
   MX_TIM5_Init();
+  MX_ICACHE_Init();
   /* USER CODE BEGIN 2 */
 
   /* USER CODE END 2 */
@@ -743,6 +745,30 @@ int main(void)
 		  sensor.gyroscope.calib[2] = sensor.gyroscope.raw[2] + calibration.gyroscope[2];
 		  sensor.valid.accelerometer = 1;
 		  sensor.valid.gyroscope = 1;
+
+		  const float qw = ekf.x.pData[0];
+		  const float qx = ekf.x.pData[1];
+		  const float qy = ekf.x.pData[2];
+		  const float qz = ekf.x.pData[3];
+		  const float g = 9.80665f;
+		  const float ax = (1.f - 2.f*qy*qy - 2.f*qz*qz)*sensor.accelerometer.calib[0] + (2.f*qx*qy - 2.f*qz*qw)*sensor.accelerometer.calib[1] + (2.f*qx*qz + 2.f*qy*qw)*sensor.accelerometer.calib[2];
+		  const float ay = (2.f*qx*qy + 2.f*qz*qw)*sensor.accelerometer.calib[0] + (1.f - 2.f*qx*qx - 2.f*qz*qz)*sensor.accelerometer.calib[1] + (2.f*qy*qz - 2.f*qx*qw)*sensor.accelerometer.calib[2];
+		  const float az = (2.f*qx*qz - 2.f*qy*qw)*sensor.accelerometer.calib[0] + (2.f*qy*qz + 2.f*qx*qw)*sensor.accelerometer.calib[1] + (1.f - 2.f*qx*qx - 2.f*qy*qy)*sensor.accelerometer.calib[2];
+		  const float u[6] = {
+			sensor.gyroscope.calib[0],
+			sensor.gyroscope.calib[1],
+			sensor.gyroscope.calib[2],
+			-ax,
+			-ay,
+			-(az + g),
+		  };
+		  ekf_predict_12_6(&ekf, &system_model, u);
+		  const float len = utils_length(sensor.accelerometer.calib, 3);
+		  if(len>g*0.99f && len<g*1.01f) {
+			  float unit[3];
+			  utils_normalize(sensor.accelerometer.calib, unit, 3);
+			  ekf_correct_12_3(&ekf, &gravity_model, unit);
+		  }
 		  STATS_BLOCK_END();
 	  }
 
@@ -756,6 +782,9 @@ int main(void)
 		  sensor.magnetometer.calib[1] = calibration.magnetometer[3]*sensor.magnetometer.raw[0] + calibration.magnetometer[4]*sensor.magnetometer.raw[1] + calibration.magnetometer[5]*sensor.magnetometer.raw[2] + calibration.magnetometer[10];
 		  sensor.magnetometer.calib[2] = calibration.magnetometer[6]*sensor.magnetometer.raw[0] + calibration.magnetometer[7]*sensor.magnetometer.raw[1] + calibration.magnetometer[8]*sensor.magnetometer.raw[2] + calibration.magnetometer[11];
 		  sensor.valid.magnetometer = 1;
+		  float unit[3];
+		  utils_normalize(sensor.magnetometer.calib, unit, 3);
+		  ekf_correct_12_3(&ekf, &magnetometer_model, unit);
 		  STATS_BLOCK_END();
 	  }
 
@@ -789,6 +818,7 @@ int main(void)
 				  misc_busy = SENSOR_MISC_NONE;
 				  bmp280_read(&sensor.barometer, misc_buffer);
 				  sensor.valid.barometer = 1;
+				  ekf_correct_12_1(&ekf, &barometer_model, &sensor.barometer);
 			  } break;
 			  case SENSOR_MISC_PWR_VOLTAGE: {
 				  misc_busy = SENSOR_MISC_PWR_CURRENT;
@@ -840,6 +870,10 @@ int main(void)
 					  sensor.gps[0] = latitude;
 					  sensor.gps[1] = longitude;
 					  sensor.valid.gps = 1;
+
+					  float position[2];
+					  utils_gps_to_enu(sensor.gps, position);
+					  ekf_correct_12_2(&ekf, &gps_model, position);
 				  }
 			  }
 		  }
@@ -855,6 +889,7 @@ int main(void)
 		  if(range<2.f) {
 			  sensor.rangefinder = range;
 			  sensor.valid.rangefinder = 1;
+			  ekf_correct_12_1(&ekf, &rangefinder_model, &sensor.rangefinder);
 		  }
 		  STATS_BLOCK_END();
 	  }
@@ -881,6 +916,15 @@ int main(void)
 		  }
 		  pmw3901_read(sensor.flow, motion, 0.02f);
 		  sensor.valid.flow = 1;
+
+		  const float z = ekf.x.pData[6];
+		  const float vel[2] = {
+			sensor.flow[0]*z,
+			sensor.flow[1]*z,
+		  };
+		  // TODO: compensate orientation
+		  // TODO: compensate angular velocity
+		  ekf_correct_12_2(&ekf, &flow_model, vel);
 		  STATS_BLOCK_END();
 	  }
 
@@ -920,7 +964,7 @@ int main(void)
 		  STATS_BLOCK_END();
 	  }
 
-	  if((time - last_sensor)>=100) {
+	  if((time - last_sensor)>=50) {
 		  STATS_BLOCK_BEGIN();
 		  last_sensor = time;
 		  protocol_enqueue(&protocol, MSG_ID_SENSOR, &sensor, sizeof(sensor));
@@ -931,6 +975,12 @@ int main(void)
 	  if((time - last_estimation)>=20) {
 		  STATS_BLOCK_BEGIN();
 		  last_estimation = time;
+		  memcpy(estimation.position, &ekf.x.pData[4], 3*sizeof(float));
+		  memcpy(estimation.velocity, &ekf.x.pData[7], 3*sizeof(float));
+		  memcpy(estimation.orientation, &ekf.x.pData[0], 4*sizeof(float));
+		  memcpy(estimation.angular_velocity, sensor.gyroscope.calib, 3*sizeof(float));
+		  estimation.theta_d = ekf.x.pData[10];
+		  estimation.pressure_0 = ekf.x.pData[11];
 		  protocol_enqueue(&protocol, MSG_ID_ESTIMATION, &estimation, sizeof(estimation));
 		  STATS_BLOCK_END();
 	  }

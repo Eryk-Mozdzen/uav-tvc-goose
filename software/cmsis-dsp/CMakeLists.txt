@@ -20,7 +20,6 @@ add_library(${PROJECT_NAME} STATIC
 
 target_compile_definitions(${PROJECT_NAME} PRIVATE
     ARM_MATH_CM33
-    CMSIS_DSP_STATIC
 )
 
 target_compile_options(${PROJECT_NAME} PRIVATE
@@ -28,6 +27,7 @@ target_compile_options(${PROJECT_NAME} PRIVATE
     -mthumb
     -mfpu=fpv5-sp-d16
     -mfloat-abi=hard
+    -Ofast
 )
 
 target_link_options(${PROJECT_NAME} PRIVATE
@@ -35,4 +35,5 @@ target_link_options(${PROJECT_NAME} PRIVATE
     -mthumb
     -mfpu=fpv5-sp-d16
     -mfloat-abi=hard
+    -Ofast
 )
