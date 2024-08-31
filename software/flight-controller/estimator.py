@@ -1,35 +1,33 @@
-import sympy
+import sympy as sp
 import sympy.codegen.ast
-from sympy import Symbol, Quaternion, Matrix
 import os
-from datetime import datetime
+import datetime
 import scipy.constants
 
-dt = Symbol('T')
-g = Symbol('g')
+dt = sp.Symbol('T')
+g = sp.Symbol('g')
 
-qw, qx, qy, qz = sympy.symbols('q_w q_x q_y q_z')
-px, py, pz = sympy.symbols('p_x p_y p_z')
-vx, vy, vz = sympy.symbols('v_x v_y v_z')
-thetad = sympy.symbols('theta_d')
-p0 = sympy.symbols('p_0')
-wx, wy, wz = sympy.symbols('w_x w_y w_z')
-ax, ay, az = sympy.symbols('a_x a_y a_z')
+qw, qx, qy, qz = sp.symbols('q_w q_x q_y q_z')
+Wx, Wy, Wz = sp.symbols('omega_x omega_y omega_z')
+px, py, pz = sp.symbols('p_x p_y p_z')
+vx, vy, vz = sp.symbols('v_x v_y v_z')
+thetad = sp.symbols('theta_d')
+p0 = sp.symbols('p_0')
+wx, wy, wz = sp.symbols('w_x w_y w_z')
+ax, ay, az = sp.symbols('a_x a_y a_z')
 
-q = Quaternion(qw, qx, qy, qz, norm=1)
-p = Matrix([[px], [py], [pz]])
-v = Matrix([[vx], [vy], [vz]])
-w = Matrix([[wx], [wy], [wz]])
-a = Matrix([[ax], [ay], [az]])
+q = sp.Quaternion(qw, qx, qy, qz, norm=1)
+p = sp.Matrix([px, py, pz])
+v = sp.Matrix([vx, vy, vz])
+w = sp.Matrix([wx, wy, wz])
+a = sp.Matrix([ax, ay, az])
 
-gravity = Matrix([[0], [0], [-g]])
-
-u = Matrix([
+u = sp.Matrix([
     w,
     a,
 ])
 
-x = Matrix([
+x = sp.Matrix([
     q.to_Matrix(),
     p,
     v,
@@ -37,74 +35,78 @@ x = Matrix([
     p0,
 ])
 
-f = Matrix([
-    (q + 0.5*dt*q*Quaternion(0, wx, wy, wz)).to_Matrix(),
+f = sp.Matrix([
+    (q + 0.5*dt*q*sp.Quaternion(0, wx, wy, wz)).to_Matrix(),
     p + dt*v + 0.5*dt**2*a,
     v + dt*a,
     thetad,
     p0,
 ])
 
-h_mag = q.to_rotation_matrix().transpose()*Matrix([[0], [sympy.cos(thetad)], [sympy.sin(thetad)]])
-h_grav = q.to_rotation_matrix().transpose()*Matrix([[0], [0], [-1]])
-h_range = Matrix([pz])
-h_press = Matrix([p0*sympy.Pow(1 - pz/44330, 5.255)])
-h_gps = Matrix([[px], [py]])
-h_flow = Matrix([[vx], [vy]])
+h_mag = q.to_rotation_matrix().transpose()*sp.Matrix([0, sp.cos(thetad), sp.sin(thetad)])
+h_grav = q.to_rotation_matrix().transpose()*sp.Matrix([0, 0, -g])
+h_range = sp.Matrix([pz])
+h_press = sp.Matrix([p0*sp.Pow(1 - pz/44330, 5.255)])
+h_gps = sp.Matrix([px, py])
+h_flow = sp.Matrix([vx, vy])
 
 here = os.path.dirname(__file__)
 
 os.makedirs(here + '/estimator-docs', exist_ok=True)
 
 with open(here + '/estimator-docs/main.tex', 'w') as file:
-    file.write('% auto-generated file\n')
-    file.write('% ' + datetime.now().strftime('%Y-%m-%d %H:%M:%S') + '\n')
-    file.write('\n')
-    file.write('\\documentclass{article}\n')
-    file.write('\\usepackage{amsmath}\n')
-    file.write('\\usepackage[paperwidth=50cm, paperheight=50cm, margin=10mm]{geometry}\n')
-    file.write('\n')
-    file.write('\\begin{document}\n')
-    file.write('\t\\[x_k = ' + sympy.latex(x) + ' = f(x_{k-1}, u_k) = ' + sympy.latex(f) + '\\]\n')
-    file.write('\t\\[\\frac{\partial}{\partial x}f(x_{k-1}, u_k) = ' + sympy.latex(f.jacobian(x)) + '\\]\n')
-    file.write('\t\\[h_{mag}(x_k) = ' + sympy.latex(h_mag) + '\\]\n')
-    file.write('\t\\[\\frac{\partial}{\partial x}h_{mag}(x_k) = ' + sympy.latex(h_mag.jacobian(x)) + '\\]\n')
-    file.write('\t\\[h_{grav}(x_k) = ' + sympy.latex(h_grav) + '\\]\n')
-    file.write('\t\\[\\frac{\partial}{\partial x}h_{grav}(x_k) = ' + sympy.latex(h_grav.jacobian(x)) + '\\]\n')
-    file.write('\t\\[h_{range}(x_k) = ' + sympy.latex(h_range) + '\\]\n')
-    file.write('\t\\[\\frac{\partial}{\partial x}h_{range}(x_k) = ' + sympy.latex(h_range.jacobian(x)) + '\\]\n')
-    file.write('\t\\[h_{press}(x_k) = ' + sympy.latex(h_press) + '\\]\n')
-    file.write('\t\\[\\frac{\partial}{\partial x}h_{press}(x_k) = ' + sympy.latex(h_press.jacobian(x)) + '\\]\n')
-    file.write('\t\\[h_{gps}(x_k) = ' + sympy.latex(h_gps) + '\\]\n')
-    file.write('\t\\[\\frac{\partial}{\partial x}h_{gps}(x_k) = ' + sympy.latex(h_gps.jacobian(x)) + '\\]\n')
-    file.write('\t\\[h_{flow}(x_k) = ' + sympy.latex(h_flow) + '\\]\n')
-    file.write('\t\\[\\frac{\partial}{\partial x}h_{flow}(x_k) = ' + sympy.latex(h_flow.jacobian(x)) + '\\]\n')
-    file.write('\\end{document}\n')
+    file.write(
+        '% auto-generated file\n'
+        '% ' + datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S') + '\n'
+        '\n'
+        '\\documentclass{article}\n'
+        '\\usepackage{amsmath}\n'
+        '\\usepackage[paperwidth=50cm, paperheight=50cm, margin=10mm]{geometry}\n'
+        '\n'
+        '\\begin{document}\n'
+        '\t\\[x_k = ' + sympy.latex(x) + ' = f(x_{k-1}, u_k) = ' + sympy.latex(f) + '\\]\n'
+        '\t\\[\\frac{\partial}{\partial x}f(x_{k-1}, u_k) = ' + sympy.latex(f.jacobian(x)) + '\\]\n'
+        '\t\\[h_{mag}(x_k) = ' + sympy.latex(h_mag) + '\\]\n'
+        '\t\\[\\frac{\partial}{\partial x}h_{mag}(x_k) = ' + sympy.latex(h_mag.jacobian(x)) + '\\]\n'
+        '\t\\[h_{grav}(x_k) = ' + sympy.latex(h_grav) + '\\]\n'
+        '\t\\[\\frac{\partial}{\partial x}h_{rav}(x_k) = ' + sympy.latex(h_grav.jacobian(x)) + '\\]\n'
+        '\t\\[h_{range}(x_k) = ' + sympy.latex(h_range) + '\\]\n'
+        '\t\\[\\frac{\partial}{\partial x}h_{range}(x_k) = ' + sympy.latex(h_range.jacobian(x)) + '\\]\n'
+        '\t\\[h_{press}(x_k) = ' + sympy.latex(h_press) + '\\]\n'
+        '\t\\[\\frac{\partial}{\partial x}h_{press}(x_k) = ' + sympy.latex(h_press.jacobian(x)) + '\\]\n'
+        '\t\\[h_{gps}(x_k) = ' + sympy.latex(h_gps) + '\\]\n'
+        '\t\\[\\frac{\partial}{\partial x}h_{gps}(x_k) = ' + sympy.latex(h_gps.jacobian(x)) + '\\]\n'
+        '\t\\[h_{flow}(x_k) = ' + sympy.latex(h_flow) + '\\]\n'
+        '\t\\[\\frac{\partial}{\partial x}h_{flow}(x_k) = ' + sympy.latex(h_flow.jacobian(x)) + '\\]\n'
+        '\\end{document}\n'
+    )
 
 with open(here + '/app/estimator.h', 'w') as file:
-    file.write('// auto-generated file\n')
-    file.write('// ' + datetime.now().strftime('%Y-%m-%d %H:%M:%S') + '\n')
-    file.write('\n')
-    file.write('#ifndef ESTIMATOR_H\n')
-    file.write('#define ESTIMATOR_H\n')
-    file.write('\n')
-    file.write('#include "ekf.h"\n')
-    file.write('\n')
-    file.write('extern ekf_t ekf;\n')
-    file.write('extern ekf_system_model_t system_model;\n')
-    file.write('extern ekf_measurement_model_t magnetometer_model;\n')
-    file.write('extern ekf_measurement_model_t gravity_model;\n')
-    file.write('extern ekf_measurement_model_t rangefinder_model;\n')
-    file.write('extern ekf_measurement_model_t barometer_model;\n')
-    file.write('extern ekf_measurement_model_t gps_model;\n')
-    file.write('extern ekf_measurement_model_t flow_model;\n')
-    file.write('\n')
-    file.write('EKF_PREDICT_DEF(' + str(x.shape[0]) + ', ' + str(u.shape[0]) + ')\n')
-    file.write('EKF_CORRECT_DEF(' + str(x.shape[0]) + ', 1)\n')
-    file.write('EKF_CORRECT_DEF(' + str(x.shape[0]) + ', 2)\n')
-    file.write('EKF_CORRECT_DEF(' + str(x.shape[0]) + ', 3)\n')
-    file.write('\n')
-    file.write('#endif\n')
+    file.write(
+        '// auto-generated file\n'
+        '// ' + datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S') + '\n'
+        '\n'
+        '#ifndef ESTIMATOR_H\n'
+        '#define ESTIMATOR_H\n'
+        '\n'
+        '#include "ekf.h"\n'
+        '\n'
+        'extern ekf_t ekf;\n'
+        'extern ekf_system_model_t system_model;\n'
+        'extern ekf_measurement_model_t magnetometer_model;\n'
+        'extern ekf_measurement_model_t gravity_model;\n'
+        'extern ekf_measurement_model_t rangefinder_model;\n'
+        'extern ekf_measurement_model_t barometer_model;\n'
+        'extern ekf_measurement_model_t gps_model;\n'
+        'extern ekf_measurement_model_t flow_model;\n'
+        '\n'
+        'EKF_PREDICT_DEF(' + str(x.shape[0]) + ', ' + str(u.shape[0]) + ')\n'
+        'EKF_CORRECT_DEF(' + str(x.shape[0]) + ', 1)\n'
+        'EKF_CORRECT_DEF(' + str(x.shape[0]) + ', 2)\n'
+        'EKF_CORRECT_DEF(' + str(x.shape[0]) + ', 3)\n'
+        '\n'
+        '#endif\n'
+    )
 
 with open(here + '/app/estimator.c', 'w') as file:
     functions = {
@@ -269,17 +271,19 @@ with open(here + '/app/estimator.c', 'w') as file:
         file.write('};\n')
         file.write('\n')
 
-    file.write('// auto-generated file\n')
-    file.write('// ' + datetime.now().strftime('%Y-%m-%d %H:%M:%S') + '\n')
-    file.write('\n')
-    file.write('#include <math.h>\n')
-    file.write('\n')
-    file.write('#include "ekf.h"\n')
-    file.write('\n')
-    file.write('#define g ' + str(scipy.constants.g) + 'f\n')
-    file.write('#define T ' + str(0.001) + 'f\n')
-    file.write('\n')
-    estimator([1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 100000], 1)
+    file.write(
+        '// auto-generated file\n'
+        '// ' + datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S') + '\n'
+        '\n'
+        '#include <math.h>\n'
+        '\n'
+        '#include "ekf.h"\n'
+        '\n'
+        '#define g ' + str(scipy.constants.g) + 'f\n'
+        '#define T ' + str(0.001) + 'f\n'
+        '\n'
+    )
+    estimator([1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 102400], 1)
     system_model(f, [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1])
     measurement_model('magnetometer', h_mag, 100)
     measurement_model('gravity', h_grav, 10000)
@@ -287,9 +291,11 @@ with open(here + '/app/estimator.c', 'w') as file:
     measurement_model('barometer', h_press, 10000)
     measurement_model('gps', h_gps, 1000000)
     measurement_model('flow', h_flow, 1000)
-    file.write('EKF_PREDICT(' + str(x.shape[0]) + ', ' + str(u.shape[0]) + ')\n')
-    file.write('EKF_CORRECT(' + str(x.shape[0]) + ', 1)\n')
-    file.write('EKF_CORRECT(' + str(x.shape[0]) + ', 2)\n')
-    file.write('EKF_CORRECT(' + str(x.shape[0]) + ', 3)\n')
+    file.write(
+        'EKF_PREDICT(' + str(x.shape[0]) + ', ' + str(u.shape[0]) + ')\n'
+        'EKF_CORRECT(' + str(x.shape[0]) + ', 1)\n'
+        'EKF_CORRECT(' + str(x.shape[0]) + ', 2)\n'
+        'EKF_CORRECT(' + str(x.shape[0]) + ', 3)\n'
+    )
 
 os.system('pdflatex -interaction=nonstopmode -output-directory=' + here + '/estimator-docs ' + here + '/estimator-docs/main.tex')

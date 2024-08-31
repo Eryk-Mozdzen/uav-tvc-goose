@@ -1,5 +1,5 @@
 // auto-generated file
-// 2024-08-31 00:37:17
+// 2024-08-31 21:28:14
 
 #include <math.h>
 
@@ -9,7 +9,7 @@
 #define T 0.001f
 
 static float x_data[12] = {
-	1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 100000,
+	1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 102400,
 };
 
 static float P_data[12*12] = {
@@ -336,9 +336,9 @@ static void gravity_h(const float *x, float *z) {
 	const float q_y = x[2];
 	const float q_z = x[3];
 
-	z[0] = 2*q_w*q_y - 2*q_x*q_z;
-	z[1] = -2*q_w*q_x - 2*q_y*q_z;
-	z[2] = -(q_w)*(q_w) + (q_x)*(q_x) + (q_y)*(q_y) - (q_z)*(q_z);
+	z[0] = -g*(-2*q_w*q_y + 2*q_x*q_z);
+	z[1] = -g*(2*q_w*q_x + 2*q_y*q_z);
+	z[2] = -g*((q_w)*(q_w) - (q_x)*(q_x) - (q_y)*(q_y) + (q_z)*(q_z));
 }
 
 static void gravity_dh(const float *x, float *z) {
@@ -347,10 +347,10 @@ static void gravity_dh(const float *x, float *z) {
 	const float q_y = x[2];
 	const float q_z = x[3];
 
-	z[0] = 2*q_y;
-	z[1] = -2*q_z;
-	z[2] = 2*q_w;
-	z[3] = -2*q_x;
+	z[0] = 2*g*q_y;
+	z[1] = -2*g*q_z;
+	z[2] = 2*g*q_w;
+	z[3] = -2*g*q_x;
 	z[4] = 0;
 	z[5] = 0;
 	z[6] = 0;
@@ -360,10 +360,10 @@ static void gravity_dh(const float *x, float *z) {
 	z[10] = 0;
 	z[11] = 0;
 
-	z[12] = -2*q_x;
-	z[13] = -2*q_w;
-	z[14] = -2*q_z;
-	z[15] = -2*q_y;
+	z[12] = -2*g*q_x;
+	z[13] = -2*g*q_w;
+	z[14] = -2*g*q_z;
+	z[15] = -2*g*q_y;
 	z[16] = 0;
 	z[17] = 0;
 	z[18] = 0;
@@ -373,10 +373,10 @@ static void gravity_dh(const float *x, float *z) {
 	z[22] = 0;
 	z[23] = 0;
 
-	z[24] = -2*q_w;
-	z[25] = 2*q_x;
-	z[26] = 2*q_y;
-	z[27] = -2*q_z;
+	z[24] = -2*g*q_w;
+	z[25] = 2*g*q_x;
+	z[26] = 2*g*q_y;
+	z[27] = -2*g*q_z;
 	z[28] = 0;
 	z[29] = 0;
 	z[30] = 0;

@@ -915,15 +915,25 @@ int main(void)
 			  motion[i] = flow_buffer_rx[2*i + 1];
 		  }
 		  pmw3901_read(sensor.flow, motion, 0.02f);
+		  const float tmp[2] = {
+				  0.5f*sensor.flow[0] - 0.866025404f*sensor.flow[1],
+				  0.866025404f*sensor.flow[0] + 0.5f*sensor.flow[1],
+		  };
+		  sensor.flow[0] = -tmp[0];
+		  sensor.flow[1] = tmp[1];
 		  sensor.valid.flow = 1;
 
+		  const float qw = ekf.x.pData[0];
+		  const float qx = ekf.x.pData[1];
+		  const float qy = ekf.x.pData[2];
+		  const float qz = ekf.x.pData[3];
+		  const float wx = sensor.gyroscope.calib[0];
+		  const float wy = sensor.gyroscope.calib[1];
 		  const float z = ekf.x.pData[6];
 		  const float vel[2] = {
-			sensor.flow[0]*z,
-			sensor.flow[1]*z,
+				((1.f - 2.f*qy*qy - 2.f*qz*qz)*(sensor.flow[0] + wy) + (2.f*qx*qy - 2.f*qz*qw)*(sensor.flow[1] - wx))*z,
+				((2.f*qx*qy + 2.f*qz*qw)*(sensor.flow[0] + wy) + (1.f - 2.f*qx*qx - 2.f*qz*qz)*(sensor.flow[1] - wx))*z,
 		  };
-		  // TODO: compensate orientation
-		  // TODO: compensate angular velocity
 		  ekf_correct_12_2(&ekf, &flow_model, vel);
 		  STATS_BLOCK_END();
 	  }
