@@ -41,6 +41,8 @@
 #include "ekf.h"
 #include "estimator.h"
 #include "utils.h"
+#include "actuators.h"
+#include "controller.h"
 
 /* USER CODE END Includes */
 
@@ -160,8 +162,17 @@ static volatile buffer_event_t gps_event = BUFFER_EVENT_NONE;
 static volatile uint32_t range_duration = 0;
 
 static bool send_calibration = false;
-static bool set_reference = false;
+static bool command_reference = false;
+static bool command_start = false;
+static bool command_abort = false;
 static sensor_misc_t misc_busy = SENSOR_MISC_NONE;
+static msg_frame_controller_t controller = {0};
+static msg_frame_manual_t manual = {0};
+static uint32_t comm_rx_last = 0;
+static uint32_t comm_rx_start = 0;
+static uint32_t comm_rx_manual_last = 0;
+static uint32_t comm_rx_manual_start = 0;
+static uint32_t limits_start = 0;
 
 static void qmc5883l_write(uint8_t address, uint8_t value) {
 	HAL_I2C_Mem_Write(&hi2c3, QMC5883L_ADDR<<1, address, 1, &value, 1, 100);
@@ -527,6 +538,16 @@ bool hx711_read(int32_t *data, const uint32_t timeout) {
 	return true;
 }
 
+static void logger(const char *format, ...) {
+    va_list args;
+    va_start(args, format);
+
+	char buffer[256];
+    const uint16_t len = vsprintf(buffer, format, args);
+
+    protocol_enqueue(&protocol, MSG_ID_LOG, buffer, len);
+}
+
 static void comm_transmit(void *user, const void *data, const uint32_t size) {
     (void)user;
     HAL_UART_Transmit_DMA(&huart4, data, size);
@@ -535,6 +556,8 @@ static void comm_transmit(void *user, const void *data, const uint32_t size) {
 static void comm_receive(void *user, const uint8_t id, const uint32_t time, const void *payload, const uint32_t size) {
     (void)user;
     (void)time;
+
+    comm_rx_last = HAL_GetTick();
 
     switch(id) {
         case MSG_ID_CALIBRATION: {
@@ -547,7 +570,24 @@ static void comm_receive(void *user, const uint8_t id, const uint32_t time, cons
         case MSG_ID_COMMAND_REFERENCE: {
 			ekf.x.pData[7] = 0;
 			ekf.x.pData[8] = 0;
-        	set_reference = true;
+        	command_reference = true;
+        } break;
+        case MSG_ID_COMMAND_START: {
+        	command_start = true;
+        } break;
+        case MSG_ID_COMMAND_ABORT: {
+        	command_abort = true;
+		} break;
+        case MSG_ID_SETPOINT: {
+        	if(size==sizeof(msg_frame_setpoint_t)) {
+        		memcpy(&controller.setpoint, payload, size);
+        	}
+        } break;
+        case MSG_ID_MANUAL: {
+        	if(size==sizeof(msg_frame_manual_t)) {
+        		memcpy(&manual, payload, size);
+        		comm_rx_manual_last = HAL_GetTick();
+        	}
         } break;
     }
 }
@@ -562,14 +602,41 @@ static uint32_t comm_time(void *user) {
 	return HAL_GetTick();
 }
 
-static void logger(const char *format, ...) {
-    va_list args;
-    va_start(args, format);
+static void sm_change_state(const msg_sm_state_t state) {
+	command_start = false;
+	command_abort = false;
+	comm_rx_last = HAL_GetTick();
+	comm_rx_start = HAL_GetTick();
+	comm_rx_manual_last = HAL_GetTick();
+	comm_rx_manual_start = HAL_GetTick();
 
-	char buffer[256];
-    const uint16_t len = vsprintf(buffer, format, args);
+	controller.state = state;
 
-    protocol_enqueue(&protocol, MSG_ID_LOG, buffer, len);
+	switch(controller.state) {
+		case MSG_SM_STATE_ABORT: {
+			logger("abort state");
+		} break;
+		case MSG_SM_STATE_READY: {
+			logger("ready state");
+		} break;
+		case MSG_SM_STATE_ACTIVE: {
+			logger("active state");
+		} break;
+		case MSG_SM_STATE_MANUAL: {
+			logger("manual state");
+		} break;
+	}
+}
+
+#define LIMITS_ANGLE		30.f
+#define LIMITS_ALTITUDE		2.f
+
+static bool sm_state_limits() {
+	const float roll = controller.process.rpy[0]*RAD2DEG;
+	const float pitch = controller.process.rpy[1]*RAD2DEG;
+	const float altitude = controller.process.pos[2];
+
+	return (fabs(roll)>LIMITS_ANGLE || fabs(pitch)>LIMITS_ANGLE || altitude>LIMITS_ALTITUDE);
 }
 
 void HAL_GPIO_EXTI_Rising_Callback(uint16_t GPIO_Pin) {
@@ -692,11 +759,19 @@ int main(void)
   uint8_t gps_buffer[16];
   HAL_UART_Receive_DMA(&huart5, gps_buffer, sizeof(gps_buffer));
 
+  HAL_TIM_Base_Start(&htim1);
   HAL_TIM_Base_Start(&htim2);
   HAL_TIM_Base_Start(&htim5);
   HAL_TIM_Base_Start(&htim8);
+  HAL_TIM_PWM_Start(&htim1, TIM_CHANNEL_1);
+  HAL_TIM_PWM_Start(&htim1, TIM_CHANNEL_2);
+  HAL_TIM_PWM_Start(&htim1, TIM_CHANNEL_3);
+  HAL_TIM_PWM_Start(&htim1, TIM_CHANNEL_4);
   HAL_TIM_PWM_Start(&htim8, TIM_CHANNEL_1);
 
+  protocol_enqueue(&protocol, 0xFF, NULL, 0);
+  protocol_enqueue(&protocol, 0xFF, NULL, 0);
+  protocol_enqueue(&protocol, 0xFF, NULL, 0);
   logger("system reset");
 
   qmc5883l_init();
@@ -712,16 +787,20 @@ int main(void)
   uint32_t last_flow = 0;
   uint32_t last_tachometer = 0;
   uint32_t last_load = 0;
-  uint32_t last_sensor = 0;
-  uint32_t last_estimation = 0;
+  uint32_t last_tx_sensor = 0;
+  uint32_t last_tx_estimation = 0;
+  uint32_t last_tx_controller = 0;
   uint32_t last_controller = 0;
   uint32_t last_stats = 0;
 
+  bool blink_state = true;
   msg_frame_sensor_t sensor = {0};
   msg_frame_estimation_t estimation = {0};
-  msg_frame_controller_t controller = {0};
   msg_frame_calibration_t calibration = {0};
   nmea_messaage_t nmea_message = {0};
+  actuators_ctx_t actuators = {0};
+
+  controller.state = MSG_SM_STATE_ABORT;
 
   STATS_MEASURE_START();
 
@@ -875,9 +954,9 @@ int main(void)
 		  STATS_BLOCK_END();
 	  }
 
-	  if(sensor.valid.gps && ((!estimation.position_reference.valid && time>5000) || set_reference)) {
+	  if(sensor.valid.gps && ((!estimation.position_reference.valid && time>5000) || command_reference)) {
 		  STATS_BLOCK_BEGIN();
-		  set_reference = false;
+		  command_reference = false;
 		  estimation.position_reference.latlon[0] = sensor.gps[0];
 		  estimation.position_reference.latlon[1] = sensor.gps[1];
 		  estimation.position_reference.valid = 1;
@@ -959,24 +1038,25 @@ int main(void)
 		  STATS_BLOCK_END();
 	  }
 
-	  if((time - last_blink)>=500) {
+	  if((time - last_blink)>=(blink_state ? 50 : 950)) {
 		  STATS_BLOCK_BEGIN();
 		  last_blink = time;
-		  HAL_GPIO_TogglePin(LED_B_GPIO_Port, LED_B_Pin);
+		  blink_state = !blink_state;
+		  HAL_GPIO_WritePin(LED_B_GPIO_Port, LED_B_Pin, blink_state);
 		  STATS_BLOCK_END();
 	  }
 
-	  if((time - last_sensor)>=50) {
+	  if((time - last_tx_sensor)>=50) {
 		  STATS_BLOCK_BEGIN();
-		  last_sensor = time;
+		  last_tx_sensor = time;
 		  protocol_enqueue(&protocol, MSG_ID_SENSOR, &sensor, sizeof(sensor));
 		  sensor.valid_all = 0;
 		  STATS_BLOCK_END();
 	  }
 
-	  if((time - last_estimation)>=20) {
+	  if((time - last_tx_estimation)>=20) {
 		  STATS_BLOCK_BEGIN();
-		  last_estimation = time;
+		  last_tx_estimation = time;
 		  memcpy(estimation.position, &ekf.x.pData[7], 3*sizeof(float));
 		  memcpy(estimation.velocity, &ekf.x.pData[10], 3*sizeof(float));
 		  memcpy(estimation.orientation, &ekf.x.pData[0], 4*sizeof(float));
@@ -987,9 +1067,9 @@ int main(void)
 		  STATS_BLOCK_END();
 	  }
 
-	  if((time - last_controller)>=20) {
+	  if((time - last_tx_controller)>=20) {
 		  STATS_BLOCK_BEGIN();
-		  last_controller = time;
+		  last_tx_controller = time;
 		  protocol_enqueue(&protocol, MSG_ID_CONTROLLER, &controller, sizeof(controller));
 		  STATS_BLOCK_END();
 	  }
@@ -999,6 +1079,93 @@ int main(void)
 		  send_calibration = false;
 		  nvm_read(0, &calibration, sizeof(calibration));
 		  protocol_enqueue(&protocol, MSG_ID_CALIBRATION, &calibration, sizeof(calibration));
+		  STATS_BLOCK_END();
+	  }
+
+	  if((time - last_controller)>=1) {
+		  STATS_BLOCK_BEGIN();
+		  last_controller = time;
+		  float rpy[3];
+		  utils_quaternion_to_rpy(&ekf.x.pData[0], rpy);
+		  memcpy(controller.process.rpy, rpy, 3*sizeof(float));
+		  memcpy(controller.process.omega, &ekf.x.pData[4], 3*sizeof(float));
+		  memcpy(controller.process.pos, &ekf.x.pData[7], 3*sizeof(float));
+		  memcpy(controller.process.vel, &ekf.x.pData[10], 3*sizeof(float));
+
+		  switch(controller.state) {
+			  case MSG_SM_STATE_ABORT: {
+				  HAL_GPIO_WritePin(LED_R_GPIO_Port, LED_R_Pin, 1);
+				  HAL_GPIO_WritePin(LED_G_GPIO_Port, LED_G_Pin, 0);
+
+				  actuators_stop(&actuators);
+
+				  if((time - comm_rx_last)>=1000) {
+					  comm_rx_start = time;
+				  }
+
+				  if(sm_state_limits()) {
+					  limits_start = time;
+				  }
+
+				  if((time - comm_rx_start)>=3000 && (time - limits_start)>=3000) {
+					  sm_change_state(MSG_SM_STATE_READY);
+				  }
+			  } break;
+			  case MSG_SM_STATE_READY: {
+				  HAL_GPIO_WritePin(LED_R_GPIO_Port, LED_R_Pin, 0);
+				  HAL_GPIO_WritePin(LED_G_GPIO_Port, LED_G_Pin, 1);
+
+				  actuators_stop(&actuators);
+
+				  if((time - comm_rx_manual_last)>=1000) {
+					  comm_rx_manual_start = time;
+				  }
+
+				  if((time - comm_rx_last)>=1000 || command_abort || sm_state_limits()) {
+					  sm_change_state(MSG_SM_STATE_ABORT);
+				  } else if((time - comm_rx_manual_start)>=3000) {
+					  sm_change_state(MSG_SM_STATE_MANUAL);
+				  } else if(command_start) {
+					  sm_change_state(MSG_SM_STATE_ACTIVE);
+				  }
+			  } break;
+			  case MSG_SM_STATE_ACTIVE: {
+				  HAL_GPIO_WritePin(LED_R_GPIO_Port, LED_R_Pin, 0);
+				  HAL_GPIO_WritePin(LED_G_GPIO_Port, LED_G_Pin, 0);
+
+				  controller_calculate(&controller);
+				  actuators_set(&actuators, controller.controls.throttle, controller.controls.angles);
+
+				  if(!sm_state_limits()) {
+					  limits_start = time;
+				  }
+
+				  if((time - comm_rx_last)>=1000 || command_abort || (time - limits_start)>=500) {
+					  sm_change_state(MSG_SM_STATE_ABORT);
+				  }
+			  } break;
+			  case MSG_SM_STATE_MANUAL: {
+				  HAL_GPIO_WritePin(LED_R_GPIO_Port, LED_R_Pin, 0);
+				  HAL_GPIO_WritePin(LED_G_GPIO_Port, LED_G_Pin, 0);
+
+				  if(manual.is_compare) {
+					  actuators_set_compare(manual.motor.compare, manual.servos.compare);
+				  } else {
+					  actuators_set(&actuators, manual.motor.throttle, manual.servos.calib);
+				  }
+
+				  if((time - comm_rx_manual_last)>=1000) {
+					  sm_change_state(MSG_SM_STATE_READY);
+				  }
+			  } break;
+		  }
+
+		  actuators_tick(&actuators, time);
+		  controller.controls.throttle = actuators.throttle_current;
+		  controller.controls.angles[0] = actuators.angles[0];
+		  controller.controls.angles[1] = actuators.angles[1];
+		  controller.controls.angles[2] = actuators.angles[2];
+
 		  STATS_BLOCK_END();
 	  }
 
@@ -1375,6 +1542,7 @@ static void MX_TIM1_Init(void)
 
   /* USER CODE END TIM1_Init 0 */
 
+  TIM_ClockConfigTypeDef sClockSourceConfig = {0};
   TIM_MasterConfigTypeDef sMasterConfig = {0};
   TIM_OC_InitTypeDef sConfigOC = {0};
   TIM_BreakDeadTimeConfigTypeDef sBreakDeadTimeConfig = {0};
@@ -1383,12 +1551,21 @@ static void MX_TIM1_Init(void)
 
   /* USER CODE END TIM1_Init 1 */
   htim1.Instance = TIM1;
-  htim1.Init.Prescaler = 0;
+  htim1.Init.Prescaler = 160-1;
   htim1.Init.CounterMode = TIM_COUNTERMODE_UP;
-  htim1.Init.Period = 65535;
+  htim1.Init.Period = 19999;
   htim1.Init.ClockDivision = TIM_CLOCKDIVISION_DIV1;
   htim1.Init.RepetitionCounter = 0;
   htim1.Init.AutoReloadPreload = TIM_AUTORELOAD_PRELOAD_DISABLE;
+  if (HAL_TIM_Base_Init(&htim1) != HAL_OK)
+  {
+    Error_Handler();
+  }
+  sClockSourceConfig.ClockSource = TIM_CLOCKSOURCE_INTERNAL;
+  if (HAL_TIM_ConfigClockSource(&htim1, &sClockSourceConfig) != HAL_OK)
+  {
+    Error_Handler();
+  }
   if (HAL_TIM_PWM_Init(&htim1) != HAL_OK)
   {
     Error_Handler();

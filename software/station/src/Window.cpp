@@ -305,11 +305,11 @@ Window::Window(QWidget *parent) : QWidget(parent) {
                 constexpr float C = 0.01;
 
                 msg_frame_manual_t frame;
-                frame.is_raw = 0;
-                frame.servos.calibrated[0] = C*(-0.333*mx - 0.577*my - 0.333*mz);
-                frame.servos.calibrated[1] = C*( 0.667*mx            - 0.333*mz);
-                frame.servos.calibrated[2] = C*(-0.333*mx + 0.577*my - 0.333*mz);
-                frame.motor = ur;
+                frame.is_compare = 0;
+                frame.servos.calib[0] = C*(-0.333*mx - 0.577*my - 0.333*mz);
+                frame.servos.calib[1] = C*( 0.667*mx            - 0.333*mz);
+                frame.servos.calib[2] = C*(-0.333*mx + 0.577*my - 0.333*mz);
+                frame.motor.throttle = ur*0.01;
 
                 transmit(MSG_ID_MANUAL, QByteArray(reinterpret_cast<const char *>(&frame), sizeof(frame)));
             } else {
@@ -390,6 +390,7 @@ Window::Window(QWidget *parent) : QWidget(parent) {
         attitude->addSeries("roll process",   QPen(Qt::red,   2, Qt::SolidLine));
         attitude->addSeries("pitch setpoint", QPen(Qt::green, 1, Qt::DashLine));
         attitude->addSeries("pitch process",  QPen(Qt::green, 2, Qt::SolidLine));
+        //attitude->addSeries("yaw setpoint",   QPen(Qt::blue,  1, Qt::DashLine));
         attitude->addSeries("yaw process",    QPen(Qt::blue,  2, Qt::SolidLine));
 
         layout->addWidget(attitude, 1, 3);

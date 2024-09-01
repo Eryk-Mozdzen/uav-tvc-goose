@@ -281,10 +281,14 @@ void Window::receive(const uint8_t id, const double time, const QByteArray &payl
 }
 
 void Window::setThrottle(const int value) {
-    const int constrained = (value>100) ? 100 : (value<0) ? 0 : value;
+    const float constrained = (value>100) ? 100 : (value<0) ? 0 : value;
 
     msg_frame_manual_t manual;
-    manual.motor = 10*constrained + 1000;
+    manual.is_compare = 0;
+    manual.motor.throttle = constrained*0.01;
+    manual.servos.calib[0] = 0;
+    manual.servos.calib[1] = 0;
+    manual.servos.calib[2] = 0;
 
     transmit(MSG_ID_MANUAL, QByteArray(reinterpret_cast<const char *>(&manual), sizeof(manual)));
 }

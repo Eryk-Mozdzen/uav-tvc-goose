@@ -34,10 +34,10 @@ void utils_normalize(const float *src, float *dest, const size_t dim) {
 }
 
 void utils_quaternion_to_rpy(const float *quaternion, float *rpy) {
-    const float qx = quaternion[0];
-	const float qy = quaternion[1];
-	const float qz = quaternion[2];
-	const float qw = quaternion[3];
+    const float qw = quaternion[0];
+    const float qx = quaternion[1];
+	const float qy = quaternion[2];
+	const float qz = quaternion[3];
 
 	const float t0 = 2.f * (qw * qx + qy * qz);
 	const float t1 = 1.f - 2.f * (qx * qx + qy * qy);

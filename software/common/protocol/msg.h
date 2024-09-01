@@ -121,12 +121,15 @@ typedef struct {
 
 typedef struct {
     union {
-        uint32_t raw[3];
-        float calibrated[3];
+        uint32_t compare[3];
+        float calib[3];
     } servos;
-    uint32_t motor : 8;
-    uint32_t is_raw : 1;
-    uint32_t unused : 23;
+    union {
+        uint32_t compare;
+        float throttle;
+    } motor;
+    uint32_t is_compare : 1;
+    uint32_t unused : 31;
 } msg_frame_manual_t;
 
 #ifdef __cplusplus

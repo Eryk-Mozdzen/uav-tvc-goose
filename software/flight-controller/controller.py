@@ -188,15 +188,15 @@ K, _, _ = control.lqr(A, B, Q, R)
 import os
 import datetime
 
-path = os.path.dirname(__file__)
+here = os.path.dirname(__file__)
 
-with open(os.path.join(path, 'controller.h'), 'w') as file:
+with open(here + '/app/controller_params.h', 'w') as file:
     file.write(
-        '// auto-generated\n'
+        '// auto-generated file\n'
         '// ' + datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S') + '\n'
         '\n'
-        '#ifndef CONTROLLER_H\n'
-        '#define CONTROLLER_H\n'
+        '#ifndef CONTROLLER_PARAMS_H\n'
+        '#define CONTROLLER_PARAMS_H\n'
         '\n'
         '#include "arm_math.h"\n'
         '\n'
@@ -206,9 +206,9 @@ with open(os.path.join(path, 'controller.h'), 'w') as file:
         '#endif\n'
     )
 
-with open(os.path.join(path, 'controller.c'), 'w') as file:
+with open(here + '/app/controller_params.c', 'w') as file:
     def write_matrix(matrix, name, format='{: .4f}f'):
-        file.write('static const float ' + name + '_data[] = {\n')
+        file.write('static float ' + name + '_data[] = {\n')
         for row in matrix:
             row = [format.format(val) for val in row]
             file.write('    ' + ', '.join(map(str, row)) + ',\n')
@@ -224,7 +224,7 @@ with open(os.path.join(path, 'controller.c'), 'w') as file:
         )
 
     file.write(
-        '// auto-generated\n'
+        '// auto-generated file\n'
         '// ' + datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S') + '\n'
         '\n'
         '#include "arm_math.h"\n'

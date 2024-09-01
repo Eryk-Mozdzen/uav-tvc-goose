@@ -134,24 +134,24 @@ void Servos::startTransmit() {
 
     connect(timer, &QTimer::timeout, [this]() {
         msg_frame_manual_t frame;
-        frame.motor = 0;
-        frame.is_raw = 1;
+        frame.is_compare = 1;
+        frame.motor.compare = 0;
 
         switch(position) {
             case Position::MIN: {
-                frame.servos.raw[0] = sliders[0]->value();
-                frame.servos.raw[1] = sliders[1]->value();
-                frame.servos.raw[2] = sliders[2]->value();
+                frame.servos.compare[0] = sliders[0]->value();
+                frame.servos.compare[1] = sliders[1]->value();
+                frame.servos.compare[2] = sliders[2]->value();
             } break;
             case Position::ZERO: {
-                frame.servos.raw[0] = sliders[3]->value();
-                frame.servos.raw[1] = sliders[4]->value();
-                frame.servos.raw[2] = sliders[5]->value();
+                frame.servos.compare[0] = sliders[3]->value();
+                frame.servos.compare[1] = sliders[4]->value();
+                frame.servos.compare[2] = sliders[5]->value();
             } break;
             case Position::MAX: {
-                frame.servos.raw[0] = sliders[6]->value();
-                frame.servos.raw[1] = sliders[7]->value();
-                frame.servos.raw[2] = sliders[8]->value();
+                frame.servos.compare[0] = sliders[6]->value();
+                frame.servos.compare[1] = sliders[7]->value();
+                frame.servos.compare[2] = sliders[8]->value();
             } break;
         }
 
