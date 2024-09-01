@@ -3,8 +3,6 @@
 
 #include "utils.h"
 
-#define REF_LATITUDE    0.950871f // 54*28'51.2''
-#define REF_LONGITUDE   0.323817f // 18*33'12.1''
 #define EARTH_RADIUS    6371000.f
 
 float utils_length(const float *vec, const size_t dim) {
@@ -99,33 +97,34 @@ void utils_quaternion_to_rot_trans(const float *quaternion, float *rot) {
     rot[8] = 1.f - s*(qx*qx + qy*qy);
 }
 
-void utils_gps_to_enu(const float *position, float *cartesian) {
-    const float lat = position[0]*DEG2RAD;
-    const float lon = position[1]*DEG2RAD;
+void utils_gps_to_enu(const float *latlon, const float *latlon_ref, float *xy) {
+    const float sin_lat = sinf(latlon[0]*DEG2RAD);
+    const float cos_lat = cosf(latlon[0]*DEG2RAD);
+    const float sin_lon = sinf(latlon[1]*DEG2RAD);
+    const float cos_lon = cosf(latlon[1]*DEG2RAD);
+    const float sin_lat_ref = sinf(latlon_ref[0]*DEG2RAD);
+    const float cos_lat_ref = cosf(latlon_ref[0]*DEG2RAD);
+    const float sin_lon_ref = sinf(latlon_ref[1]*DEG2RAD);
+    const float cos_lon_ref = cosf(latlon_ref[1]*DEG2RAD);
 
     const float ecef[3] = {
-        EARTH_RADIUS*cosf(lat)*cosf(lon),
-        EARTH_RADIUS*cosf(lat)*sinf(lon),
-        EARTH_RADIUS*sinf(lat)
+        EARTH_RADIUS*cos_lat*cos_lon,
+        EARTH_RADIUS*cos_lat*sin_lon,
+        EARTH_RADIUS*sin_lat,
     };
 
     const float ecef_ref[3] = {
-        EARTH_RADIUS*cosf(REF_LATITUDE)*cosf(REF_LONGITUDE),
-        EARTH_RADIUS*cosf(REF_LATITUDE)*sinf(REF_LONGITUDE),
-        EARTH_RADIUS*sinf(REF_LATITUDE)
+        EARTH_RADIUS*cos_lat_ref*cos_lon_ref,
+        EARTH_RADIUS*cos_lat_ref*sin_lon_ref,
+        EARTH_RADIUS*sin_lat_ref,
     };
-
-    const float s_phi = sinf(REF_LATITUDE);
-    const float c_phi = cosf(REF_LATITUDE);
-    const float s_lambda = sinf(REF_LONGITUDE);
-    const float c_lambda = cosf(REF_LONGITUDE);
 
     const float R[9] = {
-        -s_lambda,        c_lambda,       0,
-        -s_phi*c_lambda, -s_phi*s_lambda, c_phi,
-         c_phi*c_lambda,  c_phi*s_lambda, s_phi
+        -sin_lon_ref,              cos_lon_ref,             0,
+        -sin_lat_ref*cos_lon_ref, -sin_lat_ref*sin_lon_ref, cos_lat_ref,
+         cos_lat_ref*cos_lon_ref,  cos_lat_ref*sin_lon_ref, sin_lat_ref,
     };
 
-    cartesian[0] = R[0]*(ecef[0] - ecef_ref[0]) + R[1]*(ecef[1] - ecef_ref[1]) + R[2]*(ecef[2] - ecef_ref[2]);
-    cartesian[1] = R[3]*(ecef[0] - ecef_ref[0]) + R[4]*(ecef[1] - ecef_ref[1]) + R[5]*(ecef[2] - ecef_ref[2]);
+    xy[0] = R[0]*(ecef[0] - ecef_ref[0]) + R[1]*(ecef[1] - ecef_ref[1]) + R[2]*(ecef[2] - ecef_ref[2]);
+    xy[1] = R[3]*(ecef[0] - ecef_ref[0]) + R[4]*(ecef[1] - ecef_ref[1]) + R[5]*(ecef[2] - ecef_ref[2]);
 }

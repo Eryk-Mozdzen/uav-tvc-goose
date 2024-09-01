@@ -182,6 +182,7 @@ Window::Window(QWidget *parent) : QWidget(parent) {
         QGroupBox *group = new QGroupBox("Controls", this);
         QVBoxLayout *inner = new QVBoxLayout(group);
 
+        QPushButton *cmd_reference = new QPushButton("Reference command", this);
         QPushButton *cmd_start = new QPushButton("Start command", this);
         QPushButton *cmd_abort = new QPushButton("Abort command", this);
         QPushButton *resume = new QPushButton("Resume plots", this);
@@ -193,6 +194,7 @@ Window::Window(QWidget *parent) : QWidget(parent) {
         QRadioButton *source3 = new QRadioButton("Sensor readings", this);
         QRadioButton *source4 = new QRadioButton("Estimation", this);
 
+        inner->addWidget(cmd_reference);
         inner->addWidget(cmd_start);
         inner->addWidget(cmd_abort);
         inner->addWidget(resume);
@@ -205,6 +207,10 @@ Window::Window(QWidget *parent) : QWidget(parent) {
         inner->addWidget(source4);
 
         layout->addWidget(group, 2, 0);
+
+        connect(cmd_reference, &QPushButton::clicked, [this]() {
+            transmit(MSG_ID_COMMAND_REFERENCE, QByteArray());
+        });
 
         connect(cmd_start, &QPushButton::clicked, [this]() {
             transmit(MSG_ID_COMMAND_START, QByteArray());

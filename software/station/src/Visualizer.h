@@ -7,6 +7,7 @@ class Visualizer : public QObject {
     Q_OBJECT
 
     double cameraPosition[3] = {0, 0, 0};
+    float latlon_ref[2] = {0, 0};
 
     QTcpSocket *socket = nullptr;
 

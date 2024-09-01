@@ -18,7 +18,7 @@ void utils_normalize(const float *src, float *dest, const size_t dim);
 void utils_quaternion_to_rpy(const float *quaternion, float *rpy);
 void utils_quaternion_to_rot(const float *quaternion, float *rot);
 void utils_quaternion_to_rot_trans(const float *quaternion, float *rot);
-void utils_gps_to_enu(const float *position, float *cartesian);
+void utils_gps_to_enu(const float *latlon, const float *latlon_ref, float *xy);
 
 #ifdef __cplusplus
 }

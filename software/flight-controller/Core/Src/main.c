@@ -160,6 +160,7 @@ static volatile buffer_event_t gps_event = BUFFER_EVENT_NONE;
 static volatile uint32_t range_duration = 0;
 
 static bool send_calibration = false;
+static bool set_reference = false;
 static sensor_misc_t misc_busy = SENSOR_MISC_NONE;
 
 static void qmc5883l_write(uint8_t address, uint8_t value) {
@@ -543,6 +544,11 @@ static void comm_receive(void *user, const uint8_t id, const uint32_t time, cons
 
             send_calibration = true;
         } break;
+        case MSG_ID_COMMAND_REFERENCE: {
+			ekf.x.pData[7] = 0;
+			ekf.x.pData[8] = 0;
+        	set_reference = true;
+        } break;
     }
 }
 
@@ -857,12 +863,28 @@ int main(void)
 					  sensor.gps[1] = longitude;
 					  sensor.valid.gps = 1;
 
-					  float position[2];
-					  utils_gps_to_enu(sensor.gps, position);
-					  ekf_correct_15_2(&ekf, &gps_model, position);
+					  if(estimation.position_reference.valid) {
+						  float position[2];
+						  utils_gps_to_enu(sensor.gps, estimation.position_reference.latlon, position);
+					  	  ekf_correct_15_2(&ekf, &gps_model, position);
+					  }
+
 				  }
 			  }
 		  }
+		  STATS_BLOCK_END();
+	  }
+
+	  if(sensor.valid.gps && ((!estimation.position_reference.valid && time>5000) || set_reference)) {
+		  STATS_BLOCK_BEGIN();
+		  set_reference = false;
+		  estimation.position_reference.latlon[0] = sensor.gps[0];
+		  estimation.position_reference.latlon[1] = sensor.gps[1];
+		  estimation.position_reference.valid = 1;
+		  logger("reference position (XY origin) set to lat: %10.6f* lon: %9.6f*",
+				  estimation.position_reference.latlon[0],
+				  estimation.position_reference.latlon[1]
+		  );
 		  STATS_BLOCK_END();
 	  }
 
@@ -907,15 +929,6 @@ int main(void)
 		  ekf_correct_15_2(&ekf, &flow_model, sensor.flow);
 		  STATS_BLOCK_END();
 	  }
-
-	  /*static uint32_t last_fake_gps = 0;
-	  if((time - last_fake_gps)>=100) {
-		  STATS_BLOCK_BEGIN();
-		  last_fake_gps = time;
-		  float pos[2] = {0, 0};
-		  ekf_correct_15_2(&ekf, &gps_model, pos);
-		  STATS_BLOCK_END();
-	  }*/
 
 	  if((time - last_tachometer)>=1000) {
 		  STATS_BLOCK_BEGIN();
@@ -1735,11 +1748,11 @@ static void MX_GPIO_Init(void)
   GPIO_InitStruct.Pull = GPIO_NOPULL;
   HAL_GPIO_Init(LOAD_DOUT_GPIO_Port, &GPIO_InitStruct);
 
-  /*Configure GPIO pins : MAG_INT_Pin FLOW_INT_Pin */
-  GPIO_InitStruct.Pin = MAG_INT_Pin|FLOW_INT_Pin;
+  /*Configure GPIO pin : MAG_INT_Pin */
+  GPIO_InitStruct.Pin = MAG_INT_Pin;
   GPIO_InitStruct.Mode = GPIO_MODE_IT_RISING;
   GPIO_InitStruct.Pull = GPIO_NOPULL;
-  HAL_GPIO_Init(GPIOC, &GPIO_InitStruct);
+  HAL_GPIO_Init(MAG_INT_GPIO_Port, &GPIO_InitStruct);
 
   /*Configure GPIO pin : FLOW_CS_Pin */
   GPIO_InitStruct.Pin = FLOW_CS_Pin;
@@ -1747,6 +1760,12 @@ static void MX_GPIO_Init(void)
   GPIO_InitStruct.Pull = GPIO_NOPULL;
   GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
   HAL_GPIO_Init(FLOW_CS_GPIO_Port, &GPIO_InitStruct);
+
+  /*Configure GPIO pin : FLOW_INT_Pin */
+  GPIO_InitStruct.Pin = FLOW_INT_Pin;
+  GPIO_InitStruct.Mode = GPIO_MODE_IT_FALLING;
+  GPIO_InitStruct.Pull = GPIO_NOPULL;
+  HAL_GPIO_Init(FLOW_INT_GPIO_Port, &GPIO_InitStruct);
 
   /*Configure GPIO pins : LED_G_Pin LED_B_Pin LED_R_Pin */
   GPIO_InitStruct.Pin = LED_G_Pin|LED_B_Pin|LED_R_Pin;
