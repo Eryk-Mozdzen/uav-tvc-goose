@@ -746,29 +746,15 @@ int main(void)
 		  sensor.valid.accelerometer = 1;
 		  sensor.valid.gyroscope = 1;
 
-		  const float qw = ekf.x.pData[0];
-		  const float qx = ekf.x.pData[1];
-		  const float qy = ekf.x.pData[2];
-		  const float qz = ekf.x.pData[3];
-		  const float g = 9.80665f;
-		  const float ax = (1.f - 2.f*qy*qy - 2.f*qz*qz)*sensor.accelerometer.calib[0] + (2.f*qx*qy - 2.f*qz*qw)*sensor.accelerometer.calib[1] + (2.f*qx*qz + 2.f*qy*qw)*sensor.accelerometer.calib[2];
-		  const float ay = (2.f*qx*qy + 2.f*qz*qw)*sensor.accelerometer.calib[0] + (1.f - 2.f*qx*qx - 2.f*qz*qz)*sensor.accelerometer.calib[1] + (2.f*qy*qz - 2.f*qx*qw)*sensor.accelerometer.calib[2];
-		  const float az = (2.f*qx*qz - 2.f*qy*qw)*sensor.accelerometer.calib[0] + (2.f*qy*qz + 2.f*qx*qw)*sensor.accelerometer.calib[1] + (1.f - 2.f*qx*qx - 2.f*qy*qy)*sensor.accelerometer.calib[2];
 		  const float u[6] = {
 			sensor.gyroscope.calib[0],
 			sensor.gyroscope.calib[1],
 			sensor.gyroscope.calib[2],
-			-ax,
-			-ay,
-			-(az + g),
+			sensor.accelerometer.calib[0],
+			sensor.accelerometer.calib[1],
+			sensor.accelerometer.calib[2],
 		  };
-		  ekf_predict_12_6(&ekf, &system_model, u);
-		  const float len = utils_length(sensor.accelerometer.calib, 3);
-		  if(len>g*0.99f && len<g*1.01f) {
-			  float unit[3];
-			  utils_normalize(sensor.accelerometer.calib, unit, 3);
-			  ekf_correct_12_3(&ekf, &gravity_model, unit);
-		  }
+		  ekf_predict_15_6(&ekf, &system_model, u);
 		  STATS_BLOCK_END();
 	  }
 
@@ -784,7 +770,7 @@ int main(void)
 		  sensor.valid.magnetometer = 1;
 		  float unit[3];
 		  utils_normalize(sensor.magnetometer.calib, unit, 3);
-		  ekf_correct_12_3(&ekf, &magnetometer_model, unit);
+		  ekf_correct_15_3(&ekf, &magnetometer_model, unit);
 		  STATS_BLOCK_END();
 	  }
 
@@ -818,7 +804,7 @@ int main(void)
 				  misc_busy = SENSOR_MISC_NONE;
 				  bmp280_read(&sensor.barometer, misc_buffer);
 				  sensor.valid.barometer = 1;
-				  ekf_correct_12_1(&ekf, &barometer_model, &sensor.barometer);
+				  ekf_correct_15_1(&ekf, &barometer_model, &sensor.barometer);
 			  } break;
 			  case SENSOR_MISC_PWR_VOLTAGE: {
 				  misc_busy = SENSOR_MISC_PWR_CURRENT;
@@ -873,7 +859,7 @@ int main(void)
 
 					  float position[2];
 					  utils_gps_to_enu(sensor.gps, position);
-					  ekf_correct_12_2(&ekf, &gps_model, position);
+					  ekf_correct_15_2(&ekf, &gps_model, position);
 				  }
 			  }
 		  }
@@ -889,7 +875,7 @@ int main(void)
 		  if(range<2.f) {
 			  sensor.rangefinder = range;
 			  sensor.valid.rangefinder = 1;
-			  ekf_correct_12_1(&ekf, &rangefinder_model, &sensor.rangefinder);
+			  ekf_correct_15_1(&ekf, &rangefinder_model, &sensor.rangefinder);
 		  }
 		  STATS_BLOCK_END();
 	  }
@@ -909,34 +895,27 @@ int main(void)
 		  STATS_BLOCK_BEGIN();
 		  flow_ready = false;
 		  HAL_GPIO_WritePin(FLOW_CS_GPIO_Port, FLOW_CS_Pin, GPIO_PIN_SET);
-
 		  uint8_t motion[5];
 		  for(uint8_t i=0; i<sizeof(motion); i++) {
 			  motion[i] = flow_buffer_rx[2*i + 1];
 		  }
-		  pmw3901_read(sensor.flow, motion, 0.02f);
-		  const float tmp[2] = {
-				  0.5f*sensor.flow[0] - 0.866025404f*sensor.flow[1],
-				  0.866025404f*sensor.flow[0] + 0.5f*sensor.flow[1],
-		  };
-		  sensor.flow[0] = -tmp[0];
-		  sensor.flow[1] = tmp[1];
+		  float tmp[2];
+		  pmw3901_read(tmp, motion, 0.02f);
+		  sensor.flow[0] = -0.5f*tmp[0] + 0.866025404f*tmp[1];
+		  sensor.flow[1] = 0.866025404f*tmp[0] + 0.5f*tmp[1];
 		  sensor.valid.flow = 1;
-
-		  const float qw = ekf.x.pData[0];
-		  const float qx = ekf.x.pData[1];
-		  const float qy = ekf.x.pData[2];
-		  const float qz = ekf.x.pData[3];
-		  const float wx = sensor.gyroscope.calib[0];
-		  const float wy = sensor.gyroscope.calib[1];
-		  const float z = ekf.x.pData[6];
-		  const float vel[2] = {
-				((1.f - 2.f*qy*qy - 2.f*qz*qz)*(sensor.flow[0] + wy) + (2.f*qx*qy - 2.f*qz*qw)*(sensor.flow[1] - wx))*z,
-				((2.f*qx*qy + 2.f*qz*qw)*(sensor.flow[0] + wy) + (1.f - 2.f*qx*qx - 2.f*qz*qz)*(sensor.flow[1] - wx))*z,
-		  };
-		  ekf_correct_12_2(&ekf, &flow_model, vel);
+		  ekf_correct_15_2(&ekf, &flow_model, sensor.flow);
 		  STATS_BLOCK_END();
 	  }
+
+	  /*static uint32_t last_fake_gps = 0;
+	  if((time - last_fake_gps)>=100) {
+		  STATS_BLOCK_BEGIN();
+		  last_fake_gps = time;
+		  float pos[2] = {0, 0};
+		  ekf_correct_15_2(&ekf, &gps_model, pos);
+		  STATS_BLOCK_END();
+	  }*/
 
 	  if((time - last_tachometer)>=1000) {
 		  STATS_BLOCK_BEGIN();
@@ -985,12 +964,12 @@ int main(void)
 	  if((time - last_estimation)>=20) {
 		  STATS_BLOCK_BEGIN();
 		  last_estimation = time;
-		  memcpy(estimation.position, &ekf.x.pData[4], 3*sizeof(float));
-		  memcpy(estimation.velocity, &ekf.x.pData[7], 3*sizeof(float));
+		  memcpy(estimation.position, &ekf.x.pData[7], 3*sizeof(float));
+		  memcpy(estimation.velocity, &ekf.x.pData[10], 3*sizeof(float));
 		  memcpy(estimation.orientation, &ekf.x.pData[0], 4*sizeof(float));
-		  memcpy(estimation.angular_velocity, sensor.gyroscope.calib, 3*sizeof(float));
-		  estimation.theta_d = ekf.x.pData[10];
-		  estimation.pressure_0 = ekf.x.pData[11];
+		  memcpy(estimation.angular_velocity, &ekf.x.pData[4], 3*sizeof(float));
+		  estimation.theta_d = ekf.x.pData[13];
+		  estimation.pressure_0 = ekf.x.pData[14];
 		  protocol_enqueue(&protocol, MSG_ID_ESTIMATION, &estimation, sizeof(estimation));
 		  STATS_BLOCK_END();
 	  }
