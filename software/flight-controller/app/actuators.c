@@ -69,12 +69,12 @@ void actuators_stop(actuators_ctx_t *actuators) {
     nvm_read(0, &calibration, sizeof(calibration));
 
     const uint32_t servos[3] = {
-        servo_get_compare(&calibration, 0, 0),
-        servo_get_compare(&calibration, 1, 0),
-        servo_get_compare(&calibration, 2, 0),
+        calibration.servos[1],
+        calibration.servos[4],
+        calibration.servos[7],
     };
 
-    actuators_set_compare(0, servos);
+    actuators_set_compare(ESC_MIN_COMPARE, servos);
 }
 
 void actuators_tick(actuators_ctx_t *actuators, const uint32_t time) {

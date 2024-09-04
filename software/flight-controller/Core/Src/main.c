@@ -792,6 +792,7 @@ int main(void)
   uint32_t last_tx_controller = 0;
   uint32_t last_controller = 0;
   uint32_t last_stats = 0;
+  uint32_t last_watchdog_uart = 0;
 
   bool blink_state = true;
   msg_frame_sensor_t sensor = {0};
@@ -1014,8 +1015,7 @@ int main(void)
 		  last_tachometer = time;
 		  const uint32_t counter = __HAL_TIM_GET_COUNTER(&htim2);
 		  __HAL_TIM_SET_COUNTER(&htim2, 0);
-		  const float pole_pairs = 7.f;
-		  sensor.tachometer = (2.f*PI*counter)/pole_pairs;
+		  sensor.tachometer = 2.f*PI*counter;
 		  sensor.valid.tachometer = 1;
 		  STATS_BLOCK_END();
 	  }
@@ -1166,6 +1166,14 @@ int main(void)
 		  controller.controls.angles[1] = actuators.angles[1];
 		  controller.controls.angles[2] = actuators.angles[2];
 
+		  STATS_BLOCK_END();
+	  }
+
+	  if((time - comm_rx_last)>=1000 && (time - last_watchdog_uart)>=1000) {
+		  STATS_BLOCK_BEGIN();
+		  last_watchdog_uart = time;
+		  HAL_UART_Receive_DMA(&huart4, protocol.fifo_rx.buffer, protocol.fifo_rx.size);
+		  logger("UART watchdog");
 		  STATS_BLOCK_END();
 	  }
 

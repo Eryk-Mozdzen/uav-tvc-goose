@@ -514,11 +514,11 @@ void Window::receive(const uint8_t id, const double time, const QByteArray &payl
         }
 
         if(sensor->valid.rangefinder) {
-            others->set("Distance", "%5.2f", sensor->rangefinder);
+            others->set("Distance", "%.2f", sensor->rangefinder);
         }
 
         if(sensor->valid.tachometer) {
-            others->set("Rotor velocity", "%.0f", sensor->tachometer);
+            others->set("Rotor velocity", "%.2f", sensor->tachometer);
         }
 
         if(sensor->valid.power) {
