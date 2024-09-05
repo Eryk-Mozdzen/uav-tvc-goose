@@ -23,6 +23,8 @@ class Window : public QWidget {
     double wait_time = 1;
     double sample_time = 3;
 
+    int current_throttle = 0;
+
     QLabel *label[4];
     QTextEdit *data_text;
     QTimer timer_step;

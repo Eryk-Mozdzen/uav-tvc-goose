@@ -181,7 +181,7 @@ Window::Window(QWidget *parent) : QWidget{parent} {
             timer_zero.setInterval(1000*wait_time);
 
             step = 0;
-            setThrottle(start);
+            current_throttle = start;
             data_text->clear();
             data_text->append("throttle,load,velocity,current,voltage");
 
@@ -190,7 +190,7 @@ Window::Window(QWidget *parent) : QWidget{parent} {
         });
 
         connect(stop_button, &QPushButton::clicked, [this]() {
-            setThrottle(0);
+            current_throttle = 0;
             timer_step.stop();
             timer_zero.stop();
         });
@@ -226,14 +226,14 @@ Window::Window(QWidget *parent) : QWidget{parent} {
         ));
 
         if(step>=steps) {
-            setThrottle(0);
+            current_throttle = 0;
             timer_step.stop();
             timer_zero.stop();
             return;
         }
 
         step++;
-        setThrottle(throttle);
+        current_throttle = throttle;
 
         timer_step.setSingleShot(true);
         timer_step.setInterval(1000*(wait_time + sample_time));
@@ -250,6 +250,14 @@ Window::Window(QWidget *parent) : QWidget{parent} {
         timer_zero.setInterval(1000*(wait_time + sample_time));
         timer_zero.start();
     });
+
+    {
+        QTimer *timer = new QTimer();
+        connect(timer, &QTimer::timeout, [this]() {
+            setThrottle(current_throttle);
+        });
+        timer->start(10);
+    }
 }
 
 void Window::receive(const uint8_t id, const double time, const QByteArray &payload) {
