@@ -1,7 +1,7 @@
 #include "arm_math.h"
 
-#include "controller_params.h"
 #include "msg.h"
+#include "nvm.h"
 
 void controller_calculate(msg_frame_controller_t *controller) {
     float x_data[] = {
@@ -53,6 +53,21 @@ void controller_calculate(msg_frame_controller_t *controller) {
         .numRows = 4,
         .numCols = 1,
         .pData = u_data,
+    };
+
+    msg_frame_gains_t gains;
+    nvm_read(0xFF, &gains, sizeof(gains));
+
+    const arm_matrix_instance_f32 K = {
+        .numRows = 4,
+        .numCols = 7,
+        .pData = gains.K,
+    };
+
+    const arm_matrix_instance_f32 u0 = {
+        .numRows = 4,
+        .numCols = 1,
+        .pData = gains.u0,
     };
 
     arm_mat_sub_f32(&xd, &x, &e);

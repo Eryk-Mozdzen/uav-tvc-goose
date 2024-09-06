@@ -1,4 +1,5 @@
 #include <iostream>
+#include <filesystem>
 #include <iomanip>
 #include <cmath>
 
@@ -17,6 +18,7 @@
 #include <QSlider>
 #include <QSettings>
 #include <QThread>
+#include <QProcess>
 
 #include "common/math/utils.h"
 #include "common/protocol/msg.h"
@@ -189,6 +191,7 @@ Window::Window(QWidget *parent) : QWidget(parent) {
         QPushButton *save = new QPushButton("Save plots", this);
         QPushButton *spawnDark = new QPushButton("Spawn server (dark)", this);
         QPushButton *spawnLight = new QPushButton("Spawn server (light)", this);
+        QPushButton *update_controller = new QPushButton("Update controller", this);
         QRadioButton *source1 = new QRadioButton("Logger", this);
         QRadioButton *source2 = new QRadioButton("GPS passthrough", this);
         QRadioButton *source3 = new QRadioButton("Sensor readings", this);
@@ -201,6 +204,7 @@ Window::Window(QWidget *parent) : QWidget(parent) {
         inner->addWidget(save);
         inner->addWidget(spawnDark);
         inner->addWidget(spawnLight);
+        inner->addWidget(update_controller);
         inner->addWidget(source1);
         inner->addWidget(source2);
         inner->addWidget(source3);
@@ -226,6 +230,47 @@ Window::Window(QWidget *parent) : QWidget(parent) {
 
         connect(save, &QPushButton::clicked, []() {
             LiveChart::save();
+        });
+
+        connect(update_controller, &QPushButton::clicked, [this, update_controller]() {
+            update_controller->setDisabled(true);
+            QProcess *process = new QProcess(this);
+
+            connect(process, &QProcess::finished, [this, process, update_controller](int exitCode, QProcess::ExitStatus exitStatus) {
+                (void)exitCode;
+                (void)exitStatus;
+
+                const QString output = process->readAllStandardOutput();
+                const QStringList lines = output.split('\n', Qt::SkipEmptyParts);
+                assert(lines.size()==(4+4));
+
+                msg_frame_gains_t gains;
+
+                for(int row=0; row<4; row++) {
+                    const QStringList numbers = lines[row].split(' ');
+                    assert(numbers.size()==7);
+                    for(int col=0; col<7; col++) {
+                        gains.K[7*row + col] = numbers[col].toFloat();
+                    }
+                }
+
+                for(int row=0; row<4; row++) {
+                    const QStringList numbers = lines[4 + row].split(' ');
+                    assert(numbers.size()==1);
+                    gains.u0[row] = numbers[0].toFloat();
+                }
+
+                transmit(MSG_ID_GAINS, QByteArray(reinterpret_cast<const char *>(&gains), sizeof(gains)));
+
+                process->deleteLater();
+                update_controller->setDisabled(false);
+            });
+
+            const std::filesystem::path script = std::filesystem::current_path() / "../../flight-controller/controller.py";
+
+            QStringList args;
+            args << script.c_str();
+            process->start("python3", args);
         });
 
         connect(spawnDark, &QPushButton::clicked, visualizer, &Visualizer::spawnDark);

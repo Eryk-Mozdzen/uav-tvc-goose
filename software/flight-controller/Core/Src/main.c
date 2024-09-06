@@ -567,6 +567,12 @@ static void comm_receive(void *user, const uint8_t id, const uint32_t time, cons
 
             send_calibration = true;
         } break;
+        case MSG_ID_GAINS: {
+			if(size==sizeof(msg_frame_gains_t)) {
+				nvm_write(0xFF, payload, size);
+				logger("gains updated");
+			}
+		} break;
         case MSG_ID_COMMAND_REFERENCE: {
 			ekf.x.pData[7] = 0;
 			ekf.x.pData[8] = 0;

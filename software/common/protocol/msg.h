@@ -13,6 +13,7 @@ typedef enum {
     MSG_ID_SENSOR,
     MSG_ID_ESTIMATION,
     MSG_ID_CALIBRATION,
+    MSG_ID_GAINS,
     MSG_ID_SETPOINT,
     MSG_ID_CONTROLLER,
     MSG_ID_MANUAL,
@@ -90,6 +91,11 @@ typedef struct {
     uint32_t servos[9];
     uint32_t load[2];
 } msg_frame_calibration_t;
+
+typedef struct {
+    float K[28];
+    float u0[4];
+} msg_frame_gains_t;
 
 typedef struct {
     float rpy[3];
