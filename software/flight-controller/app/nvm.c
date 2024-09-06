@@ -4,13 +4,19 @@
 
 #include "stm32u5xx_hal.h"
 
-#define BEGIN 0x0807E000
+#define PAGE_BEGIN 0x0807E000
+#define PAGE_SIZE  0x2000
+
+static uint8_t page[PAGE_SIZE];
 
 void nvm_read(const uint32_t address, void *dest, const size_t len) {
-    memcpy(dest, (void *)(BEGIN + address), len);
+    memcpy(dest, (void *)(PAGE_BEGIN + address), len);
 }
 
 void nvm_write(const uint32_t address, const void *src, const size_t len) {
+    memcpy(page, (void *)PAGE_BEGIN, PAGE_SIZE);
+    memcpy((void *)(page + address), src, len);
+
     HAL_FLASH_Unlock();
 
     FLASH_EraseInitTypeDef erase = {
@@ -23,26 +29,8 @@ void nvm_write(const uint32_t address, const void *src, const size_t len) {
     uint32_t error;
     HAL_FLASHEx_Erase(&erase, &error);
 
-    uint32_t addr = address;
-    uint32_t *data = (uint32_t *)src;
-    uint32_t remaining = len;
-
-    while(remaining>=16) {
-        uint32_t quadword[4] = {0};
-        memcpy(quadword, data, 16);
-
-        HAL_FLASH_Program(FLASH_TYPEPROGRAM_QUADWORD, BEGIN + addr, (uint32_t)quadword);
-
-        addr +=16;
-        data +=4;
-        remaining -=16;
-    }
-
-    if(remaining>0) {
-        uint32_t quadword[4] = {0};
-        memcpy(quadword, data, remaining);
-
-        HAL_FLASH_Program(FLASH_TYPEPROGRAM_QUADWORD, BEGIN + addr, (uint32_t)quadword);
+    for(uint32_t i=0; i<PAGE_SIZE; i +=128) {
+        HAL_FLASH_Program(FLASH_TYPEPROGRAM_BURST, PAGE_BEGIN + i, (uint32_t)(page + i));
     }
 
     HAL_FLASH_Lock();

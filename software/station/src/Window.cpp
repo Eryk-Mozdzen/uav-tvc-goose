@@ -102,6 +102,28 @@ std::ostream & operator<<(std::ostream &stream, const msg_frame_estimation_t est
 	return stream;
 }
 
+std::ostream & operator<<(std::ostream &stream, const msg_frame_gains_t gains) {
+    stream << std::setprecision(3) << std::fixed << std::showpos << std::setfill(' ');
+    stream << std::endl;
+
+    for(int i=0; i<4; i++) {
+        stream << std::setw(10) << gains.u0[i] << std::endl;
+    }
+
+    stream << std::endl;
+
+	for(int i=0; i<4; i++) {
+        for(int j=0; j<7; j++) {
+            stream << std::setw(10) << gains.K[7*i + j];
+        }
+        stream << std::endl;
+    }
+
+    stream << std::endl;
+
+	return stream;
+}
+
 Window::Window(QWidget *parent) : QWidget(parent) {
     QGridLayout *layout = new QGridLayout(this);
 
@@ -259,6 +281,8 @@ Window::Window(QWidget *parent) : QWidget(parent) {
                     assert(numbers.size()==1);
                     gains.u0[row] = numbers[0].toFloat();
                 }
+
+                std::cout << gains;
 
                 transmit(MSG_ID_GAINS, QByteArray(reinterpret_cast<const char *>(&gains), sizeof(gains)));
 
@@ -571,6 +595,13 @@ void Window::receive(const uint8_t id, const double time, const QByteArray &payl
             others->set("Supply current", "%.3f", sensor->power[1]);
         }
 
+        return;
+    }
+
+    if(id==MSG_ID_GAINS && payload.size()==sizeof(msg_frame_gains_t)) {
+        const msg_frame_gains_t *gains = reinterpret_cast<const msg_frame_gains_t *>(payload.data());
+        std::cout << *gains;
+        std::cout.flush();
         return;
     }
 

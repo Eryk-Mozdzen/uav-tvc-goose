@@ -162,6 +162,7 @@ static volatile buffer_event_t gps_event = BUFFER_EVENT_NONE;
 static volatile uint32_t range_duration = 0;
 
 static bool send_calibration = false;
+static bool send_gains = false;
 static bool command_reference = false;
 static bool command_start = false;
 static bool command_abort = false;
@@ -572,6 +573,8 @@ static void comm_receive(void *user, const uint8_t id, const uint32_t time, cons
 				nvm_write(0xFF, payload, size);
 				logger("gains updated");
 			}
+
+			send_gains = true;
 		} break;
         case MSG_ID_COMMAND_REFERENCE: {
 			ekf.x.pData[7] = 0;
@@ -1085,6 +1088,15 @@ int main(void)
 		  send_calibration = false;
 		  nvm_read(0, &calibration, sizeof(calibration));
 		  protocol_enqueue(&protocol, MSG_ID_CALIBRATION, &calibration, sizeof(calibration));
+		  STATS_BLOCK_END();
+	  }
+
+	  if(send_gains) {
+		  STATS_BLOCK_BEGIN();
+		  send_gains = false;
+		  msg_frame_gains_t gains = {0};
+		  nvm_read(0xFF, &gains, sizeof(gains));
+		  protocol_enqueue(&protocol, MSG_ID_GAINS, &gains, sizeof(gains));
 		  STATS_BLOCK_END();
 	  }
 
