@@ -3,26 +3,21 @@ import sympy as sp
 ur = sp.Symbol('ur', real=True, nonnegative=True)
 wr = sp.Symbol('wr', real=True)
 a1, a2, a3, a0 = sp.symbols('a1 a2 a3 a0', real=True)
-mw, Kw, Kf, Km = sp.symbols('mw Kw Kf Km', real=True, positive=True)
+Kw1, Kw2, Kf, Km = sp.symbols('Kw1 Kw2 Kf Km', real=True, positive=True)
 g = sp.Symbol('g', real=True, positive=True)
 m, l, r, Kl = sp.symbols('m, l r Kl', real=True, positive=True)
 Jxx, Jyy, Jzz, Jr = sp.symbols('Jxx Jyy Jzz Jr', real=True, positive=True)
 wx, wy, wz = sp.symbols('wx wy wz', real=True)
 vx, vy, vz = sp.symbols('vx vy vz', real=True)
-
-phi = sp.Symbol('phi', real=True)
-theta = sp.Symbol('theta', real=True)
-psi = sp.Symbol('psi', real=True)
-px = sp.Symbol('x', real=True)
-py = sp.Symbol('y', real=True)
-pz = sp.Symbol('z', real=True)
+px, py, pz = sp.symbols('x y z', real=True)
+phi, theta, psi = sp.symbols('phi theta psi', real=True)
 
 eta = sp.Matrix([phi, theta, psi])
 w = sp.Matrix([wx, wy, wz])
 p = sp.Matrix([px, py, pz])
 v = sp.Matrix([vx, vy, vz])
 
-wru = Kw*ur**mw
+wru = Kw1*ur**Kw2
 Fw = Kf*wr**2
 Mw = Km*wr**2
 
@@ -140,31 +135,27 @@ import scipy.constants
 import control
 
 params = {
-    mw: 0.700,
-    Kw: 1000,
-    Kf: 8.748045e-06,
-    Km: 1.249879e-07,
-    Kl: 0.21015,
+    Kw1: 6.682639e+02,
+    Kw2: 6.456912e-01,
+    Kf: 1.410630e-05,
+    Km: 2.678529e-07,
+    Kl: 0.21015,            #TODO
 
-    Jxx: 0.000988742,
-    Jyy: 0.000981663,
-    Jzz: 0.000217661,
-    Jr: 0.000013658,
+    Jxx: 0.000988742,       #TODO
+    Jyy: 0.000981663,       #TODO
+    Jzz: 0.000217661,       #TODO
+    Jr: 0.000013658,        #TODO
 
-    m: 0.332,
-    l: 0.0377 + 0.01225,
-    r: 0.0665,
+    m: 0.500,               #TODO
+    l: 0.0377 + 0.01225,    #TODO
+    r: 0.0665,              #TODO
     a0: np.radians(-10),
     g: scipy.constants.g,
 }
 
-u0 = u0.subs(params)
-A = A.subs(params)
-B = B.subs(params)
-
-u0 = np.array(u0).astype(np.float64)
-A = np.array(A).astype(np.float64)
-B = np.array(B).astype(np.float64)
+u0 = np.array(u0.subs(params)).astype(np.float64)
+A = np.array(A.subs(params)).astype(np.float64)
+B = np.array(B.subs(params)).astype(np.float64)
 
 Q = np.diag([
     100,
