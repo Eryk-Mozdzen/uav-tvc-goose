@@ -134,21 +134,35 @@ import numpy as np
 import scipy.constants
 import control
 
+Pl1 =  986.49264*1e-6
+Pl2 = 1820.18643*1e-6
+r1 = 95.33768*1e-3
+r2 = 74.49534*1e-3
+CLa = 2*np.pi
+Rr = 0.254/2
+Pr = np.pi*Rr**2
+
+Kl_val = CLa*(2*Pl1 + 2*Pl2)/(2*Pr)
+r_val = r1*Pl1/(Pl1 + Pl2) + r2*Pl2/(Pl1 + Pl2)
+
+#print(Kl_val)
+#print(r_val)
+
 params = {
     Kw1: 6.682639e+02,
     Kw2: 6.456912e-01,
-    Kf: 1.410630e-05,
-    Km: 2.678529e-07,
-    Kl: 0.21015,            #TODO
+    Kf:  1.410630e-05,
+    Km:  2.678529e-07,
+    Kl:  Kl_val,
 
-    Jxx: 0.000988742,       #TODO
-    Jyy: 0.000981663,       #TODO
-    Jzz: 0.000217661,       #TODO
-    Jr: 0.000013658,        #TODO
+    Jxx: 3513658.12176*1e-9,
+    Jyy: 4068713.21612*1e-9,
+    Jzz: 3724881.39219*1e-9,
+    Jr:    38872.17503*1e-9,
 
-    m: 0.500,               #TODO
-    l: 0.0377 + 0.01225,    #TODO
-    r: 0.0665,              #TODO
+    m: 0.518,
+    l: 62.89435*1e-3,
+    r: r_val,
     a0: np.radians(-10),
     g: scipy.constants.g,
 }
@@ -156,6 +170,8 @@ params = {
 u0 = np.array(u0.subs(params)).astype(np.float64)
 A = np.array(A.subs(params)).astype(np.float64)
 B = np.array(B.subs(params)).astype(np.float64)
+
+#print(np.degrees(u0[1]))
 
 Q = np.diag([
     100,

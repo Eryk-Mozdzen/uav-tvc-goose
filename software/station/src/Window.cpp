@@ -401,6 +401,7 @@ Window::Window(QWidget *parent) : QWidget(parent) {
 
                 if(gamepad.get(Gamepad::Analog::VERTICAL)<0) {
                     transmit(MSG_ID_COMMAND_START, QByteArray());
+                    LiveChart::resume();
                 }
 
                 if(gamepad.get(Gamepad::Button::X)) {
@@ -630,6 +631,7 @@ void Window::receive(const uint8_t id, const double time, const QByteArray &payl
             } break;
             case MSG_SM_STATE_ABORT: {
                 others->set("State machine", "abort");
+                LiveChart::pause();
             } break;
             case MSG_SM_STATE_MANUAL: {
                 others->set("State machine", "manual");

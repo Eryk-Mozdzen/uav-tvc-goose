@@ -18,13 +18,13 @@ static float interpolate(const float in, const float in_lower, const float in_up
     return (((out_upper - out_lower)*(in - in_lower))/(in_upper - in_lower)) + out_lower;
 }
 
-static uint32_t servo_get_compare(const msg_frame_calibration_t *calibration, const uint8_t index, float angle) {
+static uint32_t servo_get_compare(const msg_frame_calibration_t *calibration, const uint8_t index, const float angle) {
 	uint32_t compare = 0;
 
 	if(angle>0) {
-		compare = interpolate(angle, 0.f, 0.5f*PI, calibration->servos[3*index + 1], calibration->servos[3*index + 2]);
+		compare = interpolate(angle, 0.f, +0.5f*PI, calibration->servos[3*index + 1], calibration->servos[3*index + 0]);
 	} else {
-		compare = interpolate(angle, -0.5f*PI, 0.f, calibration->servos[3*index + 0], calibration->servos[3*index + 1]);
+		compare = interpolate(angle, -0.5f*PI, 0.f, calibration->servos[3*index + 2], calibration->servos[3*index + 1]);
 	}
 
     return compare;
