@@ -1012,8 +1012,8 @@ int main(void)
 		  }
 		  float tmp[2];
 		  pmw3901_read(tmp, motion, 0.02f);
-		  sensor.flow[0] = -0.5f*tmp[0] + 0.866025404f*tmp[1];
-		  sensor.flow[1] = 0.866025404f*tmp[0] + 0.5f*tmp[1];
+		  sensor.flow[0] = -0.866025404f*tmp[0] - 0.500000000f*tmp[1];
+		  sensor.flow[1] = -0.500000000f*tmp[0] + 0.866025404f*tmp[1];
 		  sensor.valid.flow = 1;
 		  ekf_correct_15_2(&ekf, &flow_model, sensor.flow);
 		  STATS_BLOCK_END();
