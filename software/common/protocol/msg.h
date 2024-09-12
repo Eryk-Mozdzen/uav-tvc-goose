@@ -89,6 +89,7 @@ typedef struct {
     float accelerometer[12];
     float gyroscope[3];
     uint32_t servos[9];
+    uint32_t esc[2];
     uint32_t load[2];
 } msg_frame_calibration_t;
 

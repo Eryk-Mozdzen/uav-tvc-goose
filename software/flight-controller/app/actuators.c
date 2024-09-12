@@ -8,8 +8,6 @@
 #define INTERVAL            20
 #define ESC_SLOPE           0.333f
 #define ESC_INCREMENT       (ESC_SLOPE*INTERVAL*0.001f)
-#define ESC_MIN_COMPARE     1000
-#define ESC_MAX_COMPARE     2000
 #define SERVO_MAX_ANGLE     (15.f*DEG2RAD)
 
 extern TIM_HandleTypeDef htim1;
@@ -30,6 +28,27 @@ static uint32_t servo_get_compare(const msg_frame_calibration_t *calibration, co
     return compare;
 }
 
+void actuators_init(actuators_ctx_t *actuators) {
+    actuators->throttle_target = 0;
+    actuators->throttle_current = 0;
+    actuators->angles[0] = 0;
+    actuators->angles[1] = 0;
+    actuators->angles[2] = 0;
+
+    msg_frame_calibration_t calibration;
+    nvm_read(0, &calibration, sizeof(calibration));
+
+    const uint32_t servos[3] = {
+        calibration.servos[1],
+        calibration.servos[4],
+        calibration.servos[7],
+    };
+
+    actuators_set_compare(1000, servos);
+    HAL_Delay(3000);
+    actuators_set_compare(calibration.esc[0], servos);
+}
+
 void actuators_set(actuators_ctx_t *actuators, float throttle, float *angles) {
     throttle = throttle>1.f ? 1.f : throttle;
     throttle = throttle<0.f ? 0.f : throttle;
@@ -48,7 +67,7 @@ void actuators_set(actuators_ctx_t *actuators, float throttle, float *angles) {
     msg_frame_calibration_t calibration;
     nvm_read(0, &calibration, sizeof(calibration));
 
-    const uint32_t esc = ESC_MIN_COMPARE + (ESC_MAX_COMPARE - ESC_MIN_COMPARE)*actuators->throttle_current;
+    const uint32_t esc = interpolate(actuators->throttle_current, 0, 1, calibration.esc[0], calibration.esc[1]);
     const uint32_t servos[3] = {
         servo_get_compare(&calibration, 0, actuators->angles[0]),
         servo_get_compare(&calibration, 1, actuators->angles[1]),
@@ -74,7 +93,7 @@ void actuators_stop(actuators_ctx_t *actuators) {
         calibration.servos[7],
     };
 
-    actuators_set_compare(ESC_MIN_COMPARE, servos);
+    actuators_set_compare(calibration.esc[0], servos);
 }
 
 void actuators_tick(actuators_ctx_t *actuators, const uint32_t time) {

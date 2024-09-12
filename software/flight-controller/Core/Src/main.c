@@ -349,7 +349,7 @@ void bmp280_read(float *pressure, const uint8_t *buffer) {
 }
 
 #define PWR_R_SHUNT		0.002f
-#define PWR_MAX_CURRENT	20.f
+#define PWR_MAX_CURRENT	30.f
 
 void ina226_write(uint8_t address, uint16_t value) {
 	uint8_t reverse[2] = {
@@ -809,6 +809,8 @@ int main(void)
   msg_frame_calibration_t calibration = {0};
   nmea_messaage_t nmea_message = {0};
   actuators_ctx_t actuators = {0};
+
+  actuators_init(&actuators);
 
   controller.state = MSG_SM_STATE_ABORT;
 

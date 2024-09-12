@@ -10,6 +10,7 @@ typedef struct {
     uint32_t last_time;
 } actuators_ctx_t;
 
+void actuators_init(actuators_ctx_t *actuators);
 void actuators_set(actuators_ctx_t *actuators, float throttle, float *angles);
 void actuators_tick(actuators_ctx_t *actuators, const uint32_t time);
 void actuators_stop(actuators_ctx_t *actuators);
