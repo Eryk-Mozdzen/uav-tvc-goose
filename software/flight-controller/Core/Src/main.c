@@ -810,8 +810,6 @@ int main(void)
   nmea_messaage_t nmea_message = {0};
   actuators_ctx_t actuators = {0};
 
-  actuators_init(&actuators);
-
   controller.state = MSG_SM_STATE_ABORT;
 
   STATS_MEASURE_START();

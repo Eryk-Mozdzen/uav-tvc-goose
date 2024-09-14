@@ -8,12 +8,23 @@
 #define INTERVAL            20
 #define ESC_SLOPE           0.333f
 #define ESC_INCREMENT       (ESC_SLOPE*INTERVAL*0.001f)
+#define ESC_COMPARE_OFF     1000
 #define SERVO_MAX_ANGLE     (15.f*DEG2RAD)
 
 extern TIM_HandleTypeDef htim1;
 
 static float interpolate(const float in, const float in_lower, const float in_upper, const float out_lower, const float out_upper) {
     return (((out_upper - out_lower)*(in - in_lower))/(in_upper - in_lower)) + out_lower;
+}
+
+static uint32_t esc_get_compare(const msg_frame_calibration_t *calibration, const float throttle) {
+	uint32_t compare = ESC_COMPARE_OFF;
+
+	if(throttle>0.01f) {
+		compare = interpolate(throttle, 0, 1, calibration->esc[0], calibration->esc[1]);
+	}
+
+    return compare;
 }
 
 static uint32_t servo_get_compare(const msg_frame_calibration_t *calibration, const uint8_t index, const float angle) {
@@ -26,27 +37,6 @@ static uint32_t servo_get_compare(const msg_frame_calibration_t *calibration, co
 	}
 
     return compare;
-}
-
-void actuators_init(actuators_ctx_t *actuators) {
-    actuators->throttle_target = 0;
-    actuators->throttle_current = 0;
-    actuators->angles[0] = 0;
-    actuators->angles[1] = 0;
-    actuators->angles[2] = 0;
-
-    msg_frame_calibration_t calibration;
-    nvm_read(0, &calibration, sizeof(calibration));
-
-    const uint32_t servos[3] = {
-        calibration.servos[1],
-        calibration.servos[4],
-        calibration.servos[7],
-    };
-
-    actuators_set_compare(1000, servos);
-    HAL_Delay(3000);
-    actuators_set_compare(calibration.esc[0], servos);
 }
 
 void actuators_set(actuators_ctx_t *actuators, float throttle, float *angles) {
@@ -67,7 +57,7 @@ void actuators_set(actuators_ctx_t *actuators, float throttle, float *angles) {
     msg_frame_calibration_t calibration;
     nvm_read(0, &calibration, sizeof(calibration));
 
-    const uint32_t esc = interpolate(actuators->throttle_current, 0, 1, calibration.esc[0], calibration.esc[1]);
+    const uint32_t esc = esc_get_compare(&calibration, actuators->throttle_current);
     const uint32_t servos[3] = {
         servo_get_compare(&calibration, 0, actuators->angles[0]),
         servo_get_compare(&calibration, 1, actuators->angles[1]),
@@ -93,7 +83,7 @@ void actuators_stop(actuators_ctx_t *actuators) {
         calibration.servos[7],
     };
 
-    actuators_set_compare(calibration.esc[0], servos);
+    actuators_set_compare(ESC_COMPARE_OFF, servos);
 }
 
 void actuators_tick(actuators_ctx_t *actuators, const uint32_t time) {

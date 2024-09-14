@@ -66,7 +66,7 @@ F_vanes = sp.Matrix([
 ])
 M_vanes = sp.Matrix([
     l*(-0.5*F1 + F2 - 0.5*F3),
-    l*(-0.5*sp.sqrt(3)*F1 + 0.5*sp.sqrt(3)*F3),
+    l*(0.5*sp.sqrt(3)*F1 - 0.5*sp.sqrt(3)*F3),
     -r*(F1 + F2 + F3 + 3*Fs),
 ])
 
@@ -174,17 +174,17 @@ B = np.array(B.subs(params)).astype(np.float64)
 #print(np.degrees(u0[1]))
 
 Q = np.diag([
-    100,
-    100,
+    200,
+    200,
     10,
     10,
-    10,
+    500,
     10,
     1,
 ])
 
 R = np.diag([
-    1000,
+    250,
     1000,
     1000,
     1000,
