@@ -113,8 +113,8 @@ std::ostream & operator<<(std::ostream &stream, const msg_frame_gains_t gains) {
     stream << std::endl;
 
 	for(int i=0; i<4; i++) {
-        for(int j=0; j<7; j++) {
-            stream << std::setw(10) << gains.K[7*i + j];
+        for(int j=0; j<8; j++) {
+            stream << std::setw(10) << gains.K[8*i + j];
         }
         stream << std::endl;
     }
@@ -270,9 +270,9 @@ Window::Window(QWidget *parent) : QWidget(parent) {
 
                 for(int row=0; row<4; row++) {
                     const QStringList numbers = lines[row].split(' ');
-                    assert(numbers.size()==7);
-                    for(int col=0; col<7; col++) {
-                        gains.K[7*row + col] = numbers[col].toFloat();
+                    assert(numbers.size()==8);
+                    for(int col=0; col<8; col++) {
+                        gains.K[8*row + col] = numbers[col].toFloat();
                     }
                 }
 
@@ -375,29 +375,34 @@ Window::Window(QWidget *parent) : QWidget(parent) {
 
                 msg_frame_manual_t frame;
                 frame.is_compare = 0;
-                frame.servos.calib[0] = C*(-0.333*mx - 0.577*my - 0.333*mz);
-                frame.servos.calib[1] = C*( 0.667*mx            - 0.333*mz);
-                frame.servos.calib[2] = C*(-0.333*mx + 0.577*my - 0.333*mz);
+                frame.servos.calib[0] = C*(-0.667*mx + 0.577*my - 0.333*mz);
+                frame.servos.calib[1] = C*( 0.333*mx            - 0.333*mz);
+                frame.servos.calib[2] = C*(-0.667*mx - 0.577*my - 0.333*mz);
                 frame.motor.throttle = ur*0.01;
 
                 transmit(MSG_ID_MANUAL, QByteArray(reinterpret_cast<const char *>(&frame), sizeof(frame)));
             } else {
-                msg_frame_setpoint_t frame;
+                constexpr double dt = 0.02f;
 
-                frame.rpy[0] = -30*DEG2RAD*gamepad.get(Gamepad::Analog::LX);
-                frame.rpy[1] = +30*DEG2RAD*gamepad.get(Gamepad::Analog::LY);
-                frame.rpy[2] = 0;
-                frame.omega[0] = 0;
-                frame.omega[1] = 0;
-                frame.omega[2] = -90*DEG2RAD*gamepad.get(Gamepad::Analog::RX);
-                frame.pos[0] = 0;
-                frame.pos[1] = 0;
-                frame.pos[2] = -0.5*gamepad.get(Gamepad::Analog::RY) + 0.5;
-                frame.vel[0] = 0;
-                frame.vel[1] = 0;
-                frame.vel[2] = 0;
+                msg_frame_setpoint_t setpoint;
+                setpoint.rpy[0] = -30*DEG2RAD*gamepad.get(Gamepad::Analog::LX);
+                setpoint.rpy[1] = +30*DEG2RAD*gamepad.get(Gamepad::Analog::LY);
+                setpoint.omega[2] = -90*DEG2RAD*gamepad.get(Gamepad::Analog::RX);
+                setpoint.pos[2] = -0.5*gamepad.get(Gamepad::Analog::RY) + 0.5;
 
-                transmit(MSG_ID_SETPOINT, QByteArray(reinterpret_cast<const char *>(&frame), sizeof(frame)));
+                setpoint.omega[0] = (setpoint.rpy[0] - last_setpoint.rpy[0])/dt;
+                setpoint.omega[1] = (setpoint.rpy[1] - last_setpoint.rpy[1])/dt;
+                setpoint.rpy[2] = last_setpoint.rpy[2] + (last_setpoint.omega[2] + setpoint.omega[2])*dt/2;
+                setpoint.vel[2] = (setpoint.pos[2] - last_setpoint.pos[2])/dt;
+
+                setpoint.pos[0] = 0;
+                setpoint.pos[1] = 0;
+                setpoint.vel[0] = 0;
+                setpoint.vel[1] = 0;
+
+                transmit(MSG_ID_SETPOINT, QByteArray(reinterpret_cast<const char *>(&setpoint), sizeof(setpoint)));
+
+                last_setpoint = setpoint;
 
                 if(gamepad.get(Gamepad::Analog::VERTICAL)<0) {
                     transmit(MSG_ID_COMMAND_START, QByteArray());
@@ -460,7 +465,7 @@ Window::Window(QWidget *parent) : QWidget(parent) {
         attitude->addSeries("roll process",   QPen(Qt::red,   2, Qt::SolidLine));
         attitude->addSeries("pitch setpoint", QPen(Qt::green, 1, Qt::DashLine));
         attitude->addSeries("pitch process",  QPen(Qt::green, 2, Qt::SolidLine));
-        //attitude->addSeries("yaw setpoint",   QPen(Qt::blue,  1, Qt::DashLine));
+        attitude->addSeries("yaw setpoint",   QPen(Qt::blue,  1, Qt::DashLine));
         attitude->addSeries("yaw process",    QPen(Qt::blue,  2, Qt::SolidLine));
 
         layout->addWidget(attitude, 1, 3);
@@ -661,7 +666,7 @@ void Window::receive(const uint8_t id, const double time, const QByteArray &payl
         linear_vel->append("z setpoint", time, controller->setpoint.vel[2]);
         attitude->append("roll setpoint", time, controller->setpoint.rpy[0]*RAD2DEG);
         attitude->append("pitch setpoint", time, controller->setpoint.rpy[1]*RAD2DEG);
-        //attitude->append("yaw setpoint", time, controller->setpoint.rpy[2]*RAD2DEG);
+        attitude->append("yaw setpoint", time, controller->setpoint.rpy[2]*RAD2DEG);
         angular_vel->append("x setpoint", time, controller->setpoint.omega[0]*RAD2DEG);
         angular_vel->append("y setpoint", time, controller->setpoint.omega[1]*RAD2DEG);
         angular_vel->append("z setpoint", time, controller->setpoint.omega[2]*RAD2DEG);

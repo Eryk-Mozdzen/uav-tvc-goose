@@ -7,6 +7,7 @@ void controller_calculate(msg_frame_controller_t *controller) {
     float x_data[] = {
         controller->process.rpy[0],
         controller->process.rpy[1],
+        controller->process.rpy[2],
         controller->process.omega[0],
         controller->process.omega[1],
         controller->process.omega[2],
@@ -14,7 +15,7 @@ void controller_calculate(msg_frame_controller_t *controller) {
         controller->process.vel[2],
     };
     const arm_matrix_instance_f32 x = {
-        .numRows = 7,
+        .numRows = 8,
         .numCols = 1,
         .pData = x_data,
     };
@@ -22,6 +23,7 @@ void controller_calculate(msg_frame_controller_t *controller) {
     float xd_data[] = {
         controller->setpoint.rpy[0],
         controller->setpoint.rpy[1],
+        controller->setpoint.rpy[2],
         controller->setpoint.omega[0],
         controller->setpoint.omega[1],
         controller->setpoint.omega[2],
@@ -29,14 +31,14 @@ void controller_calculate(msg_frame_controller_t *controller) {
         controller->setpoint.vel[2],
     };
     const arm_matrix_instance_f32 xd = {
-        .numRows = 7,
+        .numRows = 8,
         .numCols = 1,
         .pData = xd_data,
     };
 
-    float e_data[7];
+    float e_data[8];
     arm_matrix_instance_f32 e = {
-        .numRows = 7,
+        .numRows = 8,
         .numCols = 1,
         .pData = e_data,
     };
@@ -60,7 +62,7 @@ void controller_calculate(msg_frame_controller_t *controller) {
 
     const arm_matrix_instance_f32 K = {
         .numRows = 4,
-        .numCols = 7,
+        .numCols = 8,
         .pData = gains.K,
     };
 

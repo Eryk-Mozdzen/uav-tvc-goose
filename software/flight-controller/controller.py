@@ -81,7 +81,6 @@ f.row_del(10)
 f.row_del(9)
 f.row_del(7)
 f.row_del(6)
-f.row_del(2)
 
 ax = sp.Symbol('a')
 ur0 = sp.solve(sp.Eq(Fu, m*g), ur)
@@ -120,7 +119,7 @@ u0 = sp.Matrix([
     an0,
 ])
 
-A = f.jacobian([phi, theta, wx, wy, wz, pz, vz]).subs(operating_point)
+A = f.jacobian([phi, theta, psi, wx, wy, wz, pz, vz]).subs(operating_point)
 B = f.jacobian([ur, a1, a2, a3]).subs(operating_point)
 
 u0 = sp.simplify(u0)
@@ -174,17 +173,18 @@ B = np.array(B.subs(params)).astype(np.float64)
 #print(np.degrees(u0[1]))
 
 Q = np.diag([
-    200,
-    200,
+    1000,
+    1000,
+    100,
     10,
     10,
-    500,
+    100,
     10,
     1,
 ])
 
 R = np.diag([
-    250,
+    100,
     1000,
     1000,
     1000,
