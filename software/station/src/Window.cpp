@@ -375,9 +375,9 @@ Window::Window(QWidget *parent) : QWidget(parent) {
 
                 msg_frame_manual_t frame;
                 frame.is_compare = 0;
-                frame.servos.calib[0] = C*(-0.667*mx + 0.577*my - 0.333*mz);
-                frame.servos.calib[1] = C*( 0.333*mx            - 0.333*mz);
-                frame.servos.calib[2] = C*(-0.667*mx - 0.577*my - 0.333*mz);
+                frame.servos.calib[0] = C*(-0.333*mx + 0.577*my - 0.333*mz);
+                frame.servos.calib[1] = C*( 0.667*mx            - 0.333*mz);
+                frame.servos.calib[2] = C*(-0.333*mx - 0.577*my - 0.333*mz);
                 frame.motor.throttle = ur*0.01;
 
                 transmit(MSG_ID_MANUAL, QByteArray(reinterpret_cast<const char *>(&frame), sizeof(frame)));
