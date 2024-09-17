@@ -113,8 +113,8 @@ std::ostream & operator<<(std::ostream &stream, const msg_frame_gains_t gains) {
     stream << std::endl;
 
 	for(int i=0; i<4; i++) {
-        for(int j=0; j<8; j++) {
-            stream << std::setw(10) << gains.K[8*i + j];
+        for(int j=0; j<12; j++) {
+            stream << std::setw(10) << gains.K[12*i + j];
         }
         stream << std::endl;
     }
@@ -270,9 +270,9 @@ Window::Window(QWidget *parent) : QWidget(parent) {
 
                 for(int row=0; row<4; row++) {
                     const QStringList numbers = lines[row].split(' ');
-                    assert(numbers.size()==8);
-                    for(int col=0; col<8; col++) {
-                        gains.K[8*row + col] = numbers[col].toFloat();
+                    assert(numbers.size()==12);
+                    for(int col=0; col<12; col++) {
+                        gains.K[12*row + col] = numbers[col].toFloat();
                     }
                 }
 
@@ -399,6 +399,14 @@ Window::Window(QWidget *parent) : QWidget(parent) {
                 setpoint.pos[1] = 0;
                 setpoint.vel[0] = 0;
                 setpoint.vel[1] = 0;
+
+                while(setpoint.rpy[2]>=PI) {
+                    setpoint.rpy[2] -=2*PI;
+                }
+
+                while(setpoint.rpy[2]<=-PI) {
+                    setpoint.rpy[2] +=2*PI;
+                }
 
                 transmit(MSG_ID_SETPOINT, QByteArray(reinterpret_cast<const char *>(&setpoint), sizeof(setpoint)));
 

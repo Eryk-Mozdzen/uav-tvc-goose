@@ -1147,6 +1147,7 @@ int main(void)
 					  sm_change_state(MSG_SM_STATE_MANUAL);
 				  } else if(command_start) {
 					  sm_change_state(MSG_SM_STATE_ACTIVE);
+					  controller_reset();
 				  }
 			  } break;
 			  case MSG_SM_STATE_ACTIVE: {

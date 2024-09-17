@@ -94,7 +94,7 @@ typedef struct {
 } msg_frame_calibration_t;
 
 typedef struct {
-    float K[32];
+    float K[48];
     float u0[4];
 } msg_frame_gains_t;
 
