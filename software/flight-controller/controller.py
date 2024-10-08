@@ -3,26 +3,21 @@ import sympy as sp
 ur = sp.Symbol('ur', real=True, nonnegative=True)
 wr = sp.Symbol('wr', real=True)
 a1, a2, a3, a0 = sp.symbols('a1 a2 a3 a0', real=True)
-mw, Kw, Kf, Km = sp.symbols('mw Kw Kf Km', real=True, positive=True)
+Kw1, Kw2, Kf, Km = sp.symbols('Kw1 Kw2 Kf Km', real=True, positive=True)
 g = sp.Symbol('g', real=True, positive=True)
 m, l, r, Kl = sp.symbols('m, l r Kl', real=True, positive=True)
 Jxx, Jyy, Jzz, Jr = sp.symbols('Jxx Jyy Jzz Jr', real=True, positive=True)
 wx, wy, wz = sp.symbols('wx wy wz', real=True)
 vx, vy, vz = sp.symbols('vx vy vz', real=True)
-
-phi = sp.Symbol('phi', real=True)
-theta = sp.Symbol('theta', real=True)
-psi = sp.Symbol('psi', real=True)
-px = sp.Symbol('x', real=True)
-py = sp.Symbol('y', real=True)
-pz = sp.Symbol('z', real=True)
+px, py, pz = sp.symbols('x y z', real=True)
+phi, theta, psi = sp.symbols('phi theta psi', real=True)
 
 eta = sp.Matrix([phi, theta, psi])
 w = sp.Matrix([wx, wy, wz])
 p = sp.Matrix([px, py, pz])
 v = sp.Matrix([vx, vy, vz])
 
-wru = Kw*ur**mw
+wru = Kw1*ur**Kw2
 Fw = Kf*wr**2
 Mw = Km*wr**2
 
@@ -71,7 +66,7 @@ F_vanes = sp.Matrix([
 ])
 M_vanes = sp.Matrix([
     l*(-0.5*F1 + F2 - 0.5*F3),
-    l*(-0.5*sp.sqrt(3)*F1 + 0.5*sp.sqrt(3)*F3),
+    l*(0.5*sp.sqrt(3)*F1 - 0.5*sp.sqrt(3)*F3),
     -r*(F1 + F2 + F3 + 3*Fs),
 ])
 
@@ -86,7 +81,6 @@ f.row_del(10)
 f.row_del(9)
 f.row_del(7)
 f.row_del(6)
-f.row_del(2)
 
 ax = sp.Symbol('a')
 ur0 = sp.solve(sp.Eq(Fu, m*g), ur)
@@ -125,7 +119,7 @@ u0 = sp.Matrix([
     an0,
 ])
 
-A = f.jacobian([phi, theta, wx, wy, wz, pz, vz]).subs(operating_point)
+A = f.jacobian([phi, theta, psi, wx, wy, wz, pz, vz]).subs(operating_point)
 B = f.jacobian([ur, a1, a2, a3]).subs(operating_point)
 
 u0 = sp.simplify(u0)
@@ -139,97 +133,79 @@ import numpy as np
 import scipy.constants
 import control
 
+Pl1 =  986.49264*1e-6
+Pl2 = 1820.18643*1e-6
+r1 = 95.33768*1e-3
+r2 = 74.49534*1e-3
+CLa = 2*np.pi
+Rr = 0.254/2
+Pr = np.pi*Rr**2
+
+Kl_val = CLa*(2*Pl1 + 2*Pl2)/(2*Pr)
+r_val = r1*Pl1/(Pl1 + Pl2) + r2*Pl2/(Pl1 + Pl2)
+
+#print(Kl_val)
+#print(r_val)
+
 params = {
-    mw: 0.700,
-    Kw: 1000,
-    Kf: 8.748045e-06,
-    Km: 1.249879e-07,
-    Kl: 0.21015,
+    Kw1: 6.677316e+02,
+    Kw2: 5.477513e-01,
+    Kf:  1.458825e-05,
+    Km:  2.531647e-07,
+    Kl:  Kl_val,
 
-    Jxx: 0.000988742,
-    Jyy: 0.000981663,
-    Jzz: 0.000217661,
-    Jr: 0.000013658,
+    Jxx: 3513658.12176*1e-9,
+    Jyy: 4068713.21612*1e-9,
+    Jzz: 3724881.39219*1e-9,
+    Jr:    38872.17503*1e-9,
 
-    m: 0.332,
-    l: 0.0377 + 0.01225,
-    r: 0.0665,
+    m: 0.518,
+    l: 62.89435*1e-3,
+    r: r_val,
     a0: np.radians(-10),
     g: scipy.constants.g,
 }
 
-u0 = u0.subs(params)
-A = A.subs(params)
-B = B.subs(params)
+u0 = np.array(u0.subs(params)).astype(np.float64)
+A = np.array(A.subs(params)).astype(np.float64)
+B = np.array(B.subs(params)).astype(np.float64)
 
-u0 = np.array(u0).astype(np.float64)
-A = np.array(A).astype(np.float64)
-B = np.array(B).astype(np.float64)
+#print(np.degrees(u0[1]))
 
 Q = np.diag([
+    1000,
+    1000,
+    100,
+    100,
     100,
     100,
     10,
-    10,
-    10,
-    10,
+    1,
+
+    1,
+    1,
+    1,
     1,
 ])
 
 R = np.diag([
-    1000,
+    100,
     1000,
     1000,
     1000,
 ])
 
-K, _, _ = control.lqr(A, B, Q, R)
+G = np.array([
+    [1, 0, 0, 0, 0, 0, 0, 0],
+    [0, 1, 0, 0, 0, 0, 0, 0],
+    [0, 0, 1, 0, 0, 0, 0, 0],
+    [0, 0, 0, 0, 0, 0, 1, 0],
+])
 
-import os
-import datetime
+K, _, _ = control.lqr(A, B, Q, R, integral_action=G)
 
-path = os.path.dirname(__file__)
+for row in K:
+    print(" ".join(map(str, row)))
 
-with open(os.path.join(path, 'controller.h'), 'w') as file:
-    file.write(
-        '// auto-generated\n'
-        '// ' + datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S') + '\n'
-        '\n'
-        '#ifndef CONTROLLER_H\n'
-        '#define CONTROLLER_H\n'
-        '\n'
-        '#include "arm_math.h"\n'
-        '\n'
-        'extern const arm_matrix_instance_f32 u0;\n'
-        'extern const arm_matrix_instance_f32 K;\n'
-        '\n'
-        '#endif\n'
-    )
-
-with open(os.path.join(path, 'controller.c'), 'w') as file:
-    def write_matrix(matrix, name, format='{: .4f}f'):
-        file.write('static const float ' + name + '_data[] = {\n')
-        for row in matrix:
-            row = [format.format(val) for val in row]
-            file.write('    ' + ', '.join(map(str, row)) + ',\n')
-        file.write(
-            '};\n'
-            '\n'
-            'const arm_matrix_instance_f32 ' + name + ' = {\n'
-            '    .numRows = ' + str(matrix.shape[0]) + ',\n'
-            '    .numCols = ' + str(matrix.shape[1]) + ',\n'
-            '    .pData = ' + name + '_data,\n'
-            '};\n'
-            '\n'
-        )
-
-    file.write(
-        '// auto-generated\n'
-        '// ' + datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S') + '\n'
-        '\n'
-        '#include "arm_math.h"\n'
-        '\n'
-    )
-
-    write_matrix(u0, 'u0')
-    write_matrix(K, 'K')
+for row in u0:
+    print(" ".join(map(str, row)))

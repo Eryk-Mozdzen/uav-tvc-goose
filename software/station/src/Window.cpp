@@ -1,4 +1,5 @@
 #include <iostream>
+#include <filesystem>
 #include <iomanip>
 #include <cmath>
 
@@ -17,6 +18,7 @@
 #include <QSlider>
 #include <QSettings>
 #include <QThread>
+#include <QProcess>
 
 #include "common/math/utils.h"
 #include "common/protocol/msg.h"
@@ -29,66 +31,95 @@
 #include "Visualizer.h"
 
 std::ostream & operator<<(std::ostream &stream, const msg_frame_sensor_t sensor) {
-	stream << "press";
-	stream << std::setprecision(0) << std::fixed << std::noshowpos << std::setw(7);
+	stream << "press ";
+	stream << std::setprecision(0) << std::fixed << std::noshowpos << std::setfill(' ') << std::setw(6);
 	stream << (sensor.valid.barometer ? sensor.barometer : std::nan(""));
 
-	stream << "   range";
-	stream << std::setprecision(2) << std::fixed << std::noshowpos << std::setw(5);
+	stream << "   range ";
+	stream << std::setprecision(2) << std::fixed << std::noshowpos << std::setfill(' ') << std::setw(4);
 	stream << (sensor.valid.rangefinder ? sensor.rangefinder : std::nan(""));
 
 	stream << "   mag [";
-	stream << std::setprecision(2) << std::fixed << std::showpos;
-	stream << std::setw(6) << (sensor.valid.magnetometer ? sensor.magnetometer.calib[0] : std::nan(""));
-	stream << std::setw(6) << (sensor.valid.magnetometer ? sensor.magnetometer.calib[1] : std::nan(""));
-	stream << std::setw(6) << (sensor.valid.magnetometer ? sensor.magnetometer.calib[2] : std::nan(""));
-	stream << "]";
+	stream << std::setprecision(2) << std::fixed << std::showpos << std::setfill(' ');
+	stream << std::setw(5) << (sensor.valid.magnetometer ? sensor.magnetometer.calib[0] : std::nan("")) << " ";
+	stream << std::setw(5) << (sensor.valid.magnetometer ? sensor.magnetometer.calib[1] : std::nan("")) << " ";
+	stream << std::setw(5) << (sensor.valid.magnetometer ? sensor.magnetometer.calib[2] : std::nan("")) << "]";
 
 	stream << "   accel [";
-	stream << std::setprecision(2) << std::fixed << std::showpos;
-	stream << std::setw(6) << (sensor.valid.accelerometer ? sensor.accelerometer.calib[0] : std::nan(""));
-	stream << std::setw(6) << (sensor.valid.accelerometer ? sensor.accelerometer.calib[1] : std::nan(""));
-	stream << std::setw(6) << (sensor.valid.accelerometer ? sensor.accelerometer.calib[2] : std::nan(""));
-	stream << "]";
+	stream << std::setprecision(2) << std::fixed << std::showpos << std::setfill(' ');
+	stream << std::setw(6) << (sensor.valid.accelerometer ? sensor.accelerometer.calib[0] : std::nan("")) << " ";
+	stream << std::setw(6) << (sensor.valid.accelerometer ? sensor.accelerometer.calib[1] : std::nan("")) << " ";
+	stream << std::setw(6) << (sensor.valid.accelerometer ? sensor.accelerometer.calib[2] : std::nan("")) << "]";
 
 	stream << "   gyro [";
-	stream << std::setprecision(2) << std::fixed << std::showpos;
-	stream << std::setw(6) << (sensor.valid.gyroscope ? sensor.gyroscope.calib[0] : std::nan(""));
-	stream << std::setw(6) << (sensor.valid.gyroscope ? sensor.gyroscope.calib[1] : std::nan(""));
-	stream << std::setw(6) << (sensor.valid.gyroscope ? sensor.gyroscope.calib[2] : std::nan(""));
-	stream << "]";
+	stream << std::setprecision(2) << std::fixed << std::showpos << std::setfill(' ');
+	stream << std::setw(5) << (sensor.valid.gyroscope ? sensor.gyroscope.calib[0] : std::nan("")) << " ";
+	stream << std::setw(5) << (sensor.valid.gyroscope ? sensor.gyroscope.calib[1] : std::nan("")) << " ";
+	stream << std::setw(5) << (sensor.valid.gyroscope ? sensor.gyroscope.calib[2] : std::nan("")) << "]";
+
+    stream << "   flow [";
+	stream << std::setprecision(3) << std::fixed << std::showpos << std::setfill(' ');
+	stream << std::setw(6) << (sensor.valid.flow ? sensor.flow[0] : std::nan("")) << " ";
+	stream << std::setw(6) << (sensor.valid.flow ? sensor.flow[1] : std::nan("")) << "]";
 
 	stream << "   gps [";
-	stream << std::setprecision(6) << std::fixed << std::noshowpos;
-	stream << std::setw(10) << (sensor.valid.gps ? sensor.gps[0] : std::nan(""));
-	stream << std::setw(10) << (sensor.valid.gps ? sensor.gps[1] : std::nan(""));
-	stream << "]";
+	stream << std::setprecision(6) << std::fixed << std::noshowpos << std::setfill(' ');
+	stream << std::setw(10) << (sensor.valid.gps ? sensor.gps[0] : std::nan("")) << " ";
+	stream << std::setw(9) << (sensor.valid.gps ? sensor.gps[1] : std::nan("")) << "]";
+
+    stream << "   power [";
+	stream << std::setprecision(2) << std::fixed << std::noshowpos << std::setfill(' ');
+	stream << std::setw(5) << (sensor.valid.power ? sensor.power[0] : std::nan("")) << " ";
+	stream << std::setw(5) << (sensor.valid.power ? sensor.power[1] : std::nan("")) << "]";
+
+    stream << "   load ";
+	stream << std::setprecision(3) << std::fixed << std::showpos << std::setfill(' ');
+	stream << std::setw(6) << (sensor.valid.load ? sensor.load.calib : std::nan(""));
 
 	return stream;
 }
 
 std::ostream & operator<<(std::ostream &stream, const msg_frame_estimation_t estimation) {
 	stream << "qua [";
-	stream << std::setprecision(2) << std::fixed << std::showpos;
-	stream << std::setw(6) << estimation.orientation[0];
-	stream << std::setw(6) << estimation.orientation[1];
-	stream << std::setw(6) << estimation.orientation[2];
-	stream << std::setw(6) << estimation.orientation[3];
-	stream << "]";
+	stream << std::setprecision(2) << std::fixed << std::showpos << std::setfill(' ');
+	stream << std::setw(5) << estimation.orientation[0] << " ";
+	stream << std::setw(5) << estimation.orientation[1] << " ";
+	stream << std::setw(5) << estimation.orientation[2] << " ";
+	stream << std::setw(5) << estimation.orientation[3] << "]";
 
 	stream << "   pos [";
-	stream << std::setprecision(2) << std::fixed << std::showpos;
-	stream << std::setw(6) << estimation.position[0];
-	stream << std::setw(6) << estimation.position[1];
-	stream << std::setw(6) << estimation.position[2];
-	stream << "]";
+	stream << std::setprecision(2) << std::fixed << std::showpos << std::setfill(' ');
+	stream << std::setw(6) << estimation.position[0] << " ";
+	stream << std::setw(6) << estimation.position[1] << " ";
+	stream << std::setw(6) << estimation.position[2] << "]";
 
 	stream << "   vel [";
-	stream << std::setprecision(2) << std::fixed << std::showpos;
-	stream << std::setw(6) << estimation.velocity[0];
-	stream << std::setw(6) << estimation.velocity[1];
-	stream << std::setw(6) << estimation.velocity[2];
-	stream << "]";
+	stream << std::setprecision(2) << std::fixed << std::showpos << std::setfill(' ');
+	stream << std::setw(5) << estimation.velocity[0] << " ";
+	stream << std::setw(5) << estimation.velocity[1] << " ";
+	stream << std::setw(5) << estimation.velocity[2] << "]";
+
+	return stream;
+}
+
+std::ostream & operator<<(std::ostream &stream, const msg_frame_gains_t gains) {
+    stream << std::setprecision(3) << std::fixed << std::showpos << std::setfill(' ');
+    stream << std::endl;
+
+    for(int i=0; i<4; i++) {
+        stream << std::setw(10) << gains.u0[i] << std::endl;
+    }
+
+    stream << std::endl;
+
+	for(int i=0; i<4; i++) {
+        for(int j=0; j<12; j++) {
+            stream << std::setw(10) << gains.K[12*i + j];
+        }
+        stream << std::endl;
+    }
+
+    stream << std::endl;
 
 	return stream;
 }
@@ -158,6 +189,7 @@ Window::Window(QWidget *parent) : QWidget(parent) {
     {
         others = new Form("Others", {
             "State machine",
+            "Core load",
             "Magnetic inclination",
             "Ground pressure",
             "Pressure",
@@ -174,29 +206,37 @@ Window::Window(QWidget *parent) : QWidget(parent) {
         QGroupBox *group = new QGroupBox("Controls", this);
         QVBoxLayout *inner = new QVBoxLayout(group);
 
+        QPushButton *cmd_reference = new QPushButton("Reference command", this);
         QPushButton *cmd_start = new QPushButton("Start command", this);
         QPushButton *cmd_abort = new QPushButton("Abort command", this);
         QPushButton *resume = new QPushButton("Resume plots", this);
         QPushButton *save = new QPushButton("Save plots", this);
         QPushButton *spawnDark = new QPushButton("Spawn server (dark)", this);
         QPushButton *spawnLight = new QPushButton("Spawn server (light)", this);
+        QPushButton *update_controller = new QPushButton("Update controller", this);
         QRadioButton *source1 = new QRadioButton("Logger", this);
         QRadioButton *source2 = new QRadioButton("GPS passthrough", this);
         QRadioButton *source3 = new QRadioButton("Sensor readings", this);
         QRadioButton *source4 = new QRadioButton("Estimation", this);
 
+        inner->addWidget(cmd_reference);
         inner->addWidget(cmd_start);
         inner->addWidget(cmd_abort);
         inner->addWidget(resume);
         inner->addWidget(save);
         inner->addWidget(spawnDark);
         inner->addWidget(spawnLight);
+        inner->addWidget(update_controller);
         inner->addWidget(source1);
         inner->addWidget(source2);
         inner->addWidget(source3);
         inner->addWidget(source4);
 
         layout->addWidget(group, 2, 0);
+
+        connect(cmd_reference, &QPushButton::clicked, [this]() {
+            transmit(MSG_ID_COMMAND_REFERENCE, QByteArray());
+        });
 
         connect(cmd_start, &QPushButton::clicked, [this]() {
             transmit(MSG_ID_COMMAND_START, QByteArray());
@@ -212,6 +252,49 @@ Window::Window(QWidget *parent) : QWidget(parent) {
 
         connect(save, &QPushButton::clicked, []() {
             LiveChart::save();
+        });
+
+        connect(update_controller, &QPushButton::clicked, [this, update_controller]() {
+            update_controller->setDisabled(true);
+            QProcess *process = new QProcess(this);
+
+            connect(process, &QProcess::finished, [this, process, update_controller](int exitCode, QProcess::ExitStatus exitStatus) {
+                (void)exitCode;
+                (void)exitStatus;
+
+                const QString output = process->readAllStandardOutput();
+                const QStringList lines = output.split('\n', Qt::SkipEmptyParts);
+                assert(lines.size()==(4+4));
+
+                msg_frame_gains_t gains;
+
+                for(int row=0; row<4; row++) {
+                    const QStringList numbers = lines[row].split(' ');
+                    assert(numbers.size()==12);
+                    for(int col=0; col<12; col++) {
+                        gains.K[12*row + col] = numbers[col].toFloat();
+                    }
+                }
+
+                for(int row=0; row<4; row++) {
+                    const QStringList numbers = lines[4 + row].split(' ');
+                    assert(numbers.size()==1);
+                    gains.u0[row] = numbers[0].toFloat();
+                }
+
+                std::cout << gains;
+
+                transmit(MSG_ID_GAINS, QByteArray(reinterpret_cast<const char *>(&gains), sizeof(gains)));
+
+                process->deleteLater();
+                update_controller->setDisabled(false);
+            });
+
+            const std::filesystem::path script = std::filesystem::current_path() / "../../flight-controller/controller.py";
+
+            QStringList args;
+            args << script.c_str();
+            process->start("python3", args);
         });
 
         connect(spawnDark, &QPushButton::clicked, visualizer, &Visualizer::spawnDark);
@@ -291,33 +374,47 @@ Window::Window(QWidget *parent) : QWidget(parent) {
                 constexpr float C = 0.01;
 
                 msg_frame_manual_t frame;
-                frame.is_raw = 0;
-                frame.servos.calibrated[0] = C*(-0.333*mx - 0.577*my - 0.333*mz);
-                frame.servos.calibrated[1] = C*( 0.667*mx            - 0.333*mz);
-                frame.servos.calibrated[2] = C*(-0.333*mx + 0.577*my - 0.333*mz);
-                frame.motor = ur;
+                frame.is_compare = 0;
+                frame.servos.calib[0] = C*(-0.333*mx + 0.577*my - 0.333*mz);
+                frame.servos.calib[1] = C*( 0.667*mx            - 0.333*mz);
+                frame.servos.calib[2] = C*(-0.333*mx - 0.577*my - 0.333*mz);
+                frame.motor.throttle = ur*0.01;
 
                 transmit(MSG_ID_MANUAL, QByteArray(reinterpret_cast<const char *>(&frame), sizeof(frame)));
             } else {
-                msg_frame_setpoint_t frame;
+                constexpr double dt = 0.02f;
 
-                frame.rpy[0] = -30*DEG2RAD*gamepad.get(Gamepad::Analog::LX);
-                frame.rpy[1] = +30*DEG2RAD*gamepad.get(Gamepad::Analog::LY);
-                frame.rpy[2] = 0;
-                frame.omega[0] = 0;
-                frame.omega[1] = 0;
-                frame.omega[2] = -90*DEG2RAD*gamepad.get(Gamepad::Analog::RX);
-                frame.pos[0] = 0;
-                frame.pos[1] = 0;
-                frame.pos[2] = -0.5*gamepad.get(Gamepad::Analog::RY) + 0.5;
-                frame.vel[0] = 0;
-                frame.vel[1] = 0;
-                frame.vel[2] = 0;
+                msg_frame_setpoint_t setpoint;
+                setpoint.rpy[0] = -30*DEG2RAD*gamepad.get(Gamepad::Analog::LX);
+                setpoint.rpy[1] = +30*DEG2RAD*gamepad.get(Gamepad::Analog::LY);
+                setpoint.omega[2] = -90*DEG2RAD*gamepad.get(Gamepad::Analog::RX);
+                setpoint.pos[2] = -0.5*gamepad.get(Gamepad::Analog::RY) + 0.5;
 
-                transmit(MSG_ID_SETPOINT, QByteArray(reinterpret_cast<const char *>(&frame), sizeof(frame)));
+                setpoint.omega[0] = (setpoint.rpy[0] - last_setpoint.rpy[0])/dt;
+                setpoint.omega[1] = (setpoint.rpy[1] - last_setpoint.rpy[1])/dt;
+                setpoint.rpy[2] = last_setpoint.rpy[2] + (last_setpoint.omega[2] + setpoint.omega[2])*dt/2;
+                setpoint.vel[2] = (setpoint.pos[2] - last_setpoint.pos[2])/dt;
+
+                setpoint.pos[0] = 0;
+                setpoint.pos[1] = 0;
+                setpoint.vel[0] = 0;
+                setpoint.vel[1] = 0;
+
+                while(setpoint.rpy[2]>=PI) {
+                    setpoint.rpy[2] -=2*PI;
+                }
+
+                while(setpoint.rpy[2]<=-PI) {
+                    setpoint.rpy[2] +=2*PI;
+                }
+
+                transmit(MSG_ID_SETPOINT, QByteArray(reinterpret_cast<const char *>(&setpoint), sizeof(setpoint)));
+
+                last_setpoint = setpoint;
 
                 if(gamepad.get(Gamepad::Analog::VERTICAL)<0) {
                     transmit(MSG_ID_COMMAND_START, QByteArray());
+                    LiveChart::resume();
                 }
 
                 if(gamepad.get(Gamepad::Button::X)) {
@@ -376,6 +473,7 @@ Window::Window(QWidget *parent) : QWidget(parent) {
         attitude->addSeries("roll process",   QPen(Qt::red,   2, Qt::SolidLine));
         attitude->addSeries("pitch setpoint", QPen(Qt::green, 1, Qt::DashLine));
         attitude->addSeries("pitch process",  QPen(Qt::green, 2, Qt::SolidLine));
+        attitude->addSeries("yaw setpoint",   QPen(Qt::blue,  1, Qt::DashLine));
         attitude->addSeries("yaw process",    QPen(Qt::blue,  2, Qt::SolidLine));
 
         layout->addWidget(attitude, 1, 3);
@@ -466,8 +564,9 @@ void Window::receive(const uint8_t id, const double time, const QByteArray &payl
             const double seconds = time - 60*minutes;
 
             std::cout << "[ ";
-            std::cout << std::setfill('0') << std::setw(2) << minutes << ":";
-            std::cout << std::setfill('0') << std::setw(6) << std::setprecision(3) << std::fixed << seconds;
+            std::cout << std::noshowpos << std::setfill('0') << std::setw(2) << minutes;
+            std::cout << ":";
+            std::cout << std::noshowpos << std::setfill('0') << std::setw(6) << std::setprecision(3) << std::fixed << seconds;
             std::cout << " ] ";
 
             std::cout << std::string(reinterpret_cast<const char *>(payload.data()), payload.size());
@@ -498,18 +597,25 @@ void Window::receive(const uint8_t id, const double time, const QByteArray &payl
         }
 
         if(sensor->valid.rangefinder) {
-            others->set("Distance", "%5.2f", sensor->rangefinder);
+            others->set("Distance", "%.2f", sensor->rangefinder);
         }
 
         if(sensor->valid.tachometer) {
-            others->set("Rotor velocity", "%.0f", sensor->tachometer);
+            others->set("Rotor velocity", "%.2f", sensor->tachometer);
         }
 
         if(sensor->valid.power) {
-            others->set("Supply voltage", "%5.2f", sensor->power[0]);
-            others->set("Supply current", "%5.2f", sensor->power[1]);
+            others->set("Supply voltage", "%.2f", sensor->power[0]);
+            others->set("Supply current", "%.3f", sensor->power[1]);
         }
 
+        return;
+    }
+
+    if(id==MSG_ID_GAINS && payload.size()==sizeof(msg_frame_gains_t)) {
+        const msg_frame_gains_t *gains = reinterpret_cast<const msg_frame_gains_t *>(payload.data());
+        std::cout << *gains;
+        std::cout.flush();
         return;
     }
 
@@ -538,11 +644,14 @@ void Window::receive(const uint8_t id, const double time, const QByteArray &payl
             } break;
             case MSG_SM_STATE_ABORT: {
                 others->set("State machine", "abort");
+                LiveChart::pause();
             } break;
             case MSG_SM_STATE_MANUAL: {
                 others->set("State machine", "manual");
             } break;
         }
+
+        others->set("Core load", "%6.2f", controller->core_load);
 
         position->append("x process", time, controller->process.pos[0]);
         position->append("y process", time, controller->process.pos[1]);
@@ -565,7 +674,7 @@ void Window::receive(const uint8_t id, const double time, const QByteArray &payl
         linear_vel->append("z setpoint", time, controller->setpoint.vel[2]);
         attitude->append("roll setpoint", time, controller->setpoint.rpy[0]*RAD2DEG);
         attitude->append("pitch setpoint", time, controller->setpoint.rpy[1]*RAD2DEG);
-        //attitude->append("yaw setpoint", time, controller->setpoint.rpy[2]*RAD2DEG);
+        attitude->append("yaw setpoint", time, controller->setpoint.rpy[2]*RAD2DEG);
         angular_vel->append("x setpoint", time, controller->setpoint.omega[0]*RAD2DEG);
         angular_vel->append("y setpoint", time, controller->setpoint.omega[1]*RAD2DEG);
         angular_vel->append("z setpoint", time, controller->setpoint.omega[2]*RAD2DEG);

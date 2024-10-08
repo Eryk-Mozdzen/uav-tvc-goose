@@ -181,7 +181,7 @@ Window::Window(QWidget *parent) : QWidget{parent} {
             timer_zero.setInterval(1000*wait_time);
 
             step = 0;
-            setThrottle(start);
+            current_throttle = start;
             data_text->clear();
             data_text->append("throttle,load,velocity,current,voltage");
 
@@ -190,7 +190,7 @@ Window::Window(QWidget *parent) : QWidget{parent} {
         });
 
         connect(stop_button, &QPushButton::clicked, [this]() {
-            setThrottle(0);
+            current_throttle = 0;
             timer_step.stop();
             timer_zero.stop();
         });
@@ -226,14 +226,14 @@ Window::Window(QWidget *parent) : QWidget{parent} {
         ));
 
         if(step>=steps) {
-            setThrottle(0);
+            current_throttle = 0;
             timer_step.stop();
             timer_zero.stop();
             return;
         }
 
         step++;
-        setThrottle(throttle);
+        current_throttle = throttle;
 
         timer_step.setSingleShot(true);
         timer_step.setInterval(1000*(wait_time + sample_time));
@@ -250,6 +250,14 @@ Window::Window(QWidget *parent) : QWidget{parent} {
         timer_zero.setInterval(1000*(wait_time + sample_time));
         timer_zero.start();
     });
+
+    {
+        QTimer *timer = new QTimer();
+        connect(timer, &QTimer::timeout, [this]() {
+            setThrottle(current_throttle);
+        });
+        timer->start(10);
+    }
 }
 
 void Window::receive(const uint8_t id, const double time, const QByteArray &payload) {
@@ -281,10 +289,14 @@ void Window::receive(const uint8_t id, const double time, const QByteArray &payl
 }
 
 void Window::setThrottle(const int value) {
-    const int constrained = (value>100) ? 100 : (value<0) ? 0 : value;
+    const float constrained = (value>100) ? 100 : (value<0) ? 0 : value;
 
     msg_frame_manual_t manual;
-    manual.motor = 10*constrained + 1000;
+    manual.is_compare = 0;
+    manual.motor.throttle = constrained*0.01;
+    manual.servos.calib[0] = 0;
+    manual.servos.calib[1] = 0;
+    manual.servos.calib[2] = 0;
 
     transmit(MSG_ID_MANUAL, QByteArray(reinterpret_cast<const char *>(&manual), sizeof(manual)));
 }

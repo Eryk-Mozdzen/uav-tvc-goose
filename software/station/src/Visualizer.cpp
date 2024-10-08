@@ -98,13 +98,11 @@ void Visualizer::receive(const uint8_t id, const double time, const QByteArray &
 
         if(sensor->valid.gps) {
             float cartesian[2];
-            utils_gps_to_enu(sensor->gps, cartesian);
+            utils_gps_to_enu(sensor->gps, latlon_ref, cartesian);
             write("update gps transform translation %f %f 0\n",
                 cartesian[0],
                 cartesian[1]
             );
-        } else {
-            write("update gps transform translation 0 0 0\n");
         }
 
         return;
@@ -112,6 +110,10 @@ void Visualizer::receive(const uint8_t id, const double time, const QByteArray &
 
     if(id==MSG_ID_ESTIMATION && payload.size()==sizeof(msg_frame_estimation_t)) {
         const msg_frame_estimation_t *estimation = reinterpret_cast<const msg_frame_estimation_t *>(payload.data());
+
+        if(estimation->position_reference.valid) {
+            memcpy(latlon_ref, estimation->position_reference.latlon, 2*sizeof(float));
+        }
 
         constexpr double alpha = 0.99;
         cameraPosition[0] = alpha*cameraPosition[0] + (1 - alpha)*estimation->position[0];

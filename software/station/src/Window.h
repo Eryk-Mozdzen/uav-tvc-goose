@@ -3,6 +3,7 @@
 #include <QWidget>
 #include <QSettings>
 
+#include "common/protocol/msg.h"
 #include "Form.h"
 #include "LiveChart.h"
 #include "Gamepad.h"
@@ -20,6 +21,13 @@ class Window : public QWidget {
 
     Gamepad gamepad;
     QSettings settings;
+
+    msg_frame_setpoint_t last_setpoint = {
+        {0, 0, 0},
+        {0, 0, 0},
+        {0, 0, 0},
+        {0, 0, 0},
+    };
 
 signals:
     void transmit(const uint8_t id, const QByteArray &payload);
