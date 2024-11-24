@@ -10,18 +10,32 @@ MPC::MPC() {
 }
 
 void MPC::eval(const drake::systems::Context<double> &context, drake::systems::BasicVector<double> *output) const {
+    static Eigen::Vector<double, 5> control(1000, 0, 0, 0, 0);
+
     const Eigen::Vector<double, 12> state = this->GetInputPort("state").Eval(context);
     const Eigen::Vector<double, 400> trajectory = this->GetInputPort("trajectory").Eval(context);
 
     double p[OPEN_OPTIMIZER_NUM_PARAMETERS];
-    double u[OPEN_OPTIMIZER_NUM_DECISION_VARIABLES] = {0};
+    double u[OPEN_OPTIMIZER_NUM_DECISION_VARIABLES];
+
+    for(int i=0; i<control.size(); i++) {
+        p[i] = control[i];
+    }
 
     for(int i=0; i<state.size(); i++) {
-        p[i] = state[i];
+        p[control.size() + i] = state[i];
     }
 
     for(int i=0; i<trajectory.size(); i++) {
-        p[state.size() + i] = trajectory[i];
+        p[control.size() + state.size() + i] = trajectory[i];
+    }
+
+    for(int i=0; i<100; i++) {
+        u[5*i + 0] = 1000;
+        u[5*i + 1] = 0;
+        u[5*i + 2] = 0;
+        u[5*i + 3] = 0;
+        u[5*i + 4] = 0;
     }
 
     open_optimizerCache *cache = open_optimizer_new();
@@ -44,7 +58,9 @@ void MPC::eval(const drake::systems::Context<double> &context, drake::systems::B
     std::cout << u[0] << " " << u[1] << " " << u[2] << " " << u[3] << " " << u[4] << std::endl;
     std::cout << std::endl;
 
-    output->SetFromVector(Eigen::Vector<double, 5>(u[0], u[1], u[2], u[3], u[4]));
+    control = Eigen::Vector<double, 5>(u[0], u[1], u[2], u[3], u[4]);
+
+    output->SetFromVector(control);
 }
 
 const drake::systems::InputPort<double> & MPC::get_state_input_port() const {
