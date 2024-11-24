@@ -18,8 +18,9 @@ H = cs.DM([
     [0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0],
     [0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0],
 ])
-Q = cs.DM.eye(NT) * 100
-R = cs.DM.eye(NU) * 1
+
+Q = 100
+#R = 1
 
 def dynamics(x, u):
     phi = x[3]
@@ -100,18 +101,18 @@ cost = 0
 x = x_0
 for t in range(0, HC):
     dx = cs.mtimes([H, x]) - x_tr[t]
-    cost +=cs.mtimes([dx.T, Q, dx])
+    cost +=Q*cs.mtimes([dx.T, dx])
     x = dynamics_discrete(x, u[t])
 for t in range(HC, HP):
     dx = cs.mtimes([H, x]) - x_tr[t]
-    cost +=cs.mtimes([dx.T, Q, dx])
+    cost +=Q*cs.mtimes([dx.T, dx])
     x = dynamics_discrete(x, u[-1])
 
-du = u[0] - u_0
-cost +=cs.mtimes([du.T, R, du])
-for t in range(0, HC-1):
-    du = u[t+1] - u[t]
-    cost +=cs.mtimes([du.T, R, du])
+#du = u[0] - u_0
+#cost +=R*cs.mtimes([du.T, du])
+#for t in range(0, HC-1):
+#    du = u[t+1] - u[t]
+#    cost +=R*cs.mtimes([du.T, du])
 
 variables = cs.vertcat(*u)
 parameters = cs.vertcat(u_0, x_0, *x_tr)
@@ -127,7 +128,7 @@ problem = og.builder.Problem(variables, parameters, cost) \
 meta = og.config.OptimizerMeta()
 
 build = og.config.BuildConfiguration() \
-    .with_build_mode('release')        \
+    .with_build_mode('debug')        \
     .with_build_c_bindings()           \
     .with_tcp_interface_config()
 
