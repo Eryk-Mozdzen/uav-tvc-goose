@@ -1,11 +1,13 @@
 import opengen as og
 import numpy as np
 
-N = 100
-T = 0.02
+HP = 100
+HC = 80
+T = 0.01
+
 x = np.array([0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0])
 u = np.array([1000, 0, 0, 0, 0])
-U = np.tile(u, (N, 1))
+U = np.tile(u, (HC, 1))
 
 def dynamics_continuous(x, u):
     phi = x[3]
@@ -46,27 +48,27 @@ def dynamics_continuous(x, u):
     Mr = -K_m*wr**2
 
     return np.array([
-        #vx*np.cos(theta)*np.cos(psi) + vy*(np.sin(phi)*np.sin(theta)*np.cos(psi) - np.cos(phi)*np.sin(psi)) + vz*(np.cos(phi)*np.sin(theta)*np.cos(psi) + np.sin(phi)*np.sin(psi)),
-        #vx*np.cos(theta)*np.sin(psi) + vy*(np.sin(phi)*np.sin(theta)*np.sin(psi) + np.cos(phi)*np.cos(psi)) + vz*(np.cos(phi)*np.sin(theta)*np.sin(psi) - np.sin(phi)*np.cos(psi)),
-        #-vx*np.sin(theta) + vy*np.sin(phi)*np.cos(theta) + vz*np.cos(phi)*np.cos(theta),
+        vx*np.cos(theta)*np.cos(psi) + vy*(np.sin(phi)*np.sin(theta)*np.cos(psi) - np.cos(phi)*np.sin(psi)) + vz*(np.cos(phi)*np.sin(theta)*np.cos(psi) + np.sin(phi)*np.sin(psi)),
+        vx*np.cos(theta)*np.sin(psi) + vy*(np.sin(phi)*np.sin(theta)*np.sin(psi) + np.cos(phi)*np.cos(psi)) + vz*(np.cos(phi)*np.sin(theta)*np.sin(psi) - np.sin(phi)*np.cos(psi)),
+        -vx*np.sin(theta) + vy*np.sin(phi)*np.cos(theta) + vz*np.cos(phi)*np.cos(theta),
+        #vx,
+        #vy,
+        #vz,
         #wx + wy*np.sin(phi)*np.tan(theta) + wz*np.cos(phi)*np.tan(theta),
         #wy*np.cos(phi) - wz*np.sin(phi),
         #wy*(np.sin(phi)/np.cos(theta)) + wz*(np.cos(phi)/np.cos(theta)),
-        #(1/m)*(F2 - F4) + g*np.sin(theta),
-        #(1/m)*(F3 - F1) - g*np.sin(phi)*np.cos(theta),
-        #(1/m)*Ft - g*np.cos(phi)*np.cos(theta),
-        #(1/J_xx)*(J_yy - J_zz)*wy*wz + (1/J_xx)*l*(F3 - F1) + (J_r/J_xx)*wr*wy,
-        #(1/J_yy)*(J_zz - J_xx)*wx*wz + (1/J_yy)*l*(F4 - F2) - (J_r/J_yy)*wr*wx,
-        #(1/J_zz)*(J_xx - J_yy)*wx*wy - (1/J_zz)*r*(F1 + F2 + F3 + F4 + 4*Fs) + (1/J_zz)*Mr,
-        vx,
-        vy,
-        vz,
         wx,
         wy,
         wz,
-        (1/m)*(F2 - F4),
-        (1/m)*(F3 - F1),
-        (1/m)*Ft - g,
+        (1/m)*(F2 - F4) + g*np.sin(theta),
+        (1/m)*(F3 - F1) - g*np.sin(phi)*np.cos(theta),
+        (1/m)*Ft - g*np.cos(phi)*np.cos(theta),
+        #(1/m)*(F2 - F4),
+        #(1/m)*(F3 - F1),
+        #(1/m)*Ft - g,
+        #(1/J_xx)*(J_yy - J_zz)*wy*wz + (1/J_xx)*l*(F3 - F1) + (J_r/J_xx)*wr*wy,
+        #(1/J_yy)*(J_zz - J_xx)*wx*wz + (1/J_yy)*l*(F4 - F2) - (J_r/J_yy)*wr*wx,
+        #(1/J_zz)*(J_xx - J_yy)*wx*wy - (1/J_zz)*r*(F1 + F2 + F3 + F4 + 4*Fs) + (1/J_zz)*Mr,
         (1/J_xx)*l*(F3 - F1),
         (1/J_yy)*l*(F4 - F2),
         - (1/J_zz)*r*(F1 + F2 + F3 + F4),
@@ -83,21 +85,28 @@ mng.start()
 
 def trajectory(t):
     a = 1
-    w = 0.5
+    w = 1
     return np.array([
-        a*np.cos(w*t)*np.sin(w*t)/(1 + np.sin(w*t)**2),
-        a*np.cos(w*t)/(1 + np.sin(w*t)**2),
+        a*np.sin(t*w)*np.cos(t*w)/(np.sin(t*w)**2 + 1),
+        a*np.cos(t*w)/(np.sin(t*w)**2 + 1),
         np.full_like(t, 1),
-        np.arctan2(
-            -(5 + np.cos(2*w*t))*np.sin(w*t),
-            -1 + 3*np.cos(2*w*t),
-        ),
+        np.full_like(t, 0),
+        np.full_like(t, 0),
+        np.atan2(-a*w*np.sin(t*w)/(np.sin(t*w)**2 + 1) - 2*a*w*np.sin(t*w)*np.cos(t*w)**2/(np.sin(t*w)**2 + 1)**2, -a*w*np.sin(t*w)**2/(np.sin(t*w)**2 + 1) + a*w*np.cos(t*w)**2/(np.sin(t*w)**2 + 1) - 2*a*w*np.sin(t*w)**2*np.cos(t*w)**2/(np.sin(t*w)**2 + 1)**2),
+        #np.cos(t*w),
+        #np.sin(t*w),
+        #np.full_like(t, 1),
+        #np.full_like(t, 0),
+        #np.full_like(t, 0),
+        #t*w + np.full_like(t, np.pi/2),
     ])
 
 for i in range(1000):
-    x_tr = trajectory(T*np.arange(i, i+N)).transpose()
+    print(f't = {i}')
 
-    response = mng.call(u.tolist() + x.tolist() + x_tr.flatten().tolist(), initial_guess=[1000, 0, 0, 0, 0]*N)
+    x_tr = trajectory(T*np.arange(i, i+HP)).transpose()
+
+    response = mng.call(u.tolist() + x.tolist() + x_tr.flatten().tolist(), initial_guess=[1000, 0, 0, 0, 0]*HC)
 
     if response.is_ok():
         U = np.array(response.get().solution).reshape(-1, 5)
@@ -105,10 +114,12 @@ for i in range(1000):
     else:
         print(response.get().message)
 
-    x_pred = np.zeros((N+1, 12))
+    x_pred = np.zeros((HP+1, 12))
     x_pred[0] = x
-    for k in range(N):
+    for k in range(0, HC):
         x_pred[k+1] = dynamics_discrete(x_pred[k], U[k])
+    for k in range(HC, HP):
+        x_pred[k+1] = dynamics_discrete(x_pred[k], U[-1])
 
     data.append({
         'x': x,
@@ -151,7 +162,7 @@ ax3.grid()
 line_xt, = ax.plot([], [], 'k*')
 line_tr, = ax.plot([], [], 'k--')
 line_pr, = ax.plot([], [], 'b--')
-line_x, = ax.plot([], [], 'r*')
+dir_x = ax.quiver(0, 0, 1, 0, angles='xy', scale_units='xy', scale=2, color='r')
 
 line_u1, = ax2.plot([], [])
 line_u2, = ax3.plot([], [])
@@ -165,14 +176,15 @@ def init():
     u.clear()
     line_tr.set_data([], [])
     line_pr.set_data([], [])
-    line_x.set_data([], [])
+    dir_x.set_offsets([0, 0])
+    dir_x.set_UVC(1, 0)
     line_xt.set_data([], [])
     line_u1.set_data([], [])
     line_u2.set_data([], [])
     line_u3.set_data([], [])
     line_u4.set_data([], [])
     line_u5.set_data([], [])
-    return line_tr, line_pr, line_x, line_u1, line_u2, line_u3, line_u4, line_u5,
+    return line_tr, line_pr, dir_x, line_u1, line_u2, line_u3, line_u4, line_u5,
 
 def update(frame):
     d = data[frame]
@@ -180,21 +192,27 @@ def update(frame):
     u.append((frame*T, d['u']))
 
     line_tr.set_data(
-        [d['x_tr'][i][0] for i in range(N)],
-        [d['x_tr'][i][1] for i in range(N)],
+        [d['x_tr'][i][0] for i in range(HP)],
+        [d['x_tr'][i][1] for i in range(HP)],
     )
     line_xt.set_data(
         [d['x_tr'][0][0]],
         [d['x_tr'][0][1]],
     )
     line_pr.set_data(
-        [d['x_pred'][i][0] for i in range(N)],
-        [d['x_pred'][i][1] for i in range(N)],
+        [d['x_pred'][i][0] for i in range(HP)],
+        [d['x_pred'][i][1] for i in range(HP)],
     )
-    line_x.set_data(
-        [d['x'][0]],
-        [d['x'][1]],
+
+    dir_x.set_offsets([
+        d['x'][0],
+        d['x'][1]
+    ])
+    dir_x.set_UVC(
+        np.cos(d['x'][5]),
+        np.sin(d['x'][5]),
     )
+
     line_u1.set_data(
         [i[0] for i in u],
         [i[1][0] for i in u],
@@ -219,7 +237,7 @@ def update(frame):
     ax2.set_xlim(frame*T-10, frame*T)
     ax3.set_xlim(frame*T-10, frame*T)
 
-    return line_tr, line_pr, line_x, line_u1, line_u2, line_u3, line_u4, line_u5,
+    return line_tr, line_pr, dir_x, line_u1, line_u2, line_u3, line_u4, line_u5,
 
 anim = FuncAnimation(
     fig=fig,

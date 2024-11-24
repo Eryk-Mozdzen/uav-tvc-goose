@@ -2,19 +2,23 @@ import casadi as cs
 import opengen as og
 import numpy as np
 
-N = 100
-T = 0.02
+HP = 100
+HC = 80
+T = 0.01
+
 NX = 12
-NTR = 4
+NT = 6
 NU = 5
 
 H = cs.DM([
     [1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
     [0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
     [0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+    [0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0],
+    [0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0],
     [0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0],
 ])
-Q = cs.DM.eye(NTR) * 10
+Q = cs.DM.eye(NT) * 100
 R = cs.DM.eye(NU) * 1
 
 def dynamics(x, u):
@@ -56,27 +60,27 @@ def dynamics(x, u):
     Mr = -K_m*wr**2
 
     return cs.vcat([
-        #vx*cs.cos(theta)*cs.cos(psi) + vy*(cs.sin(phi)*cs.sin(theta)*cs.cos(psi) - cs.cos(phi)*cs.sin(psi)) + vz*(cs.cos(phi)*cs.sin(theta)*cs.cos(psi) + cs.sin(phi)*cs.sin(psi)),
-        #vx*cs.cos(theta)*cs.sin(psi) + vy*(cs.sin(phi)*cs.sin(theta)*cs.sin(psi) + cs.cos(phi)*cs.cos(psi)) + vz*(cs.cos(phi)*cs.sin(theta)*cs.sin(psi) - cs.sin(phi)*cs.cos(psi)),
-        #-vx*cs.sin(theta) + vy*cs.sin(phi)*cs.cos(theta) + vz*cs.cos(phi)*cs.cos(theta),
+        vx*cs.cos(theta)*cs.cos(psi) + vy*(cs.sin(phi)*cs.sin(theta)*cs.cos(psi) - cs.cos(phi)*cs.sin(psi)) + vz*(cs.cos(phi)*cs.sin(theta)*cs.cos(psi) + cs.sin(phi)*cs.sin(psi)),
+        vx*cs.cos(theta)*cs.sin(psi) + vy*(cs.sin(phi)*cs.sin(theta)*cs.sin(psi) + cs.cos(phi)*cs.cos(psi)) + vz*(cs.cos(phi)*cs.sin(theta)*cs.sin(psi) - cs.sin(phi)*cs.cos(psi)),
+        -vx*cs.sin(theta) + vy*cs.sin(phi)*cs.cos(theta) + vz*cs.cos(phi)*cs.cos(theta),
+        #vx,
+        #vy,
+        #vz,
         #wx + wy*cs.sin(phi)*cs.tan(theta) + wz*cs.cos(phi)*cs.tan(theta),
         #wy*cs.cos(phi) - wz*cs.sin(phi),
         #wy*(cs.sin(phi)/cs.cos(theta)) + wz*(cs.cos(phi)/cs.cos(theta)),
-        #(1/m)*(F2 - F4) + g*cs.sin(theta),
-        #(1/m)*(F3 - F1) - g*cs.sin(phi)*cs.cos(theta),
-        #(1/m)*Ft - g*cs.cos(phi)*cs.cos(theta),
-        #(1/J_xx)*(J_yy - J_zz)*wy*wz + (1/J_xx)*l*(F3 - F1) + (J_r/J_xx)*wr*wy,
-        #(1/J_yy)*(J_zz - J_xx)*wx*wz + (1/J_yy)*l*(F4 - F2) - (J_r/J_yy)*wr*wx,
-        #(1/J_zz)*(J_xx - J_yy)*wx*wy - (1/J_zz)*r*(F1 + F2 + F3 + F4 + 4*Fs) + (1/J_zz)*Mr,
-        vx,
-        vy,
-        vz,
         wx,
         wy,
         wz,
-        (1/m)*(F2 - F4),
-        (1/m)*(F3 - F1),
-        (1/m)*Ft - g,
+        (1/m)*(F2 - F4) + g*cs.sin(theta),
+        (1/m)*(F3 - F1) - g*cs.sin(phi)*cs.cos(theta),
+        (1/m)*Ft - g*cs.cos(phi)*cs.cos(theta),
+        #(1/m)*(F2 - F4),
+        #(1/m)*(F3 - F1),
+        #(1/m)*Ft - g,
+        #(1/J_xx)*(J_yy - J_zz)*wy*wz + (1/J_xx)*l*(F3 - F1) + (J_r/J_xx)*wr*wy,
+        #(1/J_yy)*(J_zz - J_xx)*wx*wz + (1/J_yy)*l*(F4 - F2) - (J_r/J_yy)*wr*wx,
+        #(1/J_zz)*(J_xx - J_yy)*wx*wy - (1/J_zz)*r*(F1 + F2 + F3 + F4 + 4*Fs) + (1/J_zz)*Mr,
         (1/J_xx)*l*(F3 - F1),
         (1/J_yy)*l*(F4 - F2),
         - (1/J_zz)*r*(F1 + F2 + F3 + F4),
@@ -88,30 +92,33 @@ def dynamics_discrete(x, u):
 
 u_0 = cs.MX.sym('u_0', NU)
 x_0 = cs.MX.sym('x_0', NX)
-x_tr = [cs.MX.sym('x_tr_' + str(i), NTR) for i in range(N)]
-u = [cs.MX.sym('u_' + str(i), NU) for i in range(N)]
+x_tr = [cs.MX.sym('x_tr_' + str(i), NT) for i in range(HP)]
+u = [cs.MX.sym('u_' + str(i), NU) for i in range(HC)]
 
 cost = 0
 
 x = x_0
-for t in range(N):
+for t in range(0, HC):
     dx = cs.mtimes([H, x]) - x_tr[t]
     cost +=cs.mtimes([dx.T, Q, dx])
-    #cost +=cs.mtimes([u[t].T, R1, u[t]])
     x = dynamics_discrete(x, u[t])
+for t in range(HC, HP):
+    dx = cs.mtimes([H, x]) - x_tr[t]
+    cost +=cs.mtimes([dx.T, Q, dx])
+    x = dynamics_discrete(x, u[-1])
 
-for t in range(N-1):
-    du = u[t+1] - u[t]
-    cost +=cs.mtimes([du.T, R, du])
 du = u[0] - u_0
 cost +=cs.mtimes([du.T, R, du])
+for t in range(0, HC-1):
+    du = u[t+1] - u[t]
+    cost +=cs.mtimes([du.T, R, du])
 
 variables = cs.vertcat(*u)
 parameters = cs.vertcat(u_0, x_0, *x_tr)
 
 bounds = og.constraints.Rectangle(
-    [0, np.deg2rad(-10), np.deg2rad(-10), np.deg2rad(-10), np.deg2rad(-10)] * N,
-    [2000, np.deg2rad(10), np.deg2rad(10), np.deg2rad(10), np.deg2rad(10)] * N,
+    [0, np.deg2rad(-10), np.deg2rad(-10), np.deg2rad(-10), np.deg2rad(-10)] * HC,
+    [2000, np.deg2rad(10), np.deg2rad(10), np.deg2rad(10), np.deg2rad(10)] * HC,
 )
 
 problem = og.builder.Problem(variables, parameters, cost) \
