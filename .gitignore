@@ -20,3 +20,4 @@
 **/build
 .vscode
 !software/identification/*.csv
+open_optimizer
