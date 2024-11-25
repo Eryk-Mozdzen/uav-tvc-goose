@@ -107,22 +107,16 @@ def trajectory(t):
         #a*np.sin(t*w)*np.cos(t*w)/(np.sin(t*w)**2 + 1),
         #a*np.cos(t*w)/(np.sin(t*w)**2 + 1),
         #np.full_like(t, 1),
-        #np.full_like(t, 0),
-        #np.full_like(t, 0),
         #np.atan2(-a*w*np.sin(t*w)/(np.sin(t*w)**2 + 1) - 2*a*w*np.sin(t*w)*np.cos(t*w)**2/(np.sin(t*w)**2 + 1)**2, -a*w*np.sin(t*w)**2/(np.sin(t*w)**2 + 1) + a*w*np.cos(t*w)**2/(np.sin(t*w)**2 + 1) - 2*a*w*np.sin(t*w)**2*np.cos(t*w)**2/(np.sin(t*w)**2 + 1)**2),
 
         #np.cos(t*w),
         #np.sin(t*w),
         #np.full_like(t, 1),
-        #np.full_like(t, 0),
-        #np.full_like(t, 0),
         #t*w + np.full_like(t, np.pi/2),
 
         np.full_like(t, 1),
         np.full_like(t, 1),
         np.full_like(t, 1),
-        np.full_like(t, 0),
-        np.full_like(t, 0),
         np.full_like(t, np.pi/2),
     ])
 

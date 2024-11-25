@@ -7,19 +7,23 @@ HC = 80
 T = 0.01
 
 NX = 12
-NT = 6
+NT = 4
 NU = 4
 
 H = cs.DM([
     [1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
     [0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
     [0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-    [0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0],
-    [0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0],
     [0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0],
 ])
 
-Q = cs.diag([100, 100, 100, 100, 100, 100])
+Z = cs.DM([
+    [0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0],
+    [0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0],
+])
+
+QT = cs.diag([100, 100, 100, 100])
+QZ = cs.diag([100, 100])
 R = cs.diag([0.1, 1, 1, 1])
 
 def dynamics(x, u):
@@ -119,11 +123,15 @@ cost = 0
 x = x_0
 for t in range(0, HC):
     dx = cs.mtimes([H, x]) - x_tr[t]
-    cost +=cs.mtimes([dx.T, Q, dx])
+    cost +=cs.mtimes([dx.T, QT, dx])
+    dx = cs.mtimes([Z, x])
+    cost +=cs.mtimes([dx.T, QZ, dx])
     x = dynamics_discrete(x, u[t])
 for t in range(HC, HP):
     dx = cs.mtimes([H, x]) - x_tr[t]
-    cost +=cs.mtimes([dx.T, Q, dx])
+    cost +=cs.mtimes([dx.T, QT, dx])
+    dx = cs.mtimes([Z, x])
+    cost +=cs.mtimes([dx.T, QZ, dx])
     x = dynamics_discrete(x, u[-1])
 
 du = u[0] - u_0
@@ -137,7 +145,7 @@ parameters = cs.vertcat(u_0, x_0, *x_tr)
 
 bounds = og.constraints.Rectangle(
     [400, np.deg2rad(-10), np.deg2rad(-10), np.deg2rad(-10)]*HC,
-    [700, np.deg2rad(10), np.deg2rad(10), np.deg2rad(10)]*HC,
+    [800, np.deg2rad(10), np.deg2rad(10), np.deg2rad(10)]*HC,
 )
 
 problem = og.builder.Problem(variables, parameters, cost) \
