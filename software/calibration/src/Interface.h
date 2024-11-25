@@ -2,7 +2,7 @@
 
 #include <QWidget>
 
-#include "protocol/protocol_data.h"
+#include "common/protocol/msg.h"
 
 class Interface : public QWidget {
     QString name;
@@ -17,6 +17,6 @@ public:
     }
 
     virtual Interface * create() const = 0;
-    virtual void receive(const protocol_readings_t &readings) = 0;
-    virtual void update(protocol_calibration_t &calibration) const = 0;
+    virtual void receive(const msg_frame_sensor_t &sensor) = 0;
+    virtual void update(msg_frame_calibration_t &calibration) const = 0;
 };

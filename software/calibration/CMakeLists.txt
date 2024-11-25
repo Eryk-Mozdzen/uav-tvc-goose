@@ -14,7 +14,8 @@ REQUIRED)
 add_executable(${PROJECT_NAME}
 	"../common/protocol/protocol.c"
 	"../common/qt/Serial.cpp"
-	"../common/qt/Telnet.cpp"
+	"../common/qt/Network.cpp"
+	"../common/qt/InterfaceWidget.cpp"
 
 	"src/main.cpp"
 	"src/Window.cpp"
@@ -23,15 +24,19 @@ add_executable(${PROJECT_NAME}
 	"src/accelerometer/Accelerometer.cpp"
 	"src/gyroscope/Gyroscope.cpp"
 	"src/servos/Servos.cpp"
+	"src/esc/Esc.cpp"
+	"src/load/Load.cpp"
 )
 
 target_include_directories(${PROJECT_NAME} PRIVATE
-	"../common"
+	".."
 	"src"
 	"src/magnetometer"
 	"src/accelerometer"
 	"src/gyroscope"
 	"src/servos"
+	"src/esc"
+	"src/load"
 )
 
 target_compile_options(${PROJECT_NAME} PRIVATE

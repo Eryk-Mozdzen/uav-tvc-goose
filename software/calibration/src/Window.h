@@ -6,18 +6,18 @@
 #include <QTextEdit>
 #include <QHBoxLayout>
 
-#include "protocol/protocol.h"
-#include "protocol/protocol_data.h"
 #include "Interface.h"
 
 class Window : public QWidget {
     Q_OBJECT
 
-    protocol_calibration_t calibration = {
+    msg_frame_calibration_t calibration = {
         {1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0},
         {1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0},
         {0, 0, 0},
-        {500, 1500, 2500, 500, 1500, 2500, 500, 1500, 2500, 500, 1500, 2500}
+        {500, 1500, 2500, 500, 1500, 2500, 500, 1500, 2500},
+        {1000, 2000},
+        {8500000, 9500000},
     };
     std::vector<Interface *> interfaces;
     Interface *current;
@@ -27,10 +27,10 @@ class Window : public QWidget {
     void setCurrent(Interface *interface);
 
 signals:
-    void transmit(const protocol_message_t &frame);
+    void transmit(const uint8_t id, const QByteArray &payload);
 
 public slots:
-    void receive(const protocol_message_t &frame);
+    void receive(const uint8_t id, const double time, const QByteArray &payload);
 
 public:
     Window(QWidget *parent = nullptr);

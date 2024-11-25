@@ -1,0 +1,30 @@
+#ifndef PMW3901_REGS_H
+#define PMW3901_REGS_H
+
+#define PMW3901_REG_PRODUCT_ID          0x00
+#define PMW3901_REG_REVISION_ID         0x01
+#define PMW3901_REG_MOTION              0x02
+#define PMW3901_REG_DELTA_X_L           0x03
+#define PMW3901_REG_DELTA_X_H           0x04
+#define PMW3901_REG_DELTA_Y_L           0x05
+#define PMW3901_REG_DELTA_Y_H           0x06
+#define PMW3901_REG_SQUAL               0x07
+#define PMW3901_REG_RAWDATA_SUM         0x08
+#define PMW3901_REG_MAXIMUM_RAWDATA     0x09
+#define PMW3901_REG_MINIMUM_RAWDATA     0x0A
+#define PMW3901_REG_SHUTTER_LOWER       0x0B
+#define PMW3901_REG_SHUTTER_UPPER       0x0C
+#define PMW3901_REG_OBSERVATION         0x15
+#define PMW3901_REG_MOTION_BURST        0x16
+#define PMW3901_REG_POWER_UP_RESET      0x3A
+#define PMW3901_REG_SHUTDOWN            0x3B
+#define PMW3901_REG_RAWDATA_GRAB        0x58
+#define PMW3901_REG_RAWDATA_GRAB_STATUS 0x59
+#define PMW3901_REG_INVERSE_PRODUCT_ID  0x5F
+
+#define PMW3901_PRODUCT_ID        		0x49
+#define PMW3901_PRODUCT_ID_INVERSE 		0xB6
+
+#define PMW3901_FOCAL_LENGTH			412.27f
+
+#endif
