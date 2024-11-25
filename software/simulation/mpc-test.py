@@ -6,7 +6,7 @@ HC = 80
 T = 0.01
 
 x = np.array([0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0])
-u = np.array([1019, 0, 0, 0, 0])
+u = np.array([1000, 0, 0, 0, 0])
 U = np.tile(u, (HC, 1))
 
 def dynamics_continuous(x, u):
@@ -141,8 +141,6 @@ for i in range(1000):
 
 mng.kill()
 
-import matplotlib
-matplotlib.use('qt5agg')
 import matplotlib.pyplot as plt
 from matplotlib.animation import FuncAnimation
 
@@ -208,6 +206,12 @@ line_u5, = ax12.plot([], [])
 ax10.legend()
 ax01.legend()
 ax11.legend()
+
+ax01.set_xlim(0, len(data)*T)
+ax10.set_xlim(0, len(data)*T)
+ax11.set_xlim(0, len(data)*T)
+ax02.set_xlim(0, len(data)*T)
+ax12.set_xlim(0, len(data)*T)
 
 x = []
 tr = []
@@ -331,12 +335,6 @@ def update(frame):
         [i[0] for i in u],
         [np.rad2deg(i[1][4]) for i in u],
     )
-
-    ax01.set_xlim(frame*T-10, frame*T)
-    ax10.set_xlim(frame*T-10, frame*T)
-    ax11.set_xlim(frame*T-10, frame*T)
-    ax02.set_xlim(frame*T-10, frame*T)
-    ax12.set_xlim(frame*T-10, frame*T)
 
     return dir_xt, dir_x, *dir_pr, line_tr, line_pr, line_z, line_zt, line_phi, line_theta, line_psi, line_psit, line_u1, line_u2, line_u3, line_u4, line_u5,
 
