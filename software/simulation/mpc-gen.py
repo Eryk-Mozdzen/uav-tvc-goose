@@ -8,7 +8,7 @@ T = 0.01
 
 NX = 12
 NT = 6
-NU = 5
+NU = 4
 
 H = cs.DM([
     [1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
@@ -19,16 +19,26 @@ H = cs.DM([
     [0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0],
 ])
 
-Q = cs.diag([10, 10, 10, 100, 100, 10])
-R = cs.diag([1, 1, 1, 1, 1])
+Q = cs.diag([100, 100, 100, 100, 100, 100])
+R = cs.diag([0.1, 1, 1, 1])
 
 def dynamics(x, u):
+    Kf  = 1.458825e-05
+    Km  = 2.531647e-07
+    Kl  = 0.34802890073780146
+    Jxx = 3513658.12176*1e-9
+    Jyy = 4068713.21612*1e-9
+    Jzz = 3724881.39219*1e-9
+    Jr  =   38872.17503*1e-9
+    m   = 0.518
+    l   = 62.89435*1e-3
+    r   = 0.08182101368679512
+    a0  = np.radians(-10)
+    g   = 9.8065
+
     phi = x[3]
     theta = x[4]
     psi = x[5]
-    vx = x[6]
-    vy = x[7]
-    vz = x[8]
     wx = x[9]
     wy = x[10]
     wz = x[11]
@@ -37,54 +47,62 @@ def dynamics(x, u):
     a1 = u[1]
     a2 = u[2]
     a3 = u[3]
-    a4 = u[4]
 
-    g = 9.8065
-    m = 0.332
-    l = 0.0500
-    r = 0.0665
-    J_xx = 0.0009887
-    J_yy = 0.0009817
-    J_zz = 0.0002177
-    J_r = 0.00001366
-    a_s = -0.08727
-    K_l = 0.4203
-    K_m = 0.000000041
-    K_w = 0.000003133
+    Ft = Kf*wr**2
+    Mz = Km*wr**2
+    F1 = Kl*Ft*a1
+    F2 = Kl*Ft*a2
+    F3 = Kl*Ft*a3
+    Fs = Kl*Ft*a0
 
-    Ft = K_w*wr**2
-    F1 = K_l*Ft*a1
-    F2 = K_l*Ft*a2
-    F3 = K_l*Ft*a3
-    F4 = K_l*Ft*a4
-    Fs = K_l*Ft*a_s
-    Mr = -K_m*wr**2
+    gravity = cs.vcat([0, 0, -g])
+    F_thrust = cs.vcat([0, 0, Ft])
+    M_areo = cs.vcat([0, 0, -Mz])
+    M_gyro = cs.vcat([Jr*wr*wy, -Jr*wr*wx, 0])
+    F_vanes = cs.vcat([
+        -0.5*cs.sqrt(3)*F1 + 0.5*cs.sqrt(3)*F3,
+        -0.5*F1 + F2 - 0.5*F3,
+        0,
+    ])
+    M_vanes = cs.vcat([
+        l*(-0.5*F1 + F2 - 0.5*F3),
+        l*(0.5*cs.sqrt(3)*F1 - 0.5*cs.sqrt(3)*F3),
+        -r*(F1 + F2 + F3 + 3*Fs),
+    ])
+
+    J = cs.diag([Jxx, Jyy, Jzz])
+    J_inv = cs.DM(np.linalg.inv(np.array(J)))
+    W = cs.vcat([
+        cs.hcat([1, cs.sin(phi)*cs.tan(theta), cs.cos(phi)*cs.tan(theta)]),
+        cs.hcat([0, cs.cos(phi), -cs.sin(phi)]),
+        cs.hcat([0, cs.sin(phi)/cs.cos(theta), cs.cos(phi)/cs.cos(theta)]),
+    ])
+    Rz = cs.vcat([
+        cs.hcat([cs.cos(psi), -cs.sin(psi), 0]),
+        cs.hcat([cs.sin(psi),  cs.cos(psi), 0]),
+        cs.hcat([0, 0, 1]),
+    ])
+    Ry = cs.vcat([
+        cs.hcat([ cs.cos(theta), 0, cs.sin(theta)]),
+        cs.hcat([0, 1, 0]),
+        cs.hcat([-cs.sin(theta), 0, cs.cos(theta)]),
+    ])
+    Rx = cs.vcat([
+        cs.hcat([1, 0, 0]),
+        cs.hcat([0, cs.cos(phi), -cs.sin(phi)]),
+        cs.hcat([0, cs.sin(phi),  cs.cos(phi)]),
+    ])
+    R = cs.mtimes([Rz, Ry, Rx])
+
+    w = cs.vcat([wx, wy, wz])
 
     return cs.vcat([
-        vx*cs.cos(theta)*cs.cos(psi) + vy*(cs.sin(phi)*cs.sin(theta)*cs.cos(psi) - cs.cos(phi)*cs.sin(psi)) + vz*(cs.cos(phi)*cs.sin(theta)*cs.cos(psi) + cs.sin(phi)*cs.sin(psi)),
-        vx*cs.cos(theta)*cs.sin(psi) + vy*(cs.sin(phi)*cs.sin(theta)*cs.sin(psi) + cs.cos(phi)*cs.cos(psi)) + vz*(cs.cos(phi)*cs.sin(theta)*cs.sin(psi) - cs.sin(phi)*cs.cos(psi)),
-        -vx*cs.sin(theta) + vy*cs.sin(phi)*cs.cos(theta) + vz*cs.cos(phi)*cs.cos(theta),
-        #vx,
-        #vy,
-        #vz,
-        #wx + wy*cs.sin(phi)*cs.tan(theta) + wz*cs.cos(phi)*cs.tan(theta),
-        #wy*cs.cos(phi) - wz*cs.sin(phi),
-        #wy*(cs.sin(phi)/cs.cos(theta)) + wz*(cs.cos(phi)/cs.cos(theta)),
-        wx,
-        wy,
-        wz,
-        (1/m)*(F2 - F4) + g*cs.sin(theta),
-        (1/m)*(F3 - F1) - g*cs.sin(phi)*cs.cos(theta),
-        (1/m)*Ft - g*cs.cos(phi)*cs.cos(theta),
-        #(1/m)*(F2 - F4),
-        #(1/m)*(F3 - F1),
-        #(1/m)*Ft - g,
-        #(1/J_xx)*(J_yy - J_zz)*wy*wz + (1/J_xx)*l*(F3 - F1) + (J_r/J_xx)*wr*wy,
-        #(1/J_yy)*(J_zz - J_xx)*wx*wz + (1/J_yy)*l*(F4 - F2) - (J_r/J_yy)*wr*wx,
-        #(1/J_zz)*(J_xx - J_yy)*wx*wy - (1/J_zz)*r*(F1 + F2 + F3 + F4 + 4*Fs) + (1/J_zz)*Mr,
-        (1/J_xx)*l*(F3 - F1),
-        (1/J_yy)*l*(F4 - F2),
-        - (1/J_zz)*r*(F1 + F2 + F3 + F4),
+        x[6],
+        x[7],
+        x[8],
+        cs.mtimes([W, w]),
+        cs.mtimes([R, F_thrust + F_vanes])/m + gravity,
+        cs.mtimes([J_inv, M_areo + M_gyro + M_vanes]) - cs.mtimes([J_inv, cs.cross(w, cs.mtimes(J, w))]),
     ])
 
 def dynamics_discrete(x, u):
@@ -118,8 +136,8 @@ variables = cs.vertcat(*u)
 parameters = cs.vertcat(u_0, x_0, *x_tr)
 
 bounds = og.constraints.Rectangle(
-    [0, np.deg2rad(-10), np.deg2rad(-10), np.deg2rad(-10), np.deg2rad(-10)]*HC,
-    [2000, np.deg2rad(10), np.deg2rad(10), np.deg2rad(10), np.deg2rad(10)]*HC,
+    [400, np.deg2rad(-10), np.deg2rad(-10), np.deg2rad(-10)]*HC,
+    [700, np.deg2rad(10), np.deg2rad(10), np.deg2rad(10)]*HC,
 )
 
 problem = og.builder.Problem(variables, parameters, cost) \

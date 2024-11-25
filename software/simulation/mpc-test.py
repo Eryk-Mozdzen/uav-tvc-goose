@@ -6,16 +6,26 @@ HC = 80
 T = 0.01
 
 x = np.array([0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0])
-u = np.array([1000, 0, 0, 0, 0])
+u = np.array([567, 0, 0, 0])
 U = np.tile(u, (HC, 1))
 
-def dynamics_continuous(x, u):
+def dynamics(x, u):
+    Kf  = 1.458825e-05
+    Km  = 2.531647e-07
+    Kl  = 0.34802890073780146
+    Jxx = 3513658.12176*1e-9
+    Jyy = 4068713.21612*1e-9
+    Jzz = 3724881.39219*1e-9
+    Jr  =   38872.17503*1e-9
+    m   = 0.518
+    l   = 62.89435*1e-3
+    r   = 0.08182101368679512
+    a0  = np.radians(-10)
+    g   = 9.8065
+
     phi = x[3]
     theta = x[4]
     psi = x[5]
-    vx = x[6]
-    vy = x[7]
-    vz = x[8]
     wx = x[9]
     wy = x[10]
     wz = x[11]
@@ -24,58 +34,65 @@ def dynamics_continuous(x, u):
     a1 = u[1]
     a2 = u[2]
     a3 = u[3]
-    a4 = u[4]
 
-    g = 9.8065
-    m = 0.332
-    l = 0.0500
-    r = 0.0665
-    J_xx = 0.0009887
-    J_yy = 0.0009817
-    J_zz = 0.0002177
-    J_r = 0.00001366
-    a_s = -0.08727
-    K_l = 0.4203
-    K_m = 0.000000041
-    K_w = 0.000003133
+    Ft = Kf*wr**2
+    Mz = Km*wr**2
+    F1 = Kl*Ft*a1
+    F2 = Kl*Ft*a2
+    F3 = Kl*Ft*a3
+    Fs = Kl*Ft*a0
 
-    Ft = K_w*wr**2
-    F1 = K_l*Ft*a1
-    F2 = K_l*Ft*a2
-    F3 = K_l*Ft*a3
-    F4 = K_l*Ft*a4
-    Fs = K_l*Ft*a_s
-    Mr = -K_m*wr**2
+    gravity = np.array([0, 0, -g]).reshape(-1, 1)
+    F_thrust = np.array([0, 0, Ft]).reshape(-1, 1)
+    M_areo = np.array([0, 0, -Mz]).reshape(-1, 1)
+    M_gyro = np.array([Jr*wr*wy, -Jr*wr*wx, 0]).reshape(-1, 1)
+    F_vanes = np.array([
+        -0.5*np.sqrt(3)*F1 + 0.5*np.sqrt(3)*F3,
+        -0.5*F1 + F2 - 0.5*F3,
+        0,
+    ]).reshape(-1, 1)
+    M_vanes = np.array([
+        l*(-0.5*F1 + F2 - 0.5*F3),
+        l*(0.5*np.sqrt(3)*F1 - 0.5*np.sqrt(3)*F3),
+        -r*(F1 + F2 + F3 + 3*Fs),
+    ]).reshape(-1, 1)
 
-    return np.array([
-        vx*np.cos(theta)*np.cos(psi) + vy*(np.sin(phi)*np.sin(theta)*np.cos(psi) - np.cos(phi)*np.sin(psi)) + vz*(np.cos(phi)*np.sin(theta)*np.cos(psi) + np.sin(phi)*np.sin(psi)),
-        vx*np.cos(theta)*np.sin(psi) + vy*(np.sin(phi)*np.sin(theta)*np.sin(psi) + np.cos(phi)*np.cos(psi)) + vz*(np.cos(phi)*np.sin(theta)*np.sin(psi) - np.sin(phi)*np.cos(psi)),
-        -vx*np.sin(theta) + vy*np.sin(phi)*np.cos(theta) + vz*np.cos(phi)*np.cos(theta),
-        #vx,
-        #vy,
-        #vz,
-        #wx + wy*np.sin(phi)*np.tan(theta) + wz*np.cos(phi)*np.tan(theta),
-        #wy*np.cos(phi) - wz*np.sin(phi),
-        #wy*(np.sin(phi)/np.cos(theta)) + wz*(np.cos(phi)/np.cos(theta)),
-        wx,
-        wy,
-        wz,
-        (1/m)*(F2 - F4) + g*np.sin(theta),
-        (1/m)*(F3 - F1) - g*np.sin(phi)*np.cos(theta),
-        (1/m)*Ft - g*np.cos(phi)*np.cos(theta),
-        #(1/m)*(F2 - F4),
-        #(1/m)*(F3 - F1),
-        #(1/m)*Ft - g,
-        #(1/J_xx)*(J_yy - J_zz)*wy*wz + (1/J_xx)*l*(F3 - F1) + (J_r/J_xx)*wr*wy,
-        #(1/J_yy)*(J_zz - J_xx)*wx*wz + (1/J_yy)*l*(F4 - F2) - (J_r/J_yy)*wr*wx,
-        #(1/J_zz)*(J_xx - J_yy)*wx*wy - (1/J_zz)*r*(F1 + F2 + F3 + F4 + 4*Fs) + (1/J_zz)*Mr,
-        (1/J_xx)*l*(F3 - F1),
-        (1/J_yy)*l*(F4 - F2),
-        - (1/J_zz)*r*(F1 + F2 + F3 + F4),
+    J = np.diag([Jxx, Jyy, Jzz])
+    W = np.array([
+        [1, np.sin(phi)*np.tan(theta), np.cos(phi)*np.tan(theta)],
+        [0, np.cos(phi), -np.sin(phi)],
+        [0, np.sin(phi)/np.cos(theta), np.cos(phi)/np.cos(theta)],
     ])
+    Rz = np.array([
+        [np.cos(psi), -np.sin(psi), 0],
+        [np.sin(psi),  np.cos(psi), 0],
+        [0, 0, 1],
+    ])
+    Ry = np.array([
+        [ np.cos(theta), 0, np.sin(theta)],
+        [0, 1, 0],
+        [-np.sin(theta), 0, np.cos(theta)],
+    ])
+    Rx = np.array([
+        [1, 0, 0],
+        [0, np.cos(phi), -np.sin(phi)],
+        [0, np.sin(phi),  np.cos(phi)],
+    ])
+    R = Rz*Ry*Rx
+
+    w = np.array([wx, wy, wz]).reshape(-1, 1)
+
+    return np.vstack([
+        x[6],
+        x[7],
+        x[8],
+        W@w,
+        R@(F_thrust + F_vanes)/m + gravity,
+        np.linalg.inv(J)@(M_areo + M_gyro + M_vanes) - np.linalg.inv(J)@np.cross(w.flatten(), np.dot(J, w).flatten()).reshape(-1, 1),
+    ]).flatten()
 
 def dynamics_discrete(x, u):
-    dx = dynamics_continuous(x, u)
+    dx = dynamics(x, u)
     return x + T*dx
 
 data = []
@@ -115,10 +132,10 @@ for i in range(1000):
     x_tr = trajectory(T*np.arange(i, i+HP)).transpose()
 
     #response = mng.call(u.tolist() + x.tolist() + x_tr.flatten().tolist(), initial_guess=np.vstack((U[1:], U[-1])).flatten().tolist())
-    response = mng.call(u.tolist() + x.tolist() + x_tr.flatten().tolist(), initial_guess=[1000, 0, 0, 0, 0]*HC)
+    response = mng.call(u.tolist() + x.tolist() + x_tr.flatten().tolist(), initial_guess=[567, 0, 0, 0]*HC)
 
     if response.is_ok():
-        U = np.array(response.get().solution).reshape(-1, 5)
+        U = np.array(response.get().solution).reshape(-1, 4)
         u = U[0]
     else:
         print(response.get().message)
@@ -201,7 +218,6 @@ line_u1, = ax02.plot([], [])
 line_u2, = ax12.plot([], [])
 line_u3, = ax12.plot([], [])
 line_u4, = ax12.plot([], [])
-line_u5, = ax12.plot([], [])
 
 ax10.legend()
 ax01.legend()
@@ -240,8 +256,7 @@ def init():
     line_u2.set_data([], [])
     line_u3.set_data([], [])
     line_u4.set_data([], [])
-    line_u5.set_data([], [])
-    return dir_xt, dir_x, *dir_pr, line_tr, line_pr, line_z, line_zt, line_phi, line_theta, line_psi, line_psit, line_u1, line_u2, line_u3, line_u4, line_u5,
+    return dir_xt, dir_x, *dir_pr, line_tr, line_pr, line_z, line_zt, line_phi, line_theta, line_psi, line_psit, line_u1, line_u2, line_u3, line_u4,
 
 def update(frame):
     d = data[frame]
@@ -331,12 +346,8 @@ def update(frame):
         [i[0] for i in u],
         [np.rad2deg(i[1][3]) for i in u],
     )
-    line_u5.set_data(
-        [i[0] for i in u],
-        [np.rad2deg(i[1][4]) for i in u],
-    )
 
-    return dir_xt, dir_x, *dir_pr, line_tr, line_pr, line_z, line_zt, line_phi, line_theta, line_psi, line_psit, line_u1, line_u2, line_u3, line_u4, line_u5,
+    return dir_xt, dir_x, *dir_pr, line_tr, line_pr, line_z, line_zt, line_phi, line_theta, line_psi, line_psit, line_u1, line_u2, line_u3, line_u4,
 
 anim = FuncAnimation(
     fig=fig,
