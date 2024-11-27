@@ -3,7 +3,7 @@ import numpy as np
 import scipy.constants
 
 HP = 20
-HC = 10
+HC = 5
 T = 0.05
 
 def dynamics(x, u):
@@ -22,14 +22,13 @@ def dynamics(x, u):
 
     Kp = 2
     Kd = 3
-    m = 0.518
 
     z2     = z2_ref     + Kd*(z1_ref     - x[8])  + Kp*(z0_ref     - x[2])
     phi2   = phi2_ref   + Kd*(phi1_ref   - x[9])  + Kp*(phi0_ref   - x[3])
     theta2 = theta2_ref + Kd*(theta1_ref - x[10]) + Kp*(theta0_ref - x[4])
     psi2   = psi2_ref   + Kd*(psi1_ref   - x[11]) + Kp*(psi0_ref   - x[5])
 
-    Fxy = (z2 + scipy.constants.g)*np.sqrt(1 - np.cos(x[3])*np.cos(x[4]))/(np.cos(x[3])*np.cos(x[4]))
+    a = (z2 + scipy.constants.g)/(np.cos(x[3])*np.cos(x[4]))
 
     dx = np.array([
         x[6],
@@ -38,8 +37,8 @@ def dynamics(x, u):
         x[9],
         x[10],
         x[11],
-        Fxy*np.cos(x[5])/m,
-        Fxy*np.sin(x[5])/m,
+        -a*np.sin(x[4]),
+        a*np.sin(x[3])*np.cos(x[4]),
         z2,
         phi2,
         theta2,
@@ -65,7 +64,7 @@ def traj(u, u2):
     ])
 
 data = []
-x = np.array([0, 0, 0, 0.1, -0.01, 0, 0, 0, 0, 0, 0, 0])
+x = np.array([0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0])
 
 mng = og.tcp.OptimizerTcpManager('open_optimizer')
 mng.start()
@@ -78,24 +77,36 @@ def trajectory(t):
         #a*np.cos(t*w)/(np.sin(t*w)**2 + 1),
         #np.full_like(t, 1),
         #np.atan2(-a*w*np.sin(t*w)/(np.sin(t*w)**2 + 1) - 2*a*w*np.sin(t*w)*np.cos(t*w)**2/(np.sin(t*w)**2 + 1)**2, -a*w*np.sin(t*w)**2/(np.sin(t*w)**2 + 1) + a*w*np.cos(t*w)**2/(np.sin(t*w)**2 + 1) - 2*a*w*np.sin(t*w)**2*np.cos(t*w)**2/(np.sin(t*w)**2 + 1)**2),
+        #a*w*(1 - 3*np.sin(t*w)**2)/((np.sin(t*w)**2 + 1)**2),
+        #a*w*(np.sin(t*w)**2 - 3)*np.sin(t*w)/((np.sin(t*w)**2 + 1)**2),
+        #np.full_like(t, 0),
+        #-3*w*np.cos(t*w)/(np.sin(t*w)**2 + 1)
 
         np.cos(t*w),
         np.sin(t*w),
         np.full_like(t, 1),
         t*w + np.full_like(t, np.pi/2),
+        -w*np.sin(t*w),
+        w*np.cos(t*w),
+        np.full_like(t, 0),
+        np.full_like(t, w),
 
         #np.full_like(t, -1),
         #np.full_like(t, 1),
         #np.full_like(t, 1),
         #np.full_like(t, np.pi/2),
+        #np.full_like(t, 0),
+        #np.full_like(t, 0),
+        #np.full_like(t, 0),
+        #np.full_like(t, 0),
     ])
 
-for i in range(200):
+for i in range(500):
     print(f't = {i}')
 
     x_tr = trajectory(T*np.arange(i, i+HP)).transpose()
 
-    response = mng.call(x.tolist() + x_tr.flatten().tolist(), initial_guess=np.zeros(4*HC))
+    response = mng.call(x.tolist() + x_tr.flatten().tolist())
 
     if response.is_ok():
         u2 = np.array(response.get().solution).reshape(HC, 4)

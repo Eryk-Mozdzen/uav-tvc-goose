@@ -3,11 +3,11 @@ import opengen as og
 import scipy.constants
 
 HP = 20
-HC = 10
+HC = 5
 T = 0.05
 
 NX = 12
-NT = 4
+NT = 8
 NU = 4
 
 H = cs.DM([
@@ -15,21 +15,23 @@ H = cs.DM([
     [0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
     [0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0],
     [0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0],
+    [0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0],
+    [0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0],
+    [0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0],
+    [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1],
 ])
 
 Z = cs.DM([
     [0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0],
     [0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0],
-    [0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0],
-    [0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0],
     [0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0],
     [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0],
 ])
 
 QH = cs.DM.eye(NT)*100
-QZ = cs.DM.eye(6)*1
+QZ = cs.DM.eye(4)*1
 
-def dynamics(x, u):
+def dynamics_continuous(x, u):
     z0_ref     = u[0]
     phi0_ref   = u[1]
     theta0_ref = u[2]
@@ -45,30 +47,31 @@ def dynamics(x, u):
 
     Kp = 2
     Kd = 3
-    m = 0.518
 
     z2     = z2_ref     + Kd*(z1_ref     - x[8])  + Kp*(z0_ref     - x[2])
     phi2   = phi2_ref   + Kd*(phi1_ref   - x[9])  + Kp*(phi0_ref   - x[3])
     theta2 = theta2_ref + Kd*(theta1_ref - x[10]) + Kp*(theta0_ref - x[4])
     psi2   = psi2_ref   + Kd*(psi1_ref   - x[11]) + Kp*(psi0_ref   - x[5])
 
-    Fxy = (z2 + scipy.constants.g)*cs.sqrt(1 - cs.cos(x[3])*cs.cos(x[4]))/(cs.cos(x[3])*cs.cos(x[4]))
+    a = (z2 + scipy.constants.g)/(cs.cos(x[3])*cs.cos(x[4]))
 
-    dx = cs.vcat([
+    return cs.vcat([
         x[6],
         x[7],
         x[8],
         x[9],
         x[10],
         x[11],
-        Fxy*cs.cos(x[5])/m,
-        Fxy*cs.sin(x[5])/m,
+        -a*cs.sin(x[4]),
+        a*cs.sin(x[3])*cs.cos(x[4]),
         z2,
         phi2,
         theta2,
         psi2,
     ])
 
+def dynamics_discrete(x, u):
+    dx = dynamics_continuous(x, u)
     return x + dx*T
 
 def traj(u, u2):
@@ -100,22 +103,22 @@ for t in range(0, HC):
     dz = cs.mtimes([Z, x])
     cost +=cs.mtimes([dx.T, QH, dx])
     cost +=cs.mtimes([dz.T, QZ, dz])
-    x = dynamics(x, u)
+    x = dynamics_discrete(x, u)
     u = traj(u, u2[t])
 for t in range(HC, HP):
     dx = cs.mtimes([H, x]) - x_tr[t]
     dz = cs.mtimes([Z, x])
     cost +=cs.mtimes([dx.T, QH, dx])
     cost +=cs.mtimes([dz.T, QZ, dz])
-    x = dynamics(x, u)
+    x = dynamics_discrete(x, u)
     u = traj(u, u2[-1])
 
 variables = cs.vertcat(*u2)
 parameters = cs.vertcat(x_0, *x_tr)
 
 bounds = og.constraints.Rectangle(
-    [-10, -10, -10, -10]*HC,
-    [+10, +10, +10, +10]*HC,
+    [-10, -10, -10, -100]*HC,
+    [+10, +10, +10, +100]*HC,
 )
 
 problem = og.builder.Problem(variables, parameters, cost) \
