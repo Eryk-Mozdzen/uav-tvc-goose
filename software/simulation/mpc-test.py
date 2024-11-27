@@ -29,6 +29,8 @@ def dynamics(x, u):
     psi2   = psi2_ref   + Kd*(psi1_ref   - x[11]) + Kp*(psi0_ref   - x[5])
 
     a = (z2 + scipy.constants.g)/(np.cos(x[3])*np.cos(x[4]))
+    ax = -a*np.sin(x[4])
+    ay = a*np.sin(x[3])*np.cos(x[4])
 
     dx = np.array([
         x[6],
@@ -37,8 +39,8 @@ def dynamics(x, u):
         x[9],
         x[10],
         x[11],
-        -a*np.sin(x[4]),
-        a*np.sin(x[3])*np.cos(x[4]),
+        ax*np.cos(x[5]) - ay*np.sin(x[5]),
+        ax*np.sin(x[5]) + ay*np.cos(x[5]),
         z2,
         phi2,
         theta2,

@@ -31,7 +31,7 @@ Z = cs.DM([
 QH = cs.DM.eye(NT)*100
 QZ = cs.DM.eye(4)*1
 
-def dynamics_continuous(x, u):
+def dynamics(x, u):
     z0_ref     = u[0]
     phi0_ref   = u[1]
     theta0_ref = u[2]
@@ -54,24 +54,24 @@ def dynamics_continuous(x, u):
     psi2   = psi2_ref   + Kd*(psi1_ref   - x[11]) + Kp*(psi0_ref   - x[5])
 
     a = (z2 + scipy.constants.g)/(cs.cos(x[3])*cs.cos(x[4]))
+    ax = -a*cs.sin(x[4])
+    ay = a*cs.sin(x[3])*cs.cos(x[4])
 
-    return cs.vcat([
+    dx = cs.vcat([
         x[6],
         x[7],
         x[8],
         x[9],
         x[10],
         x[11],
-        -a*cs.sin(x[4]),
-        a*cs.sin(x[3])*cs.cos(x[4]),
+        ax*cs.cos(x[5]) - ay*cs.sin(x[5]),
+        ax*cs.sin(x[5]) + ay*cs.cos(x[5]),
         z2,
         phi2,
         theta2,
         psi2,
     ])
 
-def dynamics_discrete(x, u):
-    dx = dynamics_continuous(x, u)
     return x + dx*T
 
 def traj(u, u2):
@@ -103,14 +103,14 @@ for t in range(0, HC):
     dz = cs.mtimes([Z, x])
     cost +=cs.mtimes([dx.T, QH, dx])
     cost +=cs.mtimes([dz.T, QZ, dz])
-    x = dynamics_discrete(x, u)
+    x = dynamics(x, u)
     u = traj(u, u2[t])
 for t in range(HC, HP):
     dx = cs.mtimes([H, x]) - x_tr[t]
     dz = cs.mtimes([Z, x])
     cost +=cs.mtimes([dx.T, QH, dx])
     cost +=cs.mtimes([dz.T, QZ, dz])
-    x = dynamics_discrete(x, u)
+    x = dynamics(x, u)
     u = traj(u, u2[-1])
 
 variables = cs.vertcat(*u2)
