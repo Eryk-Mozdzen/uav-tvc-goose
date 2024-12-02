@@ -27,3 +27,4 @@ build
 !software/identification/*.csv
 open_optimizer
 estimator-docs
+docs
