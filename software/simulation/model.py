@@ -63,7 +63,7 @@ forces = [
     (B, (Km*x7.diff('t')**2)*B.z),
     (B, Jr*x7.diff('t')*w[1]*B.x - Jr*x7.diff('t')*w[0]*B.y),
     #(R, ((1/(T1*T2)*ur - (1/(T1*T2)*x7 - ((T1 + T2)/(T1*T2)*x7.diff('t')))))*B.z),
-    (R, ur*B.z),
+    #(R, ur*B.z),
 ]
 
 vanes = [
@@ -100,141 +100,55 @@ dq = q.diff('t')
 
 ddq = M.LUsolve(T)
 
-f = sp.simplify(sp.Matrix.vstack(dq, ddq).subs([(ur, 0), (a1, 0), (a2, 0), (a3, 0)]))
-G = sp.simplify(sp.Matrix.vstack(dq, ddq).jacobian([ur, a1, a2, a3]))
-
-#import os
-#
-#subs = {
-#    (x1.diff('t'), sp.Symbol('x8')),
-#    (x2.diff('t'), sp.Symbol('x9')),
-#    (x3.diff('t'), sp.Symbol('x10')),
-#    (x4.diff('t'), sp.Symbol('x11')),
-#    (x5.diff('t'), sp.Symbol('x12')),
-#    (x6.diff('t'), sp.Symbol('x13')),
-#    (x7.diff('t'), sp.Symbol('x14')),
-#    (x1, sp.Symbol('x1')),
-#    (x2, sp.Symbol('x2')),
-#    (x3, sp.Symbol('x3')),
-#    (x4, sp.Symbol('x4')),
-#    (x5, sp.Symbol('x5')),
-#    (x6, sp.Symbol('x6')),
-#    (x7, sp.Symbol('x7')),
-#}
-#
-#f = f.subs(subs)
-#g = g.subs(subs)
-#
-#here = os.path.dirname(__file__)
-#os.makedirs(f'{here}/docs', exist_ok=True)
-#
-#with open(f'{here}/docs/main.tex', 'w') as file:
-#    file.write(
-#        '\\documentclass{article}\n'
-#        '\\usepackage{amsmath}\n'
-#        '\\usepackage[paperwidth=250cm, paperheight=20cm, margin=10mm]{geometry}\n'
-#        '\n'
-#        '\\begin{document}\n'
-#        '    \\begin{equation}\n'
-#        '        \\begin{bmatrix}\n'
-#        '            \\dot{x}\\\\\n'
-#        '            \\dot{y}\\\\\n'
-#        '            \\dot{z}\\\\\n'
-#        '            \\dot{\\phi}\\\\\n'
-#        '            \\dot{\\theta}\\\\\n'
-#        '            \\dot{\\psi}\\\\\n'
-#        '            \\dot{\\beta}\\\\\n'
-#        '            \\ddot{x}\\\\\n'
-#        '            \\ddot{y}\\\\\n'
-#        '            \\ddot{z}\\\\\n'
-#        '            \\ddot{\\phi}\\\\\n'
-#        '            \\ddot{\\theta}\\\\\n'
-#        '            \\ddot{\\psi}\\\\\n'
-#        '            \\ddot{\\beta}\\\\\n'
-#        '        \\end{bmatrix}\n'
-#        '        = ' + sp.latex(f) + ' + ' + sp.latex(g) + '\\cdot\n'
-#        '        \\begin{bmatrix}\n'
-#        '            u_r\\\\\n'
-#        '            \\alpha_1\\\\\n'
-#        '            \\alpha_2\\\\\n'
-#        '            \\alpha_3\\\\\n'
-#        '        \\end{bmatrix}\n'
-#        '    \\end{equation}\n'
-#        '\\end{document}\n'
-#    )
-#
-#os.system(f'pdflatex -interaction=nonstopmode -output-directory={here}/docs {here}/docs/main.tex')
+#f = sp.simplify(sp.Matrix.vstack(dq, ddq).subs([(ur, 0), (a1, 0), (a2, 0), (a3, 0)]))
+#G = sp.simplify(sp.Matrix.vstack(dq, ddq).jacobian([ur, a1, a2, a3]))
+f = sp.simplify(sp.Matrix.vstack(dq, ddq).subs([(a1, 0), (a2, 0), (a3, 0)]))
+G = sp.simplify(sp.Matrix.vstack(dq, ddq).jacobian([a1, a2, a3]))
 
 x = sp.Matrix.vstack(q, dq)
 
 t = sp.Symbol('t')
 
 y_ref = sp.Matrix([
-    [sp.sin(2*sp.pi*t)],
-    [sp.sin(2*sp.pi*t + sp.pi/3)],
-    [sp.sin(2*sp.pi*t + sp.pi/4)],
-    [sp.sin(2*sp.pi*t + sp.pi/5)],
+    #[sp.sin(2*sp.pi*t)],
+    [sp.sin(2*sp.pi*(t + sp.pi))],
+    [sp.sin(2*sp.pi*(t + sp.pi/2))],
+    [sp.sin(2*sp.pi*(t + sp.pi/3))],
 ])
 
 h = sp.Matrix([
-    [x[2]],
+    #[x[2]],
     [x[3]],
     [x[4]],
     [x[5]],
 ])
 
-Kp = sp.Symbol('K_p')
-Kd = sp.Symbol('K_d')
+k0 = sp.Symbol('k_0')
+k1 = sp.Symbol('k_1')
 
-v = y_ref.diff('t', 2) - Kd*(h.diff('t') - y_ref.diff('t')) - Kp*(h - y_ref)
+v = y_ref.diff('t', 2) - k1*(h.diff('t') - y_ref.diff('t')) - k0*(h - y_ref)
 
-def Lie(field1, field2):
-    return field2.jacobian(x)*field1
+def Lie(field1, field2, order=1):
+    if order==1:
+        return field2.jacobian(x)*field1
+    return Lie(field1, Lie(field1, field2), order-1)
 
-#A = sp.Matrix([
-#    [Lie(G[:, 0], Lie(f, h[0, :])), Lie(G[:, 1], Lie(f, h[0, :])), Lie(G[:, 2], Lie(f, h[0, :])), Lie(G[:, 3], Lie(f, h[0, :]))],
-#    [Lie(G[:, 0], Lie(f, h[1, :])), Lie(G[:, 1], Lie(f, h[1, :])), Lie(G[:, 2], Lie(f, h[1, :])), Lie(G[:, 3], Lie(f, h[1, :]))],
-#    [Lie(G[:, 0], Lie(f, h[2, :])), Lie(G[:, 1], Lie(f, h[2, :])), Lie(G[:, 2], Lie(f, h[2, :])), Lie(G[:, 3], Lie(f, h[2, :]))],
-#    [Lie(G[:, 0], Lie(f, h[3, :])), Lie(G[:, 1], Lie(f, h[3, :])), Lie(G[:, 2], Lie(f, h[3, :])), Lie(G[:, 3], Lie(f, h[3, :]))],
-#])
-#
-#b = sp.Matrix([
-#    [Lie(f, Lie(f, h[0, :]))],
-#    [Lie(f, Lie(f, h[1, :]))],
-#    [Lie(f, Lie(f, h[2, :]))],
-#    [Lie(f, Lie(f, h[3, :]))],
-#])
+relative_degree = [2, 2, 2]
 
-#A = sp.Matrix([
-#    [Lie(G[:, 0], Lie(f, Lie(f, Lie(f, h[0, :])))), Lie(G[:, 1], Lie(f, Lie(f, Lie(f, h[0, :])))), Lie(G[:, 2], Lie(f, Lie(f, Lie(f, h[0, :])))), Lie(G[:, 3], Lie(f, Lie(f, Lie(f, h[0, :]))))],
-#    [Lie(G[:, 0], Lie(f, h[1, :])), Lie(G[:, 1], Lie(f, h[1, :])), Lie(G[:, 2], Lie(f, h[1, :])), Lie(G[:, 3], Lie(f, h[1, :]))],
-#    [Lie(G[:, 0], Lie(f, h[2, :])), Lie(G[:, 1], Lie(f, h[2, :])), Lie(G[:, 2], Lie(f, h[2, :])), Lie(G[:, 3], Lie(f, h[2, :]))],
-#    [Lie(G[:, 0], Lie(f, h[3, :])), Lie(G[:, 1], Lie(f, h[3, :])), Lie(G[:, 2], Lie(f, h[3, :])), Lie(G[:, 3], Lie(f, h[3, :]))],
-#])
-#
-#b = sp.Matrix([
-#    [Lie(f, Lie(f, Lie(f, Lie(f, h[0, :]))))],
-#    [Lie(f, Lie(f, h[1, :]))],
-#    [Lie(f, Lie(f, h[2, :]))],
-#    [Lie(f, Lie(f, h[3, :]))],
-#])
+A = sp.Matrix.zeros(h.shape[0], h.shape[0])
+b = sp.Matrix.zeros(h.shape[0], 1)
 
-A = sp.Matrix([
-    [Lie(G[:, 0], Lie(f, Lie(f, h[0, :]))), Lie(G[:, 1], Lie(f, Lie(f, h[0, :]))), Lie(G[:, 2], Lie(f, Lie(f, h[0, :]))), Lie(G[:, 3], Lie(f, Lie(f, h[0, :])))],
-    [Lie(G[:, 0], Lie(f, h[1, :])), Lie(G[:, 1], Lie(f, h[1, :])), Lie(G[:, 2], Lie(f, h[1, :])), Lie(G[:, 3], Lie(f, h[1, :]))],
-    [Lie(G[:, 0], Lie(f, h[2, :])), Lie(G[:, 1], Lie(f, h[2, :])), Lie(G[:, 2], Lie(f, h[2, :])), Lie(G[:, 3], Lie(f, h[2, :]))],
-    [Lie(G[:, 0], Lie(f, h[3, :])), Lie(G[:, 1], Lie(f, h[3, :])), Lie(G[:, 2], Lie(f, h[3, :])), Lie(G[:, 3], Lie(f, h[3, :]))],
-])
+for i in range(h.shape[0]):
+    for j in range(h.shape[0]):
+        A[i, j] = Lie(G[:, j], Lie(f, h[i, :], relative_degree[i]-1))
+    b[i] = Lie(f, h[i, :], relative_degree[i])
 
-b = sp.Matrix([
-    [Lie(f, Lie(f, Lie(f, h[0, :])))],
-    [Lie(f, Lie(f, h[1, :]))],
-    [Lie(f, Lie(f, h[2, :]))],
-    [Lie(f, Lie(f, h[3, :]))],
-])
+A = sp.simplify(A)
+b = sp.simplify(b)
 
-u = A.LUsolve(v - b)
-#u = A.inv()*(v - b)
+u = A.inv()*(v - b)
+
+#u = sp.simplify(u)
 
 import os
 
@@ -255,10 +169,6 @@ subs = {
     (x7, sp.Symbol('x7')),
 }
 
-A = sp.simplify(A)
-b = sp.simplify(b)
-#u = sp.simplify(u)
-
 here = os.path.dirname(__file__)
 os.makedirs(f'{here}/docs', exist_ok=True)
 
@@ -271,7 +181,7 @@ with open(f'{here}/docs/main.tex', 'w') as file:
         '\\begin{document}\n'
         '    \\begin{equation}\n'
         '        \\begin{bmatrix}\n'
-        '            u_r\\\\\n'
+#        '            u_r\\\\\n'
         '            \\alpha_1\\\\\n'
         '            \\alpha_2\\\\\n'
         '            \\alpha_3\\\\\n'
@@ -281,9 +191,9 @@ with open(f'{here}/docs/main.tex', 'w') as file:
         '    \\begin{equation}\n'
         '        A = ' + sp.latex(A) + '\n'
         '    \\end{equation}\n'
-        '    \\begin{equation}\n'
-        '        b = ' + sp.latex(b) + '\n'
-        '    \\end{equation}\n'
+#        '    \\begin{equation}\n'
+#        '        b = ' + sp.latex(b) + '\n'
+#        '    \\end{equation}\n'
         '    \\begin{equation}\n'
         '        v = ' + sp.latex(v) + '\n'
         '    \\end{equation}\n'
@@ -317,8 +227,8 @@ system = system.subs({
     T1:  0.1,
     T2:  0.01,
 
-    Kp:  100,
-    Kd:  100,
+    k0:  100,
+    k1:  100,
 
     x1.diff('t'): X[7],
     x2.diff('t'): X[8],
@@ -355,7 +265,7 @@ solution = scipy.integrate.solve_ivp(
 print(solution.message)
 
 plt.figure()
-plt.plot(solution.t, solution.y[2], label='z')
+#plt.plot(solution.t, solution.y[2], label='z')
 plt.plot(solution.t, solution.y[3], label='phi')
 plt.plot(solution.t, solution.y[4], label='theta')
 plt.plot(solution.t, solution.y[5], label='psi')

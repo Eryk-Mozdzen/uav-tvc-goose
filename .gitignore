@@ -25,6 +25,6 @@ Release
 .vscode
 build
 !software/identification/*.csv
-open_optimizer
-estimator-docs
-docs
+software/flight-controller/estimator-docs
+software/simulation/open_optimizer
+software/simulation/docs
