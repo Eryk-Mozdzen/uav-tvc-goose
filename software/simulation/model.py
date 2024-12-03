@@ -231,8 +231,8 @@ system = system.subs({
     T1:  0.1,
     T2:  0.01,
 
-    k0:  100,
-    k1:  100,
+    k0:  2,
+    k1:  3,
 
     x1.diff('t'): X[7],
     x2.diff('t'): X[8],
@@ -262,8 +262,8 @@ solution = scipy.integrate.solve_ivp(
     t_span=(0, 10),
     y0=[0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 590],
     method='RK45',
-    rtol=1e-4,
-    atol=1e-5,
+    rtol=1e-9,
+    atol=1e-9,
 )
 
 print(solution.message)

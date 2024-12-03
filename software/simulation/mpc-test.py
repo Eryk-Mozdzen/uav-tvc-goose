@@ -7,66 +7,56 @@ HC = 5
 T = 0.05
 
 def dynamics(x, u):
-    z0_ref     = u[0]
-    phi0_ref   = u[1]
-    theta0_ref = u[2]
-    psi0_ref   = u[3]
-    z1_ref     = u[4]
-    phi1_ref   = u[5]
-    theta1_ref = u[6]
-    psi1_ref   = u[7]
-    z2_ref     = u[8]
-    phi2_ref   = u[9]
-    theta2_ref = u[10]
-    psi2_ref   = u[11]
+    k0 = 2
+    k1 = 3
+    m  = 0.518
 
-    Kp = 2
-    Kd = 3
+    v1 = u[8]  - k1*(x[10] - u[4]) - k0*(x[3] - u[0])
+    v2 = u[9]  - k1*(x[11] - u[5]) - k0*(x[4] - u[1])
+    v3 = u[10] - k1*(x[12] - u[6]) - k0*(x[5] - u[2])
+    v4 =                     u[7]  - k0*(x[6] - u[3])
 
-    z2     = z2_ref     + Kd*(z1_ref     - x[8])  + Kp*(z0_ref     - x[2])
-    phi2   = phi2_ref   + Kd*(phi1_ref   - x[9])  + Kp*(phi0_ref   - x[3])
-    theta2 = theta2_ref + Kd*(theta1_ref - x[10]) + Kp*(theta0_ref - x[4])
-    psi2   = psi2_ref   + Kd*(psi1_ref   - x[11]) + Kp*(psi0_ref   - x[5])
-
-    a = (z2 + scipy.constants.g)/(np.cos(x[3])*np.cos(x[4]))
-    ax = -a*np.sin(x[4])
-    ay = a*np.sin(x[3])*np.cos(x[4])
+    ddx = (x[6]/m)*(np.cos(x[3])*np.sin(x[4])*np.cos(x[5]) + np.sin(x[3])*np.sin(x[5]))
+    ddy = (x[6]/m)*(np.cos(x[3])*np.sin(x[4])*np.sin(x[5]) - np.sin(x[3])*np.cos(x[5]))
+    ddz = (x[6]/m)*(np.cos(x[3])*np.cos(x[4])) - scipy.constants.g
 
     dx = np.array([
-        x[6],
         x[7],
         x[8],
         x[9],
         x[10],
         x[11],
-        ax*np.cos(x[5]) - ay*np.sin(x[5]),
-        ax*np.sin(x[5]) + ay*np.cos(x[5]),
-        z2,
-        phi2,
-        theta2,
-        psi2,
+        x[12],
+        v4,
+        ddx,
+        ddy,
+        ddz,
+        v1,
+        v2,
+        v3,
     ])
 
     return x + dx*T
 
-def traj(u, u2):
+def control(u, uhd):
     return np.array([
-        u[0] + u[4]*T + 0.5*u2[0]*T**2,
-        u[1] + u[5]*T + 0.5*u2[1]*T**2,
-        u[2] + u[6]*T + 0.5*u2[2]*T**2,
-        u[3] + u[7]*T + 0.5*u2[3]*T**2,
-        u[4] + u2[0]*T,
-        u[5] + u2[1]*T,
-        u[6] + u2[2]*T,
-        u[7] + u2[3]*T,
-        u2[0],
-        u2[1],
-        u2[2],
-        u2[3],
+        u[0] + u[4]*T + 0.5*uhd[0]*T**2,
+        u[1] + u[5]*T + 0.5*uhd[1]*T**2,
+        u[2] + u[6]*T + 0.5*uhd[2]*T**2,
+        u[3] + uhd[3]*T,
+
+        u[4] + uhd[0]*T,
+        u[5] + uhd[1]*T,
+        u[6] + uhd[2]*T,
+        uhd[3],
+
+        uhd[0],
+        uhd[1],
+        uhd[2],
     ])
 
 data = []
-x = np.array([0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0])
+x = np.array([0, 0, 0, 0, 0, 0, 5, 0, 0, 0, 0, 0, 0])
 
 mng = og.tcp.OptimizerTcpManager('open_optimizer')
 mng.start()
@@ -75,23 +65,23 @@ def trajectory(t):
     a = 1
     w = 1
     return np.array([
-        #a*np.sin(t*w)*np.cos(t*w)/(np.sin(t*w)**2 + 1),
-        #a*np.cos(t*w)/(np.sin(t*w)**2 + 1),
-        #np.full_like(t, 1),
-        #np.atan2(-a*w*np.sin(t*w)/(np.sin(t*w)**2 + 1) - 2*a*w*np.sin(t*w)*np.cos(t*w)**2/(np.sin(t*w)**2 + 1)**2, -a*w*np.sin(t*w)**2/(np.sin(t*w)**2 + 1) + a*w*np.cos(t*w)**2/(np.sin(t*w)**2 + 1) - 2*a*w*np.sin(t*w)**2*np.cos(t*w)**2/(np.sin(t*w)**2 + 1)**2),
-        #a*w*(1 - 3*np.sin(t*w)**2)/((np.sin(t*w)**2 + 1)**2),
-        #a*w*(np.sin(t*w)**2 - 3)*np.sin(t*w)/((np.sin(t*w)**2 + 1)**2),
-        #np.full_like(t, 0),
-        #-3*w*np.cos(t*w)/(np.sin(t*w)**2 + 1)
-
-        np.cos(t*w),
-        np.sin(t*w),
+        a*np.sin(t*w)*np.cos(t*w)/(np.sin(t*w)**2 + 1),
+        a*np.cos(t*w)/(np.sin(t*w)**2 + 1),
         np.full_like(t, 1),
-        t*w + np.full_like(t, np.pi/2),
-        -w*np.sin(t*w),
-        w*np.cos(t*w),
+        np.atan2(-a*w*np.sin(t*w)/(np.sin(t*w)**2 + 1) - 2*a*w*np.sin(t*w)*np.cos(t*w)**2/(np.sin(t*w)**2 + 1)**2, -a*w*np.sin(t*w)**2/(np.sin(t*w)**2 + 1) + a*w*np.cos(t*w)**2/(np.sin(t*w)**2 + 1) - 2*a*w*np.sin(t*w)**2*np.cos(t*w)**2/(np.sin(t*w)**2 + 1)**2),
+        a*w*(1 - 3*np.sin(t*w)**2)/((np.sin(t*w)**2 + 1)**2),
+        a*w*(np.sin(t*w)**2 - 3)*np.sin(t*w)/((np.sin(t*w)**2 + 1)**2),
         np.full_like(t, 0),
-        np.full_like(t, w),
+        -3*w*np.cos(t*w)/(np.sin(t*w)**2 + 1)
+
+        #np.cos(t*w),
+        #np.sin(t*w),
+        #np.full_like(t, 1),
+        #t*w + np.full_like(t, np.pi/2),
+        #-w*np.sin(t*w),
+        #w*np.cos(t*w),
+        #np.full_like(t, 0),
+        #np.full_like(t, w),
 
         #np.full_like(t, -1),
         #np.full_like(t, 1),
@@ -111,21 +101,21 @@ for i in range(500):
     response = mng.call(x.tolist() + x_tr.flatten().tolist())
 
     if response.is_ok():
-        u2 = np.array(response.get().solution).reshape(HC, 4)
+        uhd = np.array(response.get().solution).reshape(HC, 4)
     else:
         print(response.get().message)
 
-    x_pred = np.zeros((HP+1, 12))
+    x_pred = np.zeros((HP+1, 13))
     x_pred[0] = x
-    u = np.hstack([x[2:6], x[8:12], u2[0]])
+    u = np.hstack([x[3], x[4], x[5], x[6], x[10], x[11], x[12], uhd[0][3], uhd[0][0], uhd[0][1], uhd[0][2]])
     for k in range(0, HC):
         x_pred[k+1] = dynamics(x_pred[k], u)
-        u = traj(u, u2[k])
+        u = control(u, uhd[k])
     for k in range(HC, HP):
         x_pred[k+1] = dynamics(x_pred[k], u)
-        u = traj(u, u2[-1])
+        u = control(u, uhd[-1])
 
-    u = np.hstack([x[2:6], x[8:12], u2[0]])
+    u = np.hstack([x[3], x[4], x[5], x[6], x[10], x[11], x[12], uhd[0][3], uhd[0][0], uhd[0][1], uhd[0][2]])
 
     data.append({
         'x': x,
@@ -254,8 +244,8 @@ def update(frame):
         [i[1][2] for i in x],
     )
     line_zt.set_data(
-        [i[0] for i in u],
-        [i[1][0] for i in u],
+        [i[0] for i in tr],
+        [i[1][2] for i in tr],
     )
     line_phi.set_data(
         [i[0] for i in x],
@@ -263,7 +253,7 @@ def update(frame):
     )
     line_phit.set_data(
         [i[0] for i in u],
-        [np.rad2deg(i[1][1]) for i in u],
+        [np.rad2deg(i[1][0]) for i in u],
     )
     line_theta.set_data(
         [i[0] for i in x],
@@ -271,7 +261,7 @@ def update(frame):
     )
     line_thetat.set_data(
         [i[0] for i in u],
-        [np.rad2deg(i[1][2]) for i in u],
+        [np.rad2deg(i[1][1]) for i in u],
     )
     line_psi.set_data(
         [i[0] for i in x],
@@ -279,7 +269,7 @@ def update(frame):
     )
     line_psit.set_data(
         [i[0] for i in u],
-        [np.rad2deg(i[1][3]) for i in u],
+        [np.rad2deg(i[1][2]) for i in u],
     )
 
     return dir_xt, dir_x, line_tr, line_pr, line_z, line_zt, line_phi, line_phit, line_theta, line_thetat, line_psi, line_psit,
