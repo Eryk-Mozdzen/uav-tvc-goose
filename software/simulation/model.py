@@ -62,8 +62,7 @@ forces = [
     (C, (Kf*x7.diff('t')**2)*B.z),
     (B, (Km*x7.diff('t')**2)*B.z),
     (B, Jr*x7.diff('t')*w[1]*B.x - Jr*x7.diff('t')*w[0]*B.y),
-    #(R, ((1/(T1*T2)*ur - (1/(T1*T2)*x7 - ((T1 + T2)/(T1*T2)*x7.diff('t')))))*B.z),
-    #(R, ur*B.z),
+    (R, ((1/(T1*T2)*ur - (1/(T1*T2)*x7 - ((T1 + T2)/(T1*T2)*x7.diff('t')))))*B.z),
 ]
 
 vanes = [
@@ -100,40 +99,45 @@ dq = q.diff('t')
 
 ddq = M.LUsolve(T)
 
-#f = sp.simplify(sp.Matrix.vstack(dq, ddq).subs([(ur, 0), (a1, 0), (a2, 0), (a3, 0)]))
-#G = sp.simplify(sp.Matrix.vstack(dq, ddq).jacobian([ur, a1, a2, a3]))
-f = sp.simplify(sp.Matrix.vstack(dq, ddq).subs([(a1, 0), (a2, 0), (a3, 0)]))
-G = sp.simplify(sp.Matrix.vstack(dq, ddq).jacobian([a1, a2, a3]))
+f = sp.simplify(sp.Matrix.vstack(dq, ddq).subs([(ur, 0), (a1, 0), (a2, 0), (a3, 0)]))
+G = sp.simplify(sp.Matrix.vstack(dq, ddq).jacobian([ur, a1, a2, a3]))
 
 x = sp.Matrix.vstack(q, dq)
 
 t = sp.Symbol('t')
 
 y_ref = sp.Matrix([
-    #[sp.sin(2*sp.pi*t)],
     [sp.sin(2*sp.pi*(t + sp.pi))],
     [sp.sin(2*sp.pi*(t + sp.pi/2))],
     [sp.sin(2*sp.pi*(t + sp.pi/3))],
+    [sp.sin(2*sp.pi*t)/2 + 1],
 ])
 
 h = sp.Matrix([
-    #[x[2]],
     [x[3]],
     [x[4]],
     [x[5]],
+    [Kf*x[13]**2],
 ])
 
 k0 = sp.Symbol('k_0')
 k1 = sp.Symbol('k_1')
 
-v = y_ref.diff('t', 2) - k1*(h.diff('t') - y_ref.diff('t')) - k0*(h - y_ref)
+v = sp.Matrix([
+    [y_ref.diff('t', 2)[0] - k1*(h.diff('t')[0] - y_ref.diff('t')[0]) - k0*(h[0] - y_ref[0])],
+    [y_ref.diff('t', 2)[1] - k1*(h.diff('t')[1] - y_ref.diff('t')[1]) - k0*(h[1] - y_ref[1])],
+    [y_ref.diff('t', 2)[2] - k1*(h.diff('t')[2] - y_ref.diff('t')[2]) - k0*(h[2] - y_ref[2])],
+    [y_ref.diff('t')[3] - k0*(h[3] - y_ref[3])],
+])
 
 def Lie(field1, field2, order=1):
+    if order==0:
+        return field2
     if order==1:
         return field2.jacobian(x)*field1
     return Lie(field1, Lie(field1, field2), order-1)
 
-relative_degree = [2, 2, 2]
+relative_degree = [2, 2, 2, 1]
 
 A = sp.Matrix.zeros(h.shape[0], h.shape[0])
 b = sp.Matrix.zeros(h.shape[0], 1)
@@ -181,7 +185,7 @@ with open(f'{here}/docs/main.tex', 'w') as file:
         '\\begin{document}\n'
         '    \\begin{equation}\n'
         '        \\begin{bmatrix}\n'
-#        '            u_r\\\\\n'
+        '            u_r\\\\\n'
         '            \\alpha_1\\\\\n'
         '            \\alpha_2\\\\\n'
         '            \\alpha_3\\\\\n'
@@ -265,12 +269,12 @@ solution = scipy.integrate.solve_ivp(
 print(solution.message)
 
 plt.figure()
-#plt.plot(solution.t, solution.y[2], label='z')
 plt.plot(solution.t, solution.y[3], label='phi')
 plt.plot(solution.t, solution.y[4], label='theta')
 plt.plot(solution.t, solution.y[5], label='psi')
+plt.plot(solution.t, 1.458825e-05*solution.y[13]**2, label='thrust')
 plt.xlabel('t')
-plt.ylabel('x')
+plt.ylabel('y(t)')
 plt.ylim(-2, 2)
 plt.legend()
 plt.grid()
