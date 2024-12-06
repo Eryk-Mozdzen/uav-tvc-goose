@@ -64,14 +64,14 @@ for t in range(0, HC):
     cost +=cs.mtimes([dx.T, QH, dx])
     cost +=cs.mtimes([dz.T, QZ, dz])
     x = dynamics(x, v[t])
-    constraints = cs.vertcat(constraints, x[3], x[4], x[6])
+    constraints = cs.vertcat(constraints, x[6])
 for t in range(HC, HP):
     dx = cs.mtimes([H, x]) - x_tr[t]
     dz = cs.mtimes([Z, x])
     cost +=cs.mtimes([dx.T, QH, dx])
     cost +=cs.mtimes([dz.T, QZ, dz])
     x = dynamics(x, v[-1])
-    constraints = cs.vertcat(constraints, x[3], x[4], x[6])
+    constraints = cs.vertcat(constraints, x[6])
 
 variables = cs.vertcat(*v)
 parameters = cs.vertcat(x_0, *x_tr)
@@ -82,8 +82,8 @@ v_bounds = og.constraints.Rectangle(
 )
 
 x_bounds = og.constraints.Rectangle(
-    [-cs.pi/9, -cs.pi/9, 0]*HP,
-    [+cs.pi/9, +cs.pi/9, 10]*HP,
+    [0 ]*HP,
+    [10]*HP,
 )
 
 problem = og.builder.Problem(variables, parameters, cost)   \
