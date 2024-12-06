@@ -22,14 +22,12 @@ H = cs.DM([
 ])
 
 Z = cs.DM([
-    [0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-    [0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0],
     [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0],
     [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0],
 ])
 
 QH = cs.DM.eye(NT)*100
-QZ = cs.DM.eye(4)*1
+QZ = cs.DM.eye(2)*1
 
 def dynamics(x, v):
     m  = 0.518
@@ -57,6 +55,7 @@ x_tr = [cs.MX.sym('x_tr_' + str(i), NT) for i in range(HP)]
 v = [cs.MX.sym('v_' + str(i), NU) for i in range(HC)]
 
 cost = 0
+constraints = []
 
 x = x_0
 for t in range(0, HC):
@@ -65,23 +64,31 @@ for t in range(0, HC):
     cost +=cs.mtimes([dx.T, QH, dx])
     cost +=cs.mtimes([dz.T, QZ, dz])
     x = dynamics(x, v[t])
+    constraints = cs.vertcat(constraints, x[3], x[4], x[6])
 for t in range(HC, HP):
     dx = cs.mtimes([H, x]) - x_tr[t]
     dz = cs.mtimes([Z, x])
     cost +=cs.mtimes([dx.T, QH, dx])
     cost +=cs.mtimes([dz.T, QZ, dz])
     x = dynamics(x, v[-1])
+    constraints = cs.vertcat(constraints, x[3], x[4], x[6])
 
 variables = cs.vertcat(*v)
 parameters = cs.vertcat(x_0, *x_tr)
 
-bounds = og.constraints.Rectangle(
+v_bounds = og.constraints.Rectangle(
     [-10, -10, -10, -10]*HC,
     [+10, +10, +10, +10]*HC,
 )
 
-problem = og.builder.Problem(variables, parameters, cost) \
-    .with_constraints(bounds)
+x_bounds = og.constraints.Rectangle(
+    [-cs.pi/9, -cs.pi/9, 0]*HP,
+    [+cs.pi/9, +cs.pi/9, 10]*HP,
+)
+
+problem = og.builder.Problem(variables, parameters, cost)   \
+    .with_constraints(v_bounds)                             \
+    .with_aug_lagrangian_constraints(constraints, x_bounds)
 
 meta = og.config.OptimizerMeta()
 

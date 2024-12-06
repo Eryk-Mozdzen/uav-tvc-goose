@@ -35,7 +35,7 @@ mng.start()
 
 def trajectory(t):
     a = 1
-    w = 1
+    w = 2*np.pi/5
     return np.array([
         a*np.sin(t*w)*np.cos(t*w)/(np.sin(t*w)**2 + 1),
         a*np.cos(t*w)/(np.sin(t*w)**2 + 1),
