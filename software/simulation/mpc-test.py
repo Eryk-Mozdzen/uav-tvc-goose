@@ -44,7 +44,7 @@ def trajectory(t):
         a*w*(1 - 3*np.sin(t*w)**2)/((np.sin(t*w)**2 + 1)**2),
         a*w*(np.sin(t*w)**2 - 3)*np.sin(t*w)/((np.sin(t*w)**2 + 1)**2),
         np.full_like(t, 0),
-        -3*w*np.cos(t*w)/(np.sin(t*w)**2 + 1)
+        -3*w*np.cos(t*w)/(np.sin(t*w)**2 + 1),
 
         #np.cos(t*w),
         #np.sin(t*w),
@@ -110,33 +110,37 @@ ax00.set_aspect(1)
 ax00.grid()
 
 ax10 = fig.add_subplot(gs[1, 0])
-ax10.set_ylim(-1, 2)
-ax10.set_ylabel('z [m]')
+ax10.set_ylim(0, 2)
+ax10.set_ylabel('altitude [m]')
 ax10.set_xlabel('t [s]')
 ax10.grid()
 
 ax01 = fig.add_subplot(gs[0, 1])
 ax01.set_ylim(-45, 45)
 ax01.set_ylabel('attitude [deg]')
+ax01.set_xlabel('t [s]')
+ax01.set_yticks([-45, -30, -15, 0, 15, 30, 45])
 ax01.grid()
 
 ax11 = fig.add_subplot(gs[1, 1])
 ax11.set_ylim(-180, 180)
 ax11.set_ylabel('attitude [deg]')
 ax11.set_xlabel('t [s]')
+ax11.set_yticks([-180, -150, -120, -90, -60, -30, 0, 30, 60, 90, 120, 150, 180])
 ax11.grid()
 
 dir_xt = ax00.quiver(0, 0, 1, 0, angles='xy', scale_units='xy', scale=2, color='k', zorder=1)
-line_tr, = ax00.plot([], [], 'k--', zorder=1, label='xy trajectory')
-line_pr, = ax00.plot([], [], '--', zorder=2, label='xy')
+line_tr, = ax00.plot([], [], 'k--', zorder=1, label='$xy$ trajectory')
+line_pr, = ax00.plot([], [], '--', zorder=2, label='$xy$ prediction')
 dir_x = ax00.quiver(0, 0, 1, 0, angles='xy', scale_units='xy', scale=2, color='r', zorder=3)
 
-line_z, = ax10.plot([], [], label='z')
-line_zt, = ax10.plot([], [], 'k--', label='z trajectory')
+line_zt, = ax10.plot([], [], 'k--', label='$z$ trajectory')
+line_z, = ax10.plot([], [], label='$z$')
 
-line_phi, = ax01.plot([], [], label='phi')
-line_theta, = ax01.plot([], [], label='theta')
-line_psi, = ax11.plot([], [], label='psi')
+line_phi, = ax01.plot([], [], label='$\phi$')
+line_theta, = ax01.plot([], [], label='$\\theta$')
+line_psit, = ax11.plot([], [], 'k--', label='$\psi$ trajectory')
+line_psi, = ax11.plot([], [], label='$\psi$')
 
 ax00.legend()
 ax10.legend()
@@ -166,7 +170,8 @@ def init():
     line_phi.set_data([], [])
     line_theta.set_data([], [])
     line_psi.set_data([], [])
-    return dir_xt, dir_x, line_tr, line_pr, line_z, line_zt, line_phi, line_theta, line_psi,
+    line_psit.set_data([], [])
+    return dir_xt, dir_x, line_tr, line_pr, line_z, line_zt, line_phi, line_theta, line_psi, line_psit,
 
 def update(frame):
     d = data[frame]
@@ -221,8 +226,12 @@ def update(frame):
         [i[0] for i in x],
         [np.rad2deg(i[1][5]) for i in x],
     )
+    line_psit.set_data(
+        [i[0] for i in tr],
+        [np.rad2deg(i[1][3]) for i in tr],
+    )
 
-    return dir_xt, dir_x, line_tr, line_pr, line_z, line_zt, line_phi, line_theta, line_psi,
+    return dir_xt, dir_x, line_tr, line_pr, line_z, line_zt, line_phi, line_theta, line_psi, line_psit,
 
 anim = FuncAnimation(
     fig=fig,
