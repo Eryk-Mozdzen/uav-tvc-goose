@@ -29,3 +29,4 @@ software/flight-controller/estimator-docs
 software/simulation/open_optimizer
 software/simulation/docs
 software/simulation/src/plant
+software/simulation/src/controllers/PlantFeedbackLinearization.*

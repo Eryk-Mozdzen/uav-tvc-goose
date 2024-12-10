@@ -6,21 +6,22 @@ find_package(drake REQUIRED)
 
 add_executable(${PROJECT_NAME}
 	"src/main.cpp"
-	"src/base/TrajectoryGenerator.cpp"
-	"src/generators/Circle.cpp"
-	"src/generators/Lemniscate.cpp"
+	#"src/base/TrajectoryGenerator.cpp"
+	#"src/generators/Circle.cpp"
+	#"src/generators/Lemniscate.cpp"
 	#"src/controllers/Simple3.cpp"
-	"src/controllers/MPCFL.cpp"
+	#"src/controllers/MPCFL.cpp"
+	"src/controllers/PlantFeedbackLinearization.cpp"
 	"src/plant/Plant.cpp"
 )
 
 target_include_directories(${PROJECT_NAME} PRIVATE
 	"src"
 	"src/base"
-	"src/generators"
+	#"src/generators"
 	"src/controllers"
 	"src/plant"
-	"open_optimizer"
+	#"open_optimizer"
 )
 
 target_compile_options(${PROJECT_NAME} PRIVATE
@@ -33,8 +34,8 @@ target_compile_options(${PROJECT_NAME} PRIVATE
 
 target_link_libraries(${PROJECT_NAME}
 	drake::drake
-	"${CMAKE_SOURCE_DIR}/open_optimizer/target/release/libopen_optimizer.a"
-	m
-	dl
-	pthread
+	#"${CMAKE_SOURCE_DIR}/open_optimizer/target/release/libopen_optimizer.a"
+	#m
+	#dl
+	#pthread
 )

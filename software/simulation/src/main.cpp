@@ -1,51 +1,61 @@
 #include <drake/systems/framework/diagram_builder.h>
 #include <drake/systems/analysis/simulator.h>
 
-#include "Circle.h"
-#include "Lemniscate.h"
-#include "Simple3.h"
-#include "MPCFL.h"
+//#include "Circle.h"
+//#include "Lemniscate.h"
+//#include "Simple3.h"
+//#include "MPCFL.h"
 #include "Plant.h"
+#include "PlantFeedbackLinearization.h"
 #include "Sink.h"
+
+class Controller : public drake::systems::LeafSystem<double> {
+    void eval(const drake::systems::Context<double> &context, drake::systems::BasicVector<double> *output) const {
+		const Eigen::Vector<double, 14> x = this->GetInputPort("x").Eval(context);
+
+		const double t = context.get_time();
+
+		const double y0 = +0.5*sin(2*3.1415*t);
+		const double y1 = +0.5*cos(2*3.1415*t)*2*3.1415;
+		const double y2 = -0.5*sin(2*3.1415*t)*2*3.1415*2*3.1415;
+
+		const double k0 = 2;
+		const double k1 = 3;
+
+		output->SetAtIndex(0, y2 - k1*(x[10] - y1) - k0*(x[3] - y0));
+		output->SetAtIndex(1, y2 - k1*(x[11] - y1) - k0*(x[4] - y0));
+		output->SetAtIndex(2, y2 - k1*(x[12] - y1) - k0*(x[5] - y0));
+		output->SetAtIndex(3,                  y1  - k0*(Plant::K_f*x[13]*x[13] - (y0 + 1)));
+	}
+
+public:
+    Controller() {
+		this->DeclareVectorInputPort("x", 14);
+		this->DeclareVectorOutputPort("v", 4, &Controller::eval);
+	}
+};
 
 int main() {
 	drake::systems::DiagramBuilder<double> builder;
 
-	//auto generator = builder.AddSystem<Circle>(0, 0, 2, 6);
-	auto generator = builder.AddSystem<Lemniscate>(2, 20);
-	//auto controller = builder.AddSystem<Simple3>();
-	auto controller = builder.AddSystem<MPCFL>();
+	auto control = builder.AddSystem<Controller>();
+	auto linear = builder.AddSystem<PlantFeedbackLinearization>();
 	auto plant = builder.AddSystem<Plant>();
 	auto sink = builder.AddSystem<Sink>();
 
-	builder.Connect(generator->get_output_port(), controller->get_trajectory_input_port());
-	builder.Connect(controller->get_control_output_port(), plant->get_input_port());
-	builder.Connect(plant->get_output_port(), controller->get_state_input_port());
+	builder.Connect(control->GetOutputPort("v"), linear->GetInputPort("v"));
+	builder.Connect(linear->GetOutputPort("u"), plant->GetInputPort("u"));
+	builder.Connect(plant->GetOutputPort("x"), linear->GetInputPort("x"));
+	builder.Connect(plant->GetOutputPort("x"), control->GetInputPort("x"));
 
-	//sink->Connect(&builder, generator->get_output_port(), "xd,yd,zd,psid,xd1,yd1,zd1,psid1,xd2,yd2,zd2,psid2,xd3,yd3,zd3,psid3,xd4,yd4,zd4,psid4");
-	//sink->Connect(&builder, controller->GetOutputPort("reference"), "phid,thetad,psid,Ftd,phid1,thetad1,psid1,Ftd1,phid2,thetad2,psid2,Ftd2");
-	sink->Connect(&builder, plant->get_output_port(), "x,y,z,phi,theta,psi,x1,y1,z1,phi1,theta1,psi1");
-	sink->Connect(&builder, controller->get_control_output_port(), "w,a1,a2,a3,a4");
-	std::stringstream ss;
-	ss << "xd,yd,zd,psid,x1d,y1d,z1d,psi1d,";
-	for(int i=1; i<20; i++) {
-		ss << "xd" << i << ",";
-		ss << "yd" << i << ",";
-		ss << "zd" << i << ",";
-		ss << "psid" << i << ",";
-		ss << "x1d" << i << ",";
-		ss << "y1d" << i << ",";
-		ss << "z1d" << i << ",";
-		ss << "psi1d" << i;
-		if(i<99) {
-			ss << ",";
-		}
-	}
-	sink->Connect(&builder, generator->get_output_port(), ss.str());
+	sink->Connect(&builder, plant->GetOutputPort("x"), "x,y,z,phi,theta,psi,beta,dx,dy,dz,dphi,dtheta,dpsi,dbeta");
 
 	auto diagram = builder.Build();
 
 	drake::systems::Simulator simulator(*diagram);
 	simulator.Initialize();
+	//simulator.get_mutable_integrator().set_fixed_step_mode(true);
+	//simulator.get_mutable_integrator().set_throw_on_minimum_step_size_violation(false);
+	//simulator.get_mutable_integrator().set_maximum_step_size(0.01);
 	simulator.AdvanceTo(30);
 }

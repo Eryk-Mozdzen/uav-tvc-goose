@@ -24,10 +24,10 @@ x5 = spm.dynamicsymbols('x5')       # drone pitch                     [rad]
 x6 = spm.dynamicsymbols('x6')       # drone yaw                       [rad]
 x7 = spm.dynamicsymbols('x7')       # rotor angle                     [rad]
 
-ur = sp.Symbol('u_r')               # rotor angular velocity target   [rad/s]
-a1 = sp.Symbol('alpha_1')           # vane 1 angle of attack          [rad]
-a2 = sp.Symbol('alpha_2')           # vane 2 angle of attack          [rad]
-a3 = sp.Symbol('alpha_3')           # vane 3 angle of attack          [rad]
+u1 = sp.Symbol('u_r')               # rotor angular velocity target   [rad/s]
+u2 = sp.Symbol('alpha_1')           # vane 1 angle of attack          [rad]
+u3 = sp.Symbol('alpha_2')           # vane 2 angle of attack          [rad]
+u4 = sp.Symbol('alpha_3')           # vane 3 angle of attack          [rad]
 
 eta = sp.Matrix([
     [x4],
@@ -62,15 +62,15 @@ forces = [
     (C, (Kf*x7.diff('t')**2)*B.z),
     (B, (Km*x7.diff('t')**2)*B.z),
     (B, Jr*x7.diff('t')*w[1]*B.x - Jr*x7.diff('t')*w[0]*B.y),
-    (R, ((1/(T1*T2)*ur - (1/(T1*T2)*x7 - ((T1 + T2)/(T1*T2)*x7.diff('t')))))*B.z),
+    (R, ((1/(T1*T2)*u1 - (1/(T1*T2)*x7 - ((T1 + T2)/(T1*T2)*x7.diff('t')))))*B.z),
 ]
 
 vanes = [
-    (a1, sp.Rational(0, 3)*sp.pi),
+    (u2, sp.Rational(0, 3)*sp.pi),
     (a0, sp.Rational(1, 3)*sp.pi),
-    (a2, sp.Rational(2, 3)*sp.pi),
+    (u3, sp.Rational(2, 3)*sp.pi),
     (a0, sp.Rational(3, 3)*sp.pi),
-    (a3, sp.Rational(4, 3)*sp.pi),
+    (u4, sp.Rational(4, 3)*sp.pi),
     (a0, sp.Rational(5, 3)*sp.pi),
 ]
 for i, (ai, dir) in enumerate(vanes):
@@ -99,9 +99,9 @@ dq = q.diff('t')
 
 ddq = M.LUsolve(T)
 
-f = sp.simplify(sp.Matrix.vstack(dq, ddq).subs([(ur, 0), (a1, 0), (a2, 0), (a3, 0)]))
-G = sp.simplify(sp.Matrix.vstack(dq, ddq).jacobian([ur, a1, a2, a3]))
-dynamics = f + G*sp.Matrix([ur, a1, a2, a3])
+f = sp.simplify(sp.Matrix.vstack(dq, ddq).subs([(u1, 0), (u2, 0), (u3, 0), (u4, 0)]))
+G = sp.simplify(sp.Matrix.vstack(dq, ddq).jacobian([u1, u2, u3, u4]))
+dynamics = f + G*sp.Matrix([u1, u2, u3, u4])
 
 x = sp.Matrix.vstack(q, dq)
 
@@ -143,7 +143,7 @@ for i in range(h.shape[0]):
 
 A = sp.simplify(A)
 b = sp.simplify(b)
-u = A.inv()*(v - b)
+feedback_linearization = A.inv()*(v - b)
 
 import numpy as np
 import scipy.constants
@@ -190,13 +190,13 @@ symbols = {
     v3: V[2],
     v4: V[3],
 
-    a1: U[0],
-    a2: U[1],
-    a3: U[2],
-    ur: U[3],
+    u1: U[0],
+    u2: U[1],
+    u3: U[2],
+    u4: U[3],
 }
 
-u = u.subs(symbols)
+feedback_linearization = feedback_linearization.subs(symbols)
 dynamics = dynamics.subs(symbols)
 
 import os
@@ -233,7 +233,7 @@ with open(f'{here}/src/plant/Plant.cpp', 'w') as file:
 Plant::Plant() {
 '''
     )
-    file.write('    this->DeclareContinuousState(' + str(len(X)) + ');\n')
+    file.write('    this->DeclareContinuousState({0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 500});\n')
     file.write('    this->DeclareVectorInputPort("u", ' + str(len(U)) + ');\n')
     file.write('    this->DeclareVectorOutputPort("x", ' + str(len(X)) + ', &Plant::eval, {this->all_state_ticket()});\n')
     file.write(
@@ -263,3 +263,54 @@ void Plant::eval(const drake::systems::Context<double> &context, drake::systems:
 }
 '''
     )
+
+with open(f'{here}/src/controllers/PlantFeedbackLinearization.h', 'w') as file:
+    file.write(
+'''#pragma once
+
+#include <drake/systems/framework/leaf_system.h>
+
+class PlantFeedbackLinearization : public drake::systems::LeafSystem<double> {
+    void eval(const drake::systems::Context<double> &context, drake::systems::BasicVector<double> *output) const;
+
+public:
+    PlantFeedbackLinearization();
+};
+'''
+    )
+
+with open(f'{here}/src/controllers/PlantFeedbackLinearization.cpp', 'w') as file:
+    file.write(
+'''#include "PlantFeedbackLinearization.h"
+#include "Plant.h"
+
+PlantFeedbackLinearization::PlantFeedbackLinearization() {
+'''
+    )
+    file.write('    this->DeclareVectorInputPort("v", ' + str(len(V)) + ');\n')
+    file.write('    this->DeclareVectorInputPort("x", ' + str(len(X)) + ');\n')
+    file.write('    this->DeclareVectorOutputPort("u", ' + str(len(U)) + ', &PlantFeedbackLinearization::eval);\n')
+    file.write(
+'''}
+
+void PlantFeedbackLinearization::eval(const drake::systems::Context<double> &context, drake::systems::BasicVector<double> *output) const {
+'''
+    )
+    file.write('    const Eigen::Vector<double, ' + str(len(V)) + '> v = this->GetInputPort("v").Eval(context);\n')
+    file.write('    const Eigen::Vector<double, ' + str(len(X)) + '> x = this->GetInputPort("x").Eval(context);\n')
+    file.write('\n')
+    for i, v in enumerate(V):
+        if v in list(feedback_linearization.free_symbols):
+            file.write(f'    const double {sp.ccode(v)} = v[{i}];\n')
+    file.write('\n')
+    for i, x in enumerate(X):
+        if x in list(feedback_linearization.free_symbols):
+            file.write(f'    const double {sp.ccode(x)} = x[{i}];\n')
+    file.write('\n')
+    for p, v in parameters.items():
+        if p in list(feedback_linearization.free_symbols):
+            file.write(f'    const double {sp.ccode(p)} = Plant::{sp.ccode(p)};\n')
+    file.write('\n')
+    for i, fl in enumerate(feedback_linearization):
+        file.write(f'    output->SetAtIndex({i}, {sp.ccode(fl)});\n')
+    file.write('}\n')
