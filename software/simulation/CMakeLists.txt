@@ -9,8 +9,8 @@ add_executable(${PROJECT_NAME}
 	"src/base/TrajectoryGenerator.cpp"
 	"src/generators/Circle.cpp"
 	"src/generators/Lemniscate.cpp"
-	"src/controllers/Simple3.cpp"
-	"src/controllers/MPC.cpp"
+	#"src/controllers/Simple3.cpp"
+	"src/controllers/MPCFL.cpp"
 	"src/plant/Plant.cpp"
 )
 

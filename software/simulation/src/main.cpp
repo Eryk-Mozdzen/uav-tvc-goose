@@ -4,7 +4,7 @@
 #include "Circle.h"
 #include "Lemniscate.h"
 #include "Simple3.h"
-#include "MPC.h"
+#include "MPCFL.h"
 #include "Plant.h"
 #include "Sink.h"
 
@@ -14,7 +14,7 @@ int main() {
 	//auto generator = builder.AddSystem<Circle>(0, 0, 2, 6);
 	auto generator = builder.AddSystem<Lemniscate>(2, 20);
 	//auto controller = builder.AddSystem<Simple3>();
-	auto controller = builder.AddSystem<MPC>();
+	auto controller = builder.AddSystem<MPCFL>();
 	auto plant = builder.AddSystem<Plant>();
 	auto sink = builder.AddSystem<Sink>();
 
@@ -27,12 +27,16 @@ int main() {
 	sink->Connect(&builder, plant->get_output_port(), "x,y,z,phi,theta,psi,x1,y1,z1,phi1,theta1,psi1");
 	sink->Connect(&builder, controller->get_control_output_port(), "w,a1,a2,a3,a4");
 	std::stringstream ss;
-	ss << "xd,yd,zd,psid,";
-	for(int i=1; i<100; i++) {
+	ss << "xd,yd,zd,psid,x1d,y1d,z1d,psi1d,";
+	for(int i=1; i<20; i++) {
 		ss << "xd" << i << ",";
 		ss << "yd" << i << ",";
 		ss << "zd" << i << ",";
-		ss << "psid" << i;
+		ss << "psid" << i << ",";
+		ss << "x1d" << i << ",";
+		ss << "y1d" << i << ",";
+		ss << "z1d" << i << ",";
+		ss << "psi1d" << i;
 		if(i<99) {
 			ss << ",";
 		}

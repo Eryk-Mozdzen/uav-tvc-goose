@@ -1,6 +1,6 @@
 #include "Lemniscate.h"
 
-Lemniscate::Lemniscate(const double c, const double T) : TrajectoryGenerator{4, 100}, a{c*sqrt2}, w{2*pi/T} {
+Lemniscate::Lemniscate(const double c, const double T) : TrajectoryGenerator{8, 20}, a{c*sqrt2}, w{2*pi/T} {
 
 }
 
@@ -42,18 +42,24 @@ Eigen::VectorX<double> Lemniscate::value(const double &time) const {
         0
     };*/
 
-    constexpr int N = 100;
-    constexpr double T = 0.02;
+    constexpr int HP = 20;
+    constexpr int NT = 8;
+    constexpr double T = 0.05;
 
-    Eigen::Vector<double, 4*N> trajectory;
+    Eigen::Vector<double, NT*HP> trajectory;
 
-    for(int k=0; k<N; k++) {
+    for(int k=0; k<HP; k +=NT) {
         const double t = time + k*T;
 
-        trajectory[4*k + 0] = a*cos(t*w)/(pow(sin(t*w), 2) + 1);
-        trajectory[4*k + 1] = a*sin(t*w)*cos(t*w)/(pow(sin(t*w), 2) + 1);
-        trajectory[4*k + 2] = 1;
-        trajectory[4*k + 3] = fix(atan2(-a*w*pow(sin(t*w), 2)/(pow(sin(t*w), 2) + 1) + a*w*pow(cos(t*w), 2)/(pow(sin(t*w), 2) + 1) - 2*a*w*pow(sin(t*w), 2)*pow(cos(t*w), 2)/pow(pow(sin(t*w), 2) + 1, 2), -a*w*sin(t*w)/(pow(sin(t*w), 2) + 1) - 2*a*w*sin(t*w)*pow(cos(t*w), 2)/pow(pow(sin(t*w), 2) + 1, 2)));
+        trajectory[k + 0] = a*cos(t*w)/(pow(sin(t*w), 2) + 1);
+        trajectory[k + 1] = a*sin(t*w)*cos(t*w)/(pow(sin(t*w), 2) + 1);
+        trajectory[k + 2] = 1;
+        trajectory[k + 3] = fix(atan2(-a*w*pow(sin(t*w), 2)/(pow(sin(t*w), 2) + 1) + a*w*pow(cos(t*w), 2)/(pow(sin(t*w), 2) + 1) - 2*a*w*pow(sin(t*w), 2)*pow(cos(t*w), 2)/pow(pow(sin(t*w), 2) + 1, 2), -a*w*sin(t*w)/(pow(sin(t*w), 2) + 1) - 2*a*w*sin(t*w)*pow(cos(t*w), 2)/pow(pow(sin(t*w), 2) + 1, 2)));
+
+        trajectory[k + 4] = a*w*(pow(sin(t*w), 2) - 3)*sin(t*w)/pow(pow(sin(t*w), 2) + 1, 2);
+        trajectory[k + 5] = a*w*(1 - 3*pow(sin(t*w), 2))/pow(pow(sin(t*w), 2) + 1, 2);
+        trajectory[k + 6] = 0;
+        trajectory[k + 7] = 3*w*cos(t*w)/(pow(sin(t*w), 2) + 1);
     }
 
     return trajectory;

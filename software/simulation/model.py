@@ -101,17 +101,9 @@ ddq = M.LUsolve(T)
 
 f = sp.simplify(sp.Matrix.vstack(dq, ddq).subs([(ur, 0), (a1, 0), (a2, 0), (a3, 0)]))
 G = sp.simplify(sp.Matrix.vstack(dq, ddq).jacobian([ur, a1, a2, a3]))
+dynamics = f + G*sp.Matrix([ur, a1, a2, a3])
 
 x = sp.Matrix.vstack(q, dq)
-
-t = sp.Symbol('t')
-
-y_ref = sp.Matrix([
-    [sp.sin(2*sp.pi*(t + sp.pi))],
-    [sp.sin(2*sp.pi*(t + sp.pi/2))],
-    [sp.sin(2*sp.pi*(t + sp.pi/3))],
-    [sp.sin(2*sp.pi*t)/2 + 1],
-])
 
 h = sp.Matrix([
     [x[3]],
@@ -120,14 +112,16 @@ h = sp.Matrix([
     [Kf*x[13]**2],
 ])
 
-k0 = sp.Symbol('k_0')
-k1 = sp.Symbol('k_1')
+v1 = sp.Symbol('v1')
+v2 = sp.Symbol('v2')
+v3 = sp.Symbol('v3')
+v4 = sp.Symbol('v4')
 
 v = sp.Matrix([
-    [y_ref.diff('t', 2)[0] - k1*(h.diff('t')[0] - y_ref.diff('t')[0]) - k0*(h[0] - y_ref[0])],
-    [y_ref.diff('t', 2)[1] - k1*(h.diff('t')[1] - y_ref.diff('t')[1]) - k0*(h[1] - y_ref[1])],
-    [y_ref.diff('t', 2)[2] - k1*(h.diff('t')[2] - y_ref.diff('t')[2]) - k0*(h[2] - y_ref[2])],
-    [y_ref.diff('t')[3] - k0*(h[3] - y_ref[3])],
+    [v1],
+    [v2],
+    [v3],
+    [v4],
 ])
 
 def Lie(field1, field2, order=1):
@@ -149,73 +143,12 @@ for i in range(h.shape[0]):
 
 A = sp.simplify(A)
 b = sp.simplify(b)
-
 u = A.inv()*(v - b)
 
-#u = sp.simplify(u)
-
-import os
-
-subs = {
-    (x1.diff('t'), sp.Symbol('x8')),
-    (x2.diff('t'), sp.Symbol('x9')),
-    (x3.diff('t'), sp.Symbol('x10')),
-    (x4.diff('t'), sp.Symbol('x11')),
-    (x5.diff('t'), sp.Symbol('x12')),
-    (x6.diff('t'), sp.Symbol('x13')),
-    (x7.diff('t'), sp.Symbol('x14')),
-    (x1, sp.Symbol('x1')),
-    (x2, sp.Symbol('x2')),
-    (x3, sp.Symbol('x3')),
-    (x4, sp.Symbol('x4')),
-    (x5, sp.Symbol('x5')),
-    (x6, sp.Symbol('x6')),
-    (x7, sp.Symbol('x7')),
-}
-
-here = os.path.dirname(__file__)
-os.makedirs(f'{here}/docs', exist_ok=True)
-
-with open(f'{here}/docs/main.tex', 'w') as file:
-    file.write(
-        '\\documentclass{article}\n'
-        '\\usepackage{amsmath}\n'
-        '\\usepackage[paperwidth=300cm, paperheight=50cm, margin=10mm]{geometry}\n'
-        '\n'
-        '\\begin{document}\n'
-        '    \\begin{equation}\n'
-        '        \\begin{bmatrix}\n'
-        '            u_r\\\\\n'
-        '            \\alpha_1\\\\\n'
-        '            \\alpha_2\\\\\n'
-        '            \\alpha_3\\\\\n'
-        '        \\end{bmatrix}\n'
-        '        = ' + sp.latex(u) + '\n'
-        '    \\end{equation}\n'
-        '    \\begin{equation}\n'
-        '        A = ' + sp.latex(A) + '\n'
-        '    \\end{equation}\n'
-#        '    \\begin{equation}\n'
-#        '        b = ' + sp.latex(b) + '\n'
-#        '    \\end{equation}\n'
-        '    \\begin{equation}\n'
-        '        v = ' + sp.latex(v) + '\n'
-        '    \\end{equation}\n'
-        '\\end{document}\n'
-    )
-
-os.system(f'pdflatex -interaction=nonstopmode -output-directory={here}/docs {here}/docs/main.tex')
-
 import numpy as np
-import scipy.integrate
 import scipy.constants
-import matplotlib.pyplot as plt
 
-X = sp.symbols('X1:15')
-
-system = f + G*u
-
-system = system.subs({
+parameters = {
     g:   scipy.constants.g,
     m:   0.518,
     Jr:  38872.17503*1e-9,
@@ -230,10 +163,13 @@ system = system.subs({
     Kl:  0.34802890073780146,
     T1:  0.1,
     T2:  0.01,
+}
 
-    k0:  2,
-    k1:  3,
+X = sp.symbols('X1:15')
+V = sp.symbols('V1:5')
+U = sp.symbols('U1:5')
 
+symbols = {
     x1.diff('t'): X[7],
     x2.diff('t'): X[8],
     x3.diff('t'): X[9],
@@ -248,35 +184,82 @@ system = system.subs({
     x5: X[4],
     x6: X[5],
     x7: X[6],
-})
 
-system = sp.lambdify([*X, t], system)
+    v1: V[0],
+    v2: V[1],
+    v3: V[2],
+    v4: V[3],
 
-print(system(0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 590, 0))
+    a1: U[0],
+    a2: U[1],
+    a3: U[2],
+    ur: U[3],
+}
 
-def ode_system(t, y):
-    return np.array(system(*y, t)).flatten()
+u = u.subs(symbols)
+dynamics = dynamics.subs(symbols)
 
-solution = scipy.integrate.solve_ivp(
-    fun=ode_system,
-    t_span=(0, 10),
-    y0=[0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 590],
-    method='RK45',
-    rtol=1e-9,
-    atol=1e-9,
-)
+import os
 
-print(solution.message)
+here = os.path.dirname(__file__)
+os.makedirs(f'{here}/src/plant', exist_ok=True)
 
-plt.figure()
-plt.plot(solution.t, solution.y[3], label='phi')
-plt.plot(solution.t, solution.y[4], label='theta')
-plt.plot(solution.t, solution.y[5], label='psi')
-plt.plot(solution.t, 1.458825e-05*solution.y[13]**2, label='thrust')
-plt.xlabel('t')
-plt.ylabel('y(t)')
-plt.ylim(-2, 2)
-plt.legend()
-plt.grid()
+with open(f'{here}/src/plant/Plant.h', 'w') as file:
+    file.write(
+'''#pragma once
 
-plt.show()
+#include <drake/systems/framework/leaf_system.h>
+
+class Plant : public drake::systems::LeafSystem<double> {
+    void DoCalcTimeDerivatives(const drake::systems::Context<double> &context, drake::systems::ContinuousState<double> *derivatives) const;
+    void eval(const drake::systems::Context<double> &context, drake::systems::BasicVector<double> *output) const;
+
+public:
+'''
+    )
+    for param, value in parameters.items():
+        file.write(f'    static constexpr double {sp.ccode(param)} = {value:e};\n')
+    file.write(
+'''
+    Plant();
+};
+'''
+    )
+
+with open(f'{here}/src/plant/Plant.cpp', 'w') as file:
+    file.write(
+'''#include "Plant.h"
+
+Plant::Plant() {
+'''
+    )
+    file.write('    this->DeclareContinuousState(' + str(len(X)) + ');\n')
+    file.write('    this->DeclareVectorInputPort("u", ' + str(len(U)) + ');\n')
+    file.write('    this->DeclareVectorOutputPort("x", ' + str(len(X)) + ', &Plant::eval, {this->all_state_ticket()});\n')
+    file.write(
+'''}
+
+void Plant::DoCalcTimeDerivatives(const drake::systems::Context<double> &context, drake::systems::ContinuousState<double> *derivatives) const {
+'''
+    )
+    file.write('    const Eigen::Vector<double, ' + str(len(U)) + '> u = this->GetInputPort("u").Eval(context);\n')
+    file.write('    const Eigen::Vector<double, ' + str(len(X)) + '> x = context.get_continuous_state_vector().CopyToVector();\n')
+    file.write('\n')
+    for i, u in enumerate(U):
+        if u in list(dynamics.free_symbols):
+            file.write(f'    const double {sp.ccode(u)} = u[{i}];\n')
+    file.write('\n')
+    for i, x in enumerate(X):
+        if x in list(dynamics.free_symbols):
+            file.write(f'    const double {sp.ccode(x)} = x[{i}];\n')
+    file.write('\n')
+    for i, dyn in enumerate(dynamics):
+        file.write(f'    derivatives->get_mutable_vector().SetAtIndex({i}, {sp.ccode(dyn)});\n')
+    file.write(
+'''}
+
+void Plant::eval(const drake::systems::Context<double> &context, drake::systems::BasicVector<double> *output) const {
+    output->SetFrom(context.get_continuous_state_vector());
+}
+'''
+    )
