@@ -1,33 +1,32 @@
 import sympy as sp
 import sympy.physics.mechanics as spm
 
-g = sp.Symbol('g')                  # gravity acceleration            [m/s^2]
-m = sp.Symbol('m')                  # drone mass                      [kg]
-Jr = sp.Symbol('J_r')               # rotor inertia                   [kg*m^2]
-Jxx = sp.Symbol('J_xx')             # drone inertia XX                [kg*m^2]
-Jyy = sp.Symbol('J_yy')             # drone inertia YY                [kg*m^2]
-Jzz = sp.Symbol('J_zz')             # drone inertia ZZ                [kg*m^2]
-l = sp.Symbol('l')                  # distance vane - COM X/Y axis    [m]
-r = sp.Symbol('r')                  # distance vane - COM Z axis      [m]
-a0 = sp.Symbol('a_0')               # passive vane angle of attack    [rad]
-Kf = sp.Symbol('K_f')               # rotor force coefficient         [N*s^2/rad^2]
-Km = sp.Symbol('K_m')               # rotor torque coefficient        [N*m*s^2/rad^2]
-Kl = sp.Symbol('K_l')               # vane lift coefficient           [1/rad]
-T1 = sp.Symbol('T_1')               # rotor time constant 1           [1/s]
-T2 = sp.Symbol('T_2')               # rotor time constant 2           [1/s]
+g = sp.Symbol('g')                  # gravity acceleration                  [m/s^2]
+m = sp.Symbol('m')                  # drone mass                            [kg]
+Jr = sp.Symbol('J_r')               # rotor inertia                         [kg*m^2]
+Jxx = sp.Symbol('J_xx')             # drone inertia XX                      [kg*m^2]
+Jyy = sp.Symbol('J_yy')             # drone inertia YY                      [kg*m^2]
+Jzz = sp.Symbol('J_zz')             # drone inertia ZZ                      [kg*m^2]
+l = sp.Symbol('l')                  # distance vane - COM X/Y axis          [m]
+r = sp.Symbol('r')                  # distance vane - COM Z axis            [m]
+a0 = sp.Symbol('a_0')               # passive vane angle of attack          [rad]
+Kf = sp.Symbol('K_f')               # rotor force coefficient               [N*s^2/rad^2]
+Km = sp.Symbol('K_m')               # rotor torque coefficient              [N*m*s^2/rad^2]
+Kl = sp.Symbol('K_l')               # vane lift coefficient                 [1/rad]
+Tr = sp.Symbol('T_r')               # rotor time constant                   [s]
 
-x1 = spm.dynamicsymbols('x1')       # drone COM X                     [m]
-x2 = spm.dynamicsymbols('x2')       # drone COM Y                     [m]
-x3 = spm.dynamicsymbols('x3')       # drone COM Z                     [m]
-x4 = spm.dynamicsymbols('x4')       # drone roll                      [rad]
-x5 = spm.dynamicsymbols('x5')       # drone pitch                     [rad]
-x6 = spm.dynamicsymbols('x6')       # drone yaw                       [rad]
-x7 = spm.dynamicsymbols('x7')       # rotor angle                     [rad]
+x1 = spm.dynamicsymbols('x1')       # drone COM X                           [m]
+x2 = spm.dynamicsymbols('x2')       # drone COM Y                           [m]
+x3 = spm.dynamicsymbols('x3')       # drone COM Z                           [m]
+x4 = spm.dynamicsymbols('x4')       # drone roll                            [rad]
+x5 = spm.dynamicsymbols('x5')       # drone pitch                           [rad]
+x6 = spm.dynamicsymbols('x6')       # drone yaw                             [rad]
+x7 = spm.dynamicsymbols('x7')       # rotor angle                           [rad]
 
-u1 = sp.Symbol('u_r')               # rotor angular velocity target   [rad/s]
-u2 = sp.Symbol('alpha_1')           # vane 1 angle of attack          [rad]
-u3 = sp.Symbol('alpha_2')           # vane 2 angle of attack          [rad]
-u4 = sp.Symbol('alpha_3')           # vane 3 angle of attack          [rad]
+u1 = sp.Symbol('u1')                # rotor steady-state angular velocity   [rad/s]
+u2 = sp.Symbol('u2')                # vane 1 angle of attack                [rad]
+u3 = sp.Symbol('u3')                # vane 2 angle of attack                [rad]
+u4 = sp.Symbol('u4')                # vane 3 angle of attack                [rad]
 
 eta = sp.Matrix([
     [x4],
@@ -62,7 +61,7 @@ forces = [
     (C, (Kf*x7.diff('t')**2)*B.z),
     (B, (Km*x7.diff('t')**2)*B.z),
     (B, Jr*x7.diff('t')*w[1]*B.x - Jr*x7.diff('t')*w[0]*B.y),
-    (R, ((1/(T1*T2)*u1 - (1/(T1*T2)*x7 - ((T1 + T2)/(T1*T2)*x7.diff('t')))))*B.z),
+    (R, Jr*(u1/Tr - x7.diff('t')/Tr)*B.z),
 ]
 
 vanes = [
@@ -161,8 +160,7 @@ parameters = {
     Kf:  1.458825e-05,
     Km:  2.531647e-07,
     Kl:  0.34802890073780146,
-    T1:  0.1,
-    T2:  0.01,
+    Tr:  0.1,
 }
 
 X = sp.symbols('X1:15')
