@@ -48,18 +48,18 @@ Eigen::VectorX<double> Lemniscate::value(const double &time) const {
 
     Eigen::Vector<double, NT*HP> trajectory;
 
-    for(int k=0; k<HP; k +=NT) {
+    for(int k=0; k<HP; k++) {
         const double t = time + k*T;
 
-        trajectory[k + 0] = a*cos(t*w)/(pow(sin(t*w), 2) + 1);
-        trajectory[k + 1] = a*sin(t*w)*cos(t*w)/(pow(sin(t*w), 2) + 1);
-        trajectory[k + 2] = 1;
-        trajectory[k + 3] = fix(atan2(-a*w*pow(sin(t*w), 2)/(pow(sin(t*w), 2) + 1) + a*w*pow(cos(t*w), 2)/(pow(sin(t*w), 2) + 1) - 2*a*w*pow(sin(t*w), 2)*pow(cos(t*w), 2)/pow(pow(sin(t*w), 2) + 1, 2), -a*w*sin(t*w)/(pow(sin(t*w), 2) + 1) - 2*a*w*sin(t*w)*pow(cos(t*w), 2)/pow(pow(sin(t*w), 2) + 1, 2)));
+        trajectory[k*NT + 0] = a*cos(t*w)/(pow(sin(t*w), 2) + 1);
+        trajectory[k*NT + 1] = a*sin(t*w)*cos(t*w)/(pow(sin(t*w), 2) + 1);
+        trajectory[k*NT + 2] = 1;
+        trajectory[k*NT + 3] = fix(atan2(-a*w*pow(sin(t*w), 2)/(pow(sin(t*w), 2) + 1) + a*w*pow(cos(t*w), 2)/(pow(sin(t*w), 2) + 1) - 2*a*w*pow(sin(t*w), 2)*pow(cos(t*w), 2)/pow(pow(sin(t*w), 2) + 1, 2), -a*w*sin(t*w)/(pow(sin(t*w), 2) + 1) - 2*a*w*sin(t*w)*pow(cos(t*w), 2)/pow(pow(sin(t*w), 2) + 1, 2)));
 
-        trajectory[k + 4] = a*w*(pow(sin(t*w), 2) - 3)*sin(t*w)/pow(pow(sin(t*w), 2) + 1, 2);
-        trajectory[k + 5] = a*w*(1 - 3*pow(sin(t*w), 2))/pow(pow(sin(t*w), 2) + 1, 2);
-        trajectory[k + 6] = 0;
-        trajectory[k + 7] = 3*w*cos(t*w)/(pow(sin(t*w), 2) + 1);
+        trajectory[k*NT + 4] = a*w*(pow(sin(t*w), 2) - 3)*sin(t*w)/pow(pow(sin(t*w), 2) + 1, 2);
+        trajectory[k*NT + 5] = a*w*(1 - 3*pow(sin(t*w), 2))/pow(pow(sin(t*w), 2) + 1, 2);
+        trajectory[k*NT + 6] = 0;
+        trajectory[k*NT + 7] = 3*w*cos(t*w)/(pow(sin(t*w), 2) + 1);
     }
 
     return trajectory;

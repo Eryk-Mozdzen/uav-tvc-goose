@@ -1,4 +1,3 @@
-//#include <cassert>
 #include <drake/systems/framework/diagram_builder.h>
 #include <open_optimizer_bindings.hpp>
 
@@ -17,7 +16,7 @@ MPC::PositionController::PositionController() {
 
 void MPC::PositionController::update(const drake::systems::Context<double> &context, drake::systems::DiscreteValues<double> *updates) const {
     const Eigen::Vector<double, NX> x = this->GetInputPort("x").Eval(context);
-    //const Eigen::Vector<double, NT*HP> x_tr = this->GetInputPort("x_tr").Eval(context);
+    const Eigen::Vector<double, NT*HP> x_tr = this->GetInputPort("x_tr").Eval(context);
 
     double p[OPEN_OPTIMIZER_NUM_PARAMETERS] = {0};
     double v[OPEN_OPTIMIZER_NUM_DECISION_VARIABLES] = {0};
@@ -37,31 +36,19 @@ void MPC::PositionController::update(const drake::systems::Context<double> &cont
     p[12] = x[12];
 
     for(int i=0; i<HP; i++) {
-        //p[13 + NT*i + 0] = x_tr[NT*i + 0];
-        //p[13 + NT*i + 1] = x_tr[NT*i + 1];
-        //p[13 + NT*i + 2] = x_tr[NT*i + 2];
-        //p[13 + NT*i + 3] = x_tr[NT*i + 3];
-        //p[13 + NT*i + 4] = x_tr[NT*i + 4];
-        //p[13 + NT*i + 5] = x_tr[NT*i + 5];
-        //p[13 + NT*i + 6] = x_tr[NT*i + 6];
-        //p[13 + NT*i + 7] = x_tr[NT*i + 7];
-
-        p[13 + NT*i + 0] = 1;
-        p[13 + NT*i + 1] = 1;
-        p[13 + NT*i + 2] = 1;
-        p[13 + NT*i + 3] = 3.1415/2;
-        p[13 + NT*i + 4] = 0;
-        p[13 + NT*i + 5] = 0;
-        p[13 + NT*i + 6] = 0;
-        p[13 + NT*i + 7] = 0;
+        p[13 + NT*i + 0] = x_tr[NT*i + 0];
+        p[13 + NT*i + 1] = x_tr[NT*i + 1];
+        p[13 + NT*i + 2] = x_tr[NT*i + 2];
+        p[13 + NT*i + 3] = x_tr[NT*i + 3];
+        p[13 + NT*i + 4] = x_tr[NT*i + 4];
+        p[13 + NT*i + 5] = x_tr[NT*i + 5];
+        p[13 + NT*i + 6] = x_tr[NT*i + 6];
+        p[13 + NT*i + 7] = x_tr[NT*i + 7];
     }
 
     open_optimizerCache *cache = open_optimizer_new();
     open_optimizer_solve(cache, v, p, nullptr, nullptr);
-    //const open_optimizerSolverStatus status = open_optimizer_solve(cache, v, p, nullptr, nullptr);
     open_optimizer_free(cache);
-
-    //assert(status.exit_status==open_optimizerExitStatus::open_optimizerConverged);
 
     updates->get_mutable_vector().SetAtIndex(0, v[0]);
     updates->get_mutable_vector().SetAtIndex(1, v[1]);
