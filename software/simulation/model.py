@@ -220,6 +220,9 @@ public:
     file.write(
 '''
     Plant();
+
+    const drake::systems::InputPort<double> & get_control_input_port() const;
+    const drake::systems::OutputPort<double> & get_state_output_port() const;
 };
 '''
     )
@@ -258,6 +261,14 @@ void Plant::DoCalcTimeDerivatives(const drake::systems::Context<double> &context
 
 void Plant::eval(const drake::systems::Context<double> &context, drake::systems::BasicVector<double> *output) const {
     output->SetFrom(context.get_continuous_state_vector());
+}
+
+const drake::systems::InputPort<double> & Plant::get_control_input_port() const {
+    return GetInputPort("u");
+}
+
+const drake::systems::OutputPort<double> & Plant::get_state_output_port() const {
+    return GetOutputPort("x");
 }
 '''
     )
