@@ -16,9 +16,9 @@ with open(f'{here}/model/dynamics_linearized.pkl', 'rb') as file:
 with open(f'{here}/model/control_linearized.pkl', 'rb') as file:
     control_linearized = pickle.load(file)
 
-X = sp.symbols('X1:15')
-V = sp.symbols('V1:5')
-U = sp.symbols('U1:5')
+X = sp.symbols('x1:15')
+V = sp.symbols('v1:5')
+U = sp.symbols('u1:5')
 
 here = os.path.dirname(__file__)
 os.makedirs(f'{here}/src/plant', exist_ok=True)
@@ -157,11 +157,11 @@ def dynamics(x, v, dt):
     file.write('\n')
     for i, v in enumerate(V):
         if v in list(dynamics_linearized.free_symbols):
-            file.write(f'    V{i+1} = v[{i}]\n')
+            file.write(f'    {sp.ccode(v)} = v[{i}]\n')
     file.write('\n')
     for i, x in enumerate(X):
         if x in list(dynamics_linearized.free_symbols):
-            file.write(f'    X{i+1} = x[{i}]\n')
+            file.write(f'    {sp.ccode(x)} = x[{i}]\n')
     file.write('\n')
     file.write('    dx = cs.vcat([\n')
     for dx in dynamics_linearized:

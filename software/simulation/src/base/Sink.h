@@ -1,16 +1,17 @@
 #pragma once
 
+#include <fstream>
 #include <drake/systems/framework/leaf_system.h>
 #include <drake/systems/framework/diagram_builder.h>
-#include <fstream>
+#include <drake/systems/primitives/matrix_gain.h>
 
 template<typename T>
 class Sink : public drake::systems::LeafSystem<T> {
     std::unique_ptr<int> counter;
-    std::unique_ptr<Eigen::MatrixX<double>> data;
+    std::unique_ptr<Eigen::MatrixX<T>> data;
 
-	drake::systems::EventStatus eval(const drake::systems::Context<double> &context) const {
-        Eigen::VectorXd row(data->cols());
+	drake::systems::EventStatus eval(const drake::systems::Context<T> &context) const {
+        Eigen::VectorX<T> row(data->cols());
 
         row[0] = context.get_time();
 
@@ -37,7 +38,7 @@ public:
         this->DeclarePerStepPublishEvent(&Sink::eval);
 
         counter = std::make_unique<int>();
-        data = std::make_unique<Eigen::MatrixX<double>>(1, 1);
+        data = std::make_unique<Eigen::MatrixX<T>>(1, 1);
 
         *counter = 0;
 	}
@@ -58,5 +59,18 @@ public:
         builder->Connect(signal, this->GetInputPort(name));
 
         data->conservativeResize(data->rows(), data->cols() + signal.size());
+    }
+
+    void Connect(drake::systems::DiagramBuilder<T>* builder, const drake::systems::OutputPort<T> &signal, const std::vector<int> indices, const std::string &name) {
+        Eigen::MatrixXd matrix = Eigen::MatrixXd::Zero(indices.size(), signal.size());
+        for(unsigned int i=0; i<indices.size(); i++) {
+            matrix(i, indices[i]) = 1;
+        }
+
+        auto selector = builder->template AddSystem<drake::systems::MatrixGain>(matrix);
+
+        builder->Connect(signal, selector->get_input_port());
+
+        Connect(builder, selector->get_output_port(), name);
     }
 };

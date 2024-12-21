@@ -170,12 +170,12 @@ parameters = {
     Kf:  1.458825e-05,
     Km:  2.531647e-07,
     Kl:  0.34802890073780146,
-    Tr:  0.1,
+    Tr:  0.5,
 }
 
-X = sp.symbols('X1:15')
-V = sp.symbols('V1:5')
-U = sp.symbols('U1:5')
+X = sp.symbols('x1:15')
+V = sp.symbols('v1:5')
+U = sp.symbols('u1:5')
 
 symbols = {
     x1.diff('t'): X[7],

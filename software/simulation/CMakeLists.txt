@@ -35,7 +35,4 @@ target_compile_options(${PROJECT_NAME} PRIVATE
 target_link_libraries(${PROJECT_NAME}
 	drake::drake
 	"${CMAKE_SOURCE_DIR}/open_optimizer/target/release/libopen_optimizer.a"
-	m
-	dl
-	pthread
 )

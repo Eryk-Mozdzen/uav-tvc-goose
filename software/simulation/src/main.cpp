@@ -20,6 +20,7 @@ int main() {
 
 	sink->Connect(&builder, plant->get_state_output_port(), "x,y,z,phi,theta,psi,beta,dx,dy,dz,dphi,dtheta,dpsi,dbeta");
 	sink->Connect(&builder, controller->get_control_output_port(), "ur,a1,a2,a3");
+	sink->Connect(&builder, generator->get_output_port(), {0, 1, 2, 3}, "xref,yref,zref,psiref");
 
 	auto diagram = builder.Build();
 
