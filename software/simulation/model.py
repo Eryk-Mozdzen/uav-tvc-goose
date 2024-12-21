@@ -98,8 +98,12 @@ dq = q.diff('t')
 
 ddq = M.LUsolve(T)
 
-f = sp.simplify(sp.Matrix.vstack(dq, ddq).subs([(u1, 0), (u2, 0), (u3, 0), (u4, 0)]))
-G = sp.simplify(sp.Matrix.vstack(dq, ddq).jacobian([u1, u2, u3, u4]))
+f = sp.Matrix.vstack(dq, ddq).subs([(u1, 0), (u2, 0), (u3, 0), (u4, 0)])
+G = sp.Matrix.vstack(dq, ddq).jacobian([u1, u2, u3, u4])
+
+#f = sp.simplify(f)
+#G = sp.simplify(G)
+
 dynamics = f + G*sp.Matrix([u1, u2, u3, u4])
 
 x = sp.Matrix.vstack(q, dq)
@@ -140,12 +144,18 @@ for i in range(h.shape[0]):
         A[i, j] = Lie(G[:, j], Lie(f, h[i, :], relative_degree[i]-1))
     b[i] = Lie(f, h[i, :], relative_degree[i])
 
-A = sp.simplify(A)
-b = sp.simplify(b)
-feedback_linearization = A.inv()*(v - b)
+#A = sp.simplify(A)
+#b = sp.simplify(b)
+
+Ainv = A.inv()
+control_linearized = Ainv*(v - b)
+
+dynamics_linearized = f + G*control_linearized
 
 import numpy as np
 import scipy.constants
+import os
+import pickle
 
 parameters = {
     g:   scipy.constants.g,
@@ -194,132 +204,52 @@ symbols = {
     u4: U[3],
 }
 
-feedback_linearization = feedback_linearization.subs(symbols)
-dynamics = dynamics.subs(symbols)
+#dynamics = sp.simplify(dynamics)
+dynamics_linearized = sp.simplify(dynamics_linearized)
+#control_linearized = sp.simplify(control_linearized)
 
-import os
+dynamics = dynamics.subs(symbols)
+dynamics_linearized = dynamics_linearized.subs(symbols)
+control_linearized = control_linearized.subs(symbols)
 
 here = os.path.dirname(__file__)
-os.makedirs(f'{here}/src/plant', exist_ok=True)
 
-with open(f'{here}/src/plant/Plant.h', 'w') as file:
+os.makedirs(f'{here}/model', exist_ok=True)
+
+with open(f'{here}/model/parameters.pkl', 'wb') as file:
+    pickle.dump(parameters, file)
+
+with open(f'{here}/model/dynamics.pkl', 'wb') as file:
+    pickle.dump(dynamics, file)
+
+with open(f'{here}/model/dynamics_linearized.pkl', 'wb') as file:
+    pickle.dump(dynamics_linearized, file)
+
+with open(f'{here}/model/control_linearized.pkl', 'wb') as file:
+    pickle.dump(control_linearized, file)
+
+os.makedirs(f'{here}/docs', exist_ok=True)
+
+with open(f'{here}/docs/main.tex', 'w') as file:
     file.write(
-'''#pragma once
-
-#include <drake/systems/framework/leaf_system.h>
-
-class Plant : public drake::systems::LeafSystem<double> {
-    void DoCalcTimeDerivatives(const drake::systems::Context<double> &context, drake::systems::ContinuousState<double> *derivatives) const;
-    void eval(const drake::systems::Context<double> &context, drake::systems::BasicVector<double> *output) const;
-
-public:
-'''
-    )
-    for param, value in parameters.items():
-        file.write(f'    static constexpr double {sp.ccode(param)} = {value:e};\n')
-    file.write(
-'''
-    Plant();
-
-    const drake::systems::InputPort<double> & get_control_input_port() const;
-    const drake::systems::OutputPort<double> & get_state_output_port() const;
-};
-'''
-    )
-
-with open(f'{here}/src/plant/Plant.cpp', 'w') as file:
-    file.write(
-'''#include "Plant.h"
-
-Plant::Plant() {
-'''
-    )
-    file.write('    this->DeclareContinuousState({0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 500});\n')
-    file.write('    this->DeclareVectorInputPort("u", ' + str(len(U)) + ');\n')
-    file.write('    this->DeclareVectorOutputPort("x", ' + str(len(X)) + ', &Plant::eval, {this->all_state_ticket()});\n')
-    file.write(
-'''}
-
-void Plant::DoCalcTimeDerivatives(const drake::systems::Context<double> &context, drake::systems::ContinuousState<double> *derivatives) const {
-'''
-    )
-    file.write('    const Eigen::Vector<double, ' + str(len(U)) + '> u = this->GetInputPort("u").Eval(context);\n')
-    file.write('    const Eigen::Vector<double, ' + str(len(X)) + '> x = context.get_continuous_state_vector().CopyToVector();\n')
-    file.write('\n')
-    for i, u in enumerate(U):
-        if u in list(dynamics.free_symbols):
-            file.write(f'    const double {sp.ccode(u)} = u[{i}];\n')
-    file.write('\n')
-    for i, x in enumerate(X):
-        if x in list(dynamics.free_symbols):
-            file.write(f'    const double {sp.ccode(x)} = x[{i}];\n')
-    file.write('\n')
-    for i, dyn in enumerate(dynamics):
-        file.write(f'    derivatives->get_mutable_vector().SetAtIndex({i}, {sp.ccode(dyn)});\n')
-    file.write(
-'''}
-
-void Plant::eval(const drake::systems::Context<double> &context, drake::systems::BasicVector<double> *output) const {
-    output->SetFrom(context.get_continuous_state_vector());
-}
-
-const drake::systems::InputPort<double> & Plant::get_control_input_port() const {
-    return GetInputPort("u");
-}
-
-const drake::systems::OutputPort<double> & Plant::get_state_output_port() const {
-    return GetOutputPort("x");
-}
-'''
+        '\\documentclass{article}\n'
+        '\\usepackage{amsmath}\n'
+        '\\usepackage[paperwidth=350cm, paperheight=50cm, margin=10mm]{geometry}\n'
+        '\n'
+        '\\begin{document}\n'
+        '    \\begin{equation}\n'
+        '        A^{-1} = ' + sp.latex(Ainv) + '\n'
+        '    \\end{equation}\n'
+#        '    \\begin{equation}\n'
+#        '        \\dot{x} = f(x, u) = ' + sp.latex(dynamics) + '\n'
+#        '    \\end{equation}\n'
+        '    \\begin{equation}\n'
+        '        \\dot{x} = f_{linearized}(x, v) = ' + sp.latex(dynamics_linearized) + '\n'
+        '    \\end{equation}\n'
+#        '    \\begin{equation}\n'
+#        '        u = h(x, v) = ' + sp.latex(control_linearized) + '\n'
+#        '    \\end{equation}\n'
+        '\\end{document}\n'
     )
 
-with open(f'{here}/src/controllers/PlantFeedbackLinearization.h', 'w') as file:
-    file.write(
-'''#pragma once
-
-#include <drake/systems/framework/leaf_system.h>
-
-class PlantFeedbackLinearization : public drake::systems::LeafSystem<double> {
-    void eval(const drake::systems::Context<double> &context, drake::systems::BasicVector<double> *output) const;
-
-public:
-    PlantFeedbackLinearization();
-};
-'''
-    )
-
-with open(f'{here}/src/controllers/PlantFeedbackLinearization.cpp', 'w') as file:
-    file.write(
-'''#include "PlantFeedbackLinearization.h"
-#include "Plant.h"
-
-PlantFeedbackLinearization::PlantFeedbackLinearization() {
-'''
-    )
-    file.write('    this->DeclareVectorInputPort("v", ' + str(len(V)) + ');\n')
-    file.write('    this->DeclareVectorInputPort("x", ' + str(len(X)) + ');\n')
-    file.write('    this->DeclareVectorOutputPort("u", ' + str(len(U)) + ', &PlantFeedbackLinearization::eval);\n')
-    file.write(
-'''}
-
-void PlantFeedbackLinearization::eval(const drake::systems::Context<double> &context, drake::systems::BasicVector<double> *output) const {
-'''
-    )
-    file.write('    const Eigen::Vector<double, ' + str(len(V)) + '> v = this->GetInputPort("v").Eval(context);\n')
-    file.write('    const Eigen::Vector<double, ' + str(len(X)) + '> x = this->GetInputPort("x").Eval(context);\n')
-    file.write('\n')
-    for i, v in enumerate(V):
-        if v in list(feedback_linearization.free_symbols):
-            file.write(f'    const double {sp.ccode(v)} = v[{i}];\n')
-    file.write('\n')
-    for i, x in enumerate(X):
-        if x in list(feedback_linearization.free_symbols):
-            file.write(f'    const double {sp.ccode(x)} = x[{i}];\n')
-    file.write('\n')
-    for p, v in parameters.items():
-        if p in list(feedback_linearization.free_symbols):
-            file.write(f'    const double {sp.ccode(p)} = Plant::{sp.ccode(p)};\n')
-    file.write('\n')
-    for i, fl in enumerate(feedback_linearization):
-        file.write(f'    output->SetAtIndex({i}, {sp.ccode(fl)});\n')
-    file.write('}\n')
+os.system(f'pdflatex -interaction=nonstopmode -output-directory={here}/docs {here}/docs/main.tex')

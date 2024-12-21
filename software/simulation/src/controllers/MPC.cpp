@@ -27,23 +27,24 @@ void MPC::PositionController::update(const drake::systems::Context<double> &cont
     p[3] = x[3];
     p[4] = x[4];
     p[5] = x[5];
-    p[6] = Plant::K_f*x[13]*x[13];
+    p[6] = x[6];
     p[7] = x[7];
     p[8] = x[8];
     p[9] = x[9];
     p[10] = x[10];
     p[11] = x[11];
     p[12] = x[12];
+    p[13] = x[13];
 
     for(int i=0; i<HP; i++) {
-        p[13 + NT*i + 0] = x_tr[NT*i + 0];
-        p[13 + NT*i + 1] = x_tr[NT*i + 1];
-        p[13 + NT*i + 2] = x_tr[NT*i + 2];
-        p[13 + NT*i + 3] = x_tr[NT*i + 3];
-        p[13 + NT*i + 4] = x_tr[NT*i + 4];
-        p[13 + NT*i + 5] = x_tr[NT*i + 5];
-        p[13 + NT*i + 6] = x_tr[NT*i + 6];
-        p[13 + NT*i + 7] = x_tr[NT*i + 7];
+        p[14 + NT*i + 0] = x_tr[NT*i + 0];
+        p[14 + NT*i + 1] = x_tr[NT*i + 1];
+        p[14 + NT*i + 2] = x_tr[NT*i + 2];
+        p[14 + NT*i + 3] = x_tr[NT*i + 3];
+        p[14 + NT*i + 4] = x_tr[NT*i + 4];
+        p[14 + NT*i + 5] = x_tr[NT*i + 5];
+        p[14 + NT*i + 6] = x_tr[NT*i + 6];
+        p[14 + NT*i + 7] = x_tr[NT*i + 7];
     }
 
     open_optimizerCache *cache = open_optimizer_new();
