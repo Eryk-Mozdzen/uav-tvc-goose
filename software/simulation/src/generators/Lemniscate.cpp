@@ -1,6 +1,6 @@
 #include "Lemniscate.h"
 
-Lemniscate::Lemniscate(const double c, const double T) : TrajectoryGenerator{8, 20}, a{c*sqrt2}, w{2*pi/T} {
+Lemniscate::Lemniscate(const double c, const double T) : TrajectoryGenerator{12, 20}, a{c*sqrt2}, w{2*pi/T} {
 
 }
 
@@ -43,7 +43,7 @@ Eigen::VectorX<double> Lemniscate::value(const double &time) const {
     };*/
 
     constexpr int HP = 20;
-    constexpr int NT = 8;
+    constexpr int NT = 12;
     constexpr double T = 0.05;
 
     Eigen::Vector<double, NT*HP> trajectory;
@@ -60,6 +60,11 @@ Eigen::VectorX<double> Lemniscate::value(const double &time) const {
         trajectory[k*NT + 5] = a*w*(1 - 3*pow(sin(t*w), 2))/pow(pow(sin(t*w), 2) + 1, 2);
         trajectory[k*NT + 6] = 0;
         trajectory[k*NT + 7] = 3*w*cos(t*w)/(pow(sin(t*w), 2) + 1);
+
+        trajectory[k*NT + 8] = a*pow(w, 2)*(-pow(sin(t*w), 4) + 12*pow(sin(t*w), 2) - 3)*cos(t*w)/pow(pow(sin(t*w), 2) + 1, 3);
+        trajectory[k*NT + 9] = 2*a*pow(w, 2)*(14*sin(2*t*w) + 3*sin(4*t*w))/pow(cos(2*t*w) - 3, 3);
+        trajectory[k*NT + 10] = 0;
+        trajectory[k*NT + 11] = pow(w, 2)*(-19*pow(sin(t*w), 10) + 31*pow(sin(t*w), 8) + 17*pow(sin(t*w), 6) - 33*pow(sin(t*w), 4)*pow(cos(t*w), 6) - 41*pow(sin(t*w), 4) - 10*pow(sin(t*w), 2) + 14*pow(cos(t*w), 10) - 2*pow(cos(t*w), 8) - 19*pow(cos(t*w), 6) - 2)*sin(t*w)/pow(pow(sin(t*w), 2) + 1, 4);
     }
 
     return trajectory;

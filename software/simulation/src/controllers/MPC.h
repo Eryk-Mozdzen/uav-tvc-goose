@@ -9,7 +9,7 @@ class MPC : public drake::systems::Diagram<double> {
     static constexpr double T = 0.05;
 
     static constexpr int NX = 14;
-    static constexpr int NT = 8;
+    static constexpr int NT = 12;
     static constexpr int NV = 4;
     static constexpr int NU = 4;
 

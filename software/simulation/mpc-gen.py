@@ -7,29 +7,13 @@ HC = 5
 T = 0.05
 
 NX = 14
-NT = 8
+NT = 12
 NU = 4
 
-H = cs.DM([
-    [1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-    [0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-    [0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-    [0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0],
-    [0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0],
-    [0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0],
-    [0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0],
-    [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0],
-])
-
-Z = cs.DM([
-    [0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-    [0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-    [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0],
-    [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0],
-])
-
-QH = cs.DM.eye(NT)*100
-QZ = cs.DM.eye(4)*1
+IX = [0, 1, 2, 5]
+IZ = [3, 4]
+QX = 1000
+QZ = 1
 
 x_0 = cs.MX.sym('x_0', NX)
 x_tr = [cs.MX.sym('x_tr_' + str(i), NT) for i in range(HP)]
@@ -40,22 +24,33 @@ constraints = []
 
 x = x_0
 for t in range(0, HC):
-    dx = cs.mtimes([H, x]) - x_tr[t]
-    dz = cs.mtimes([Z, x])
-    cost +=cs.mtimes([dx.T, QH, dx])
-    cost +=cs.mtimes([dz.T, QZ, dz])
-    x = dynamics.dynamics(x, v[t], T)
-    constraints = cs.vertcat(constraints, x[13])
+    dx = dynamics.dynamics(x, v[t])
+    for i, idx in enumerate(IX):
+        cost +=QX*( x[0+idx] - x_tr[t][0+i])**2
+        cost +=QX*( x[7+idx] - x_tr[t][4+i])**2
+        cost +=QX*(dx[7+idx] - x_tr[t][8+i])**2
+    for idx in IZ:
+        cost +=QZ* x[0+idx]**2
+        cost +=QZ* x[7+idx]**2
+        cost +=QZ*dx[7+idx]**2
+    x +=T*dx
+    constraints.append(x[13])
 for t in range(HC, HP):
-    dx = cs.mtimes([H, x]) - x_tr[t]
-    dz = cs.mtimes([Z, x])
-    cost +=cs.mtimes([dx.T, QH, dx])
-    cost +=cs.mtimes([dz.T, QZ, dz])
-    x = dynamics.dynamics(x, v[-1], T)
-    constraints = cs.vertcat(constraints, x[13])
+    dx = dynamics.dynamics(x, v[-1])
+    for i, idx in enumerate(IX):
+        cost +=QX*( x[0+idx] - x_tr[t][0+i])**2
+        cost +=QX*( x[7+idx] - x_tr[t][4+i])**2
+        cost +=QX*(dx[7+idx] - x_tr[t][8+i])**2
+    for idx in IZ:
+        cost +=QZ* x[0+idx]**2
+        cost +=QZ* x[7+idx]**2
+        cost +=QZ*dx[7+idx]**2
+    x +=T*dx
+    constraints.append(x[13])
 
 variables = cs.vertcat(*v)
 parameters = cs.vertcat(x_0, *x_tr)
+constraints = cs.vertcat(*constraints)
 
 v_bounds = og.constraints.Rectangle(
     [-10, -10, -10, -10]*HC,
@@ -79,7 +74,7 @@ build = og.config.BuildConfiguration() \
     .with_tcp_interface_config()
 
 solver = og.config.SolverConfiguration() \
-    .with_tolerance(1e-5)
+    .with_tolerance(1e-6)
 
 builder = og.builder.OpEnOptimizerBuilder(
     problem,

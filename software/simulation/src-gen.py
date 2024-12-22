@@ -149,7 +149,7 @@ with open(f'{here}/dynamics.py', 'w') as file:
     file.write(
 '''import casadi as cs
 
-def dynamics(x, v, dt):
+def dynamics(x, v):
 ''')
     for p, v in parameters.items():
         if p in list(dynamics_linearized.free_symbols):
@@ -163,13 +163,9 @@ def dynamics(x, v, dt):
         if x in list(dynamics_linearized.free_symbols):
             file.write(f'    {sp.ccode(x)} = x[{i}]\n')
     file.write('\n')
-    file.write('    dx = cs.vcat([\n')
+    file.write('    return cs.vcat([\n')
     for dx in dynamics_linearized:
         code = sp.pycode(dx)
         code = code.replace('math', 'cs')
         file.write(f'        {code},\n')
-    file.write(
-'''    ])
-
-    return x + dt*dx
-''')
+    file.write('    ])\n')

@@ -45,6 +45,10 @@ void MPC::PositionController::update(const drake::systems::Context<double> &cont
         p[14 + NT*i + 5] = x_tr[NT*i + 5];
         p[14 + NT*i + 6] = x_tr[NT*i + 6];
         p[14 + NT*i + 7] = x_tr[NT*i + 7];
+        p[14 + NT*i + 8] = x_tr[NT*i + 8];
+        p[14 + NT*i + 9] = x_tr[NT*i + 9];
+        p[14 + NT*i + 10] = x_tr[NT*i + 10];
+        p[14 + NT*i + 11] = x_tr[NT*i + 11];
     }
 
     open_optimizerCache *cache = open_optimizer_new();
