@@ -12,7 +12,7 @@ class Lemniscate : public TrajectoryGenerator {
 
 	static double fix(double angle);
 
-	Eigen::VectorX<double> value(const double &time) const;
+	Eigen::VectorX<double> value(const double &t) const;
 
 public:
 	Lemniscate(const double c, const double T);
