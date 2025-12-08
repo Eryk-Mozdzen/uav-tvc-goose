@@ -1,21 +1,14 @@
-#ifndef RTOS_TASK_HPP
-#define RTOS_TASK_HPP
+#ifndef SYSTEM_THREAD_HPP
+#define SYSTEM_THREAD_HPP
 
 #include <FreeRTOS.h>
 #include <task.h>
 
-namespace rtos {
-
-enum ThreadPriority {
-    Idle = 0,
-    Low = 1,
-    Mid = 3,
-    High = 4,
-};
+namespace system {
 
 template <uint32_t STACK>
 class Thread {
-    StackType_t stack[STACK];
+    StackType_t stack[STACK / sizeof(StackType_t)];
     StaticTask_t tcb;
     TaskHandle_t handle;
 
@@ -33,8 +26,16 @@ protected:
     }
 
 public:
-    Thread(const char *name, const ThreadPriority priority) {
-        handle = xTaskCreateStatic(function, name, STACK, this, priority, stack, &tcb);
+    enum Priority {
+        Idle = 0,
+        Low = 1,
+        Mid = 3,
+        High = 4,
+    };
+
+    Thread(const char *name, const Priority priority) {
+        handle = xTaskCreateStatic(function, name, STACK / sizeof(StackType_t), this, priority,
+                                   stack, &tcb);
     }
 };
 

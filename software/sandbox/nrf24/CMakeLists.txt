@@ -76,9 +76,11 @@ add_executable(${TARGET}
     "FreeRTOS-Kernel/portable/GCC/ARM_CM0/port.c"
     "FreeRTOS-Kernel/portable/GCC/ARM_CM0/portasm.c"
 
-	"src/main.cpp"
-    "src/blink.cpp"
-    "src/rtos/freertos.c"
+	"src/main.c"
+    "src/Blink.cpp"
+    "src/system/freertos.c"
+    "src/topic/Topics.cpp"
+    "src/hardware/Led.cpp"
 )
 
 target_include_directories(${TARGET} PRIVATE
@@ -89,7 +91,7 @@ target_include_directories(${TARGET} PRIVATE
     "FreeRTOS-Kernel/include"
     "FreeRTOS-Kernel/portable/GCC/ARM_CM0"
 	"src"
-    "src/rtos"
+    "src/system"
 )
 
 target_compile_definitions(${TARGET} PRIVATE

@@ -2,8 +2,8 @@
 #include <stm32u0xx_hal.h>
 #include <task.h>
 
-extern "C" void SystemClock_Config();
-extern "C" void MX_GPIO_Init();
+void SystemClock_Config();
+void MX_GPIO_Init();
 
 int main() {
     HAL_Init();
@@ -13,4 +13,6 @@ int main() {
     MX_GPIO_Init();
 
     vTaskStartScheduler();
+
+    return 0;
 }
