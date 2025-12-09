@@ -77,13 +77,13 @@ add_executable(${TARGET}
     "FreeRTOS-Kernel/portable/GCC/ARM_CM0/port.c"
     "FreeRTOS-Kernel/portable/GCC/ARM_CM0/portasm.c"
 
-	"src/main.c"
+	"src/system/main.c"
+    "src/system/freertos.c"
+    "src/topic/Topics.cpp"
     "src/Blink.cpp"
     "src/Button.cpp"
     "src/Led.cpp"
     "src/Serial.cpp"
-    "src/system/freertos.c"
-    "src/topic/Topics.cpp"
 )
 
 target_include_directories(${TARGET} PRIVATE

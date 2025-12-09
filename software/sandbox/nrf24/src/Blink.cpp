@@ -17,7 +17,7 @@ class Blink : Thread<1024> {
 
             message.state = false;
             publisher.publish(message);
-            delay(950);
+            delay(1950);
         }
     }
 
