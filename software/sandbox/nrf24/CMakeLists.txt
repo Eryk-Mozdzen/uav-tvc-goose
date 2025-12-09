@@ -66,6 +66,7 @@ add_executable(${TARGET}
     "cubemx/Drivers/STM32U0xx_HAL_Driver/Src/stm32u0xx_hal_irda.c"
     "cubemx/Drivers/STM32U0xx_HAL_Driver/Src/stm32u0xx_hal_dma_ex.c"
 
+    "FreeRTOS-Kernel/croutine.c"
     "FreeRTOS-Kernel/event_groups.c"
     "FreeRTOS-Kernel/list.c"
     "FreeRTOS-Kernel/queue.c"
@@ -78,9 +79,11 @@ add_executable(${TARGET}
 
 	"src/main.c"
     "src/Blink.cpp"
+    "src/Button.cpp"
+    "src/Led.cpp"
+    "src/Serial.cpp"
     "src/system/freertos.c"
     "src/topic/Topics.cpp"
-    "src/hardware/Led.cpp"
 )
 
 target_include_directories(${TARGET} PRIVATE

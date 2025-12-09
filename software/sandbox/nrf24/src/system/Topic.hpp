@@ -2,27 +2,39 @@
 #define SYSTEM_TOPIC_HPP
 
 #include <FreeRTOS.h>
-#include <queue.h>
+#include <event_groups.h>
+#include <semphr.h>
 
 namespace system {
 
 template <typename MESSAGE>
 class Topic {
-    uint8_t storage[sizeof(MESSAGE)];
-    StaticQueue_t queue;
-    QueueHandle_t handle;
+    MESSAGE value;
+    StaticSemaphore_t mutexStorage;
+    StaticEventGroup_t eventStorage;
+    SemaphoreHandle_t mutex;
+    EventGroupHandle_t event;
 
 public:
     Topic() {
-        handle = xQueueCreateStatic(1, sizeof(MESSAGE), storage, &queue);
+        mutex = xSemaphoreCreateMutexStatic(&mutexStorage);
+        event = xEventGroupCreateStatic(&eventStorage);
     }
 
-    void put(const MESSAGE &message) {
-        xQueueSend(handle, &message, portMAX_DELAY);
+    void publish(const MESSAGE &message) {
+        xSemaphoreTake(mutex, portMAX_DELAY);
+        value = message;
+        xSemaphoreGive(mutex);
+        xEventGroupSetBits(event, 0x01);
     }
 
-    void peek(MESSAGE &message) const {
-        xQueuePeek(handle, &message, portMAX_DELAY);
+    MESSAGE wait() const {
+        MESSAGE message;
+        xEventGroupWaitBits(event, 0x01, pdTRUE, pdFALSE, portMAX_DELAY);
+        xSemaphoreTake(mutex, portMAX_DELAY);
+        message = value;
+        xSemaphoreGive(mutex);
+        return message;
     }
 };
 

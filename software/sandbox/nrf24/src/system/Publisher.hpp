@@ -14,7 +14,7 @@ public:
     }
 
     void publish(const MESSAGE &message) {
-        topic.put(message);
+        topic.publish(message);
     }
 };
 

@@ -16,7 +16,7 @@ class Subscriber : public Thread<STACK> {
         MESSAGE message;
 
         while(true) {
-            topic.peek(message);
+            message = topic.wait();
             receive(message);
         }
     }

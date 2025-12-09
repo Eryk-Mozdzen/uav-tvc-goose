@@ -4,6 +4,7 @@
 
 void SystemClock_Config();
 void MX_GPIO_Init();
+void MX_USART2_UART_Init();
 
 int main() {
     HAL_Init();
@@ -11,6 +12,7 @@ int main() {
     SystemClock_Config();
 
     MX_GPIO_Init();
+    MX_USART2_UART_Init();
 
     vTaskStartScheduler();
 
