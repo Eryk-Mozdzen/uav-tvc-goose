@@ -1,12 +1,12 @@
 #ifndef TOPIC_TOPICS_HPP
 #define TOPIC_TOPICS_HPP
 
-#include "system/Topic.hpp"
+#include "rtos/Topic.hpp"
 #include "topic/message/Led.hpp"
 
 namespace topic {
 
-extern system::Topic<message::Led> LedControl;
+extern rtos::Topic<message::Led> LedControl;
 
 }
 

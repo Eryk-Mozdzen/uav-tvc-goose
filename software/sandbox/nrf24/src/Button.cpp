@@ -1,10 +1,10 @@
 #include <stm32u0xx_hal.h>
 
-#include "system/Publisher.hpp"
-#include "system/Thread.hpp"
+#include "rtos/Publisher.hpp"
+#include "rtos/Thread.hpp"
 #include "topic/Topics.hpp"
 
-using namespace system;
+using namespace rtos;
 
 class Button : Thread<1024> {
     Publisher<topic::message::Led> publisher;

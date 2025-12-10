@@ -1,8 +1,8 @@
-#include "system/Publisher.hpp"
-#include "system/Thread.hpp"
+#include "rtos/Publisher.hpp"
+#include "rtos/Thread.hpp"
 #include "topic/Topics.hpp"
 
-using namespace system;
+using namespace rtos;
 
 class Blink : Thread<1024> {
     Publisher<topic::message::Led> publisher;
