@@ -23,6 +23,7 @@ Release
 
 # vscode
 .vscode
+.vscode-ctags
 build
 __pycache__
 !software/identification/*.csv
