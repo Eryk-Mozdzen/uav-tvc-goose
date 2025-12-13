@@ -1,10 +1,29 @@
 #include <stm32u0xx_hal.h>
 
+#include "rtos/Publisher.hpp"
+#include "rtos/Subscriber.hpp"
 #include "rtos/Thread.hpp"
+#include "topic/Topics.hpp"
 
 using namespace rtos;
 
-extern SPI_HandleTypeDef hspi2;
+class Output {
+    GPIO_TypeDef *GPIOx;
+    uint16_t GPIO_Pin;
+
+public:
+    enum class State {
+        LOW = GPIO_PIN_RESET,
+        HIGH = GPIO_PIN_SET,
+    };
+
+    Output(GPIO_TypeDef *GPIOx, uint16_t GPIO_Pin) : GPIOx{GPIOx}, GPIO_Pin{GPIO_Pin} {
+    }
+
+    void set(const State state) {
+        HAL_GPIO_WritePin(GPIOx, GPIO_Pin, static_cast<GPIO_PinState>(state));
+    }
+};
 
 class nRF24L01p : Thread<1024> {
     enum Register {
@@ -50,7 +69,7 @@ class nRF24L01p : Thread<1024> {
         _250KBPS,
     };
 
-    enum CRCMode {
+    enum CRCLength {
         DISABLED,
         _8,
         _16,
@@ -125,13 +144,12 @@ class nRF24L01p : Thread<1024> {
     static constexpr uint8_t RF_PWR_LOW = 1;
     static constexpr uint8_t RF_PWR_HIGH = 2;
 
-    inline void ce(const bool state) {
-        HAL_GPIO_WritePin(GPIOC, GPIO_PIN_0, state ? GPIO_PIN_SET : GPIO_PIN_RESET);
-    }
+    static constexpr uint8_t PAYLOAD_SIZE = 1;
+    static constexpr uint8_t ADDR_SIZE = 3;
 
-    inline void csn(const bool state) {
-        HAL_GPIO_WritePin(GPIOC, GPIO_PIN_1, state ? GPIO_PIN_SET : GPIO_PIN_RESET);
-    }
+    SPI_HandleTypeDef &hspi;
+    Output ce;
+    Output csn;
 
     uint8_t readReg(const Register reg) {
         const uint8_t txData[2] = {
@@ -140,9 +158,9 @@ class nRF24L01p : Thread<1024> {
         };
         uint8_t rxData[2] = {0};
 
-        csn(false);
-        HAL_SPI_TransmitReceive(&hspi2, txData, rxData, 2, HAL_MAX_DELAY);
-        csn(true);
+        csn.set(Output::State::LOW);
+        HAL_SPI_TransmitReceive(&hspi, txData, rxData, 2, HAL_MAX_DELAY);
+        csn.set(Output::State::HIGH);
 
         return rxData[1];
     }
@@ -153,28 +171,28 @@ class nRF24L01p : Thread<1024> {
             value,
         };
 
-        csn(false);
-        HAL_SPI_Transmit(&hspi2, txData, 2, HAL_MAX_DELAY);
-        csn(true);
+        csn.set(Output::State::LOW);
+        HAL_SPI_Transmit(&hspi, txData, 2, HAL_MAX_DELAY);
+        csn.set(Output::State::HIGH);
     }
 
     void flushRx() {
         const uint8_t txData[1] = {FLUSH_RX};
 
-        csn(false);
-        HAL_SPI_Transmit(&hspi2, txData, 1, HAL_MAX_DELAY);
-        csn(true);
+        csn.set(Output::State::LOW);
+        HAL_SPI_Transmit(&hspi, txData, 1, HAL_MAX_DELAY);
+        csn.set(Output::State::HIGH);
     }
 
     void flushTx() {
         const uint8_t txData[1] = {FLUSH_TX};
 
-        csn(false);
-        HAL_SPI_Transmit(&hspi2, txData, 1, HAL_MAX_DELAY);
-        csn(true);
+        csn.set(Output::State::LOW);
+        HAL_SPI_Transmit(&hspi, txData, 1, HAL_MAX_DELAY);
+        csn.set(Output::State::HIGH);
     }
 
-    void setChannel(uint8_t channel) {
+    void setRFChannel(uint8_t channel) {
         if(channel > 127) {
             channel = 127;
         }
@@ -227,7 +245,7 @@ class nRF24L01p : Thread<1024> {
         writeReg(RF_SETUP, setup);
     }
 
-    void setCRCLength(const CRCMode length) {
+    void setCRCLength(const CRCLength length) {
         uint8_t config = readReg(CONFIG);
 
         config &= ~((1 << CRCO) | (1 << EN_CRC));
@@ -249,34 +267,78 @@ class nRF24L01p : Thread<1024> {
     }
 
     void thread() {
-        ce(false);
-        csn(true);
+        ce.set(Output::State::LOW);
+        csn.set(Output::State::HIGH);
 
-        delay(5);
-
-        writeReg(SETUP_RETR, (0b0100 << ARD) | (0b1111 << ARC));
+        /*delay(5);
 
         setPALevel(PaDbm::MAX);
         setDataRate(DataRate::_250KBPS);
-        setDataRate(DataRate::_1MBPS);
-        setCRCLength(CRCMode::_16);
+        setCRCLength(CRCLength::_8);
+        setRetries(0x04, 0x07);
+        writeReg(Register::DYNPD, 0);
+        setRFChannel(10);
+        setPayloadSize(0, PAYLOAD_SIZE);
+        enablePipe(0, 1);
+        autoACK(0, 1);
+        setAddressWidth(ADDR_SIZE);
 
-        writeReg(DYNPD, 0);
-        writeReg(STATUS, (1 << RX_DR) | (1 << TX_DS) | (1 << MAX_RT));
-
-        setChannel(76);
-
-        flushRx();
-        flushTx();
+        setRXAddress(0, "Nad");
+        setTXAddress("Odb");
+        txMode();*/
 
         while(true) {
+            /*const char *msg = "witajcie w mojej kuchni";
+
+            writeTxPayload(msg);
+            delay(1);
+            waitTx();*/
             delay(100);
         }
     }
 
 public:
-    nRF24L01p() : Thread{"nRF24L01+ driver", Thread::Priority::Mid} {
+    nRF24L01p(SPI_HandleTypeDef hspi, const Output csn, const Output ce)
+        : Thread{"nRF24L01+ driver", Thread::Priority::Mid}, hspi{hspi}, ce{ce}, csn{csn} {
     }
 };
 
-static nRF24L01p nrf24l01p;
+class Transmitter : Subscriber<topic::message::Led, 1024> {
+    nRF24L01p &radio;
+
+    void receive(const topic::message::Led &message) {
+        // serialization
+        // radio.transmit();
+    }
+
+public:
+    Transmitter(nRF24L01p &radio)
+        : Subscriber{topic::LedControl, "radio tx", Thread::Priority::Mid}, radio{radio} {
+    }
+};
+
+class Receiver : Thread<1024> {
+    Publisher<topic::message::Led> publisher;
+    nRF24L01p &radio;
+
+    void thread() {
+        while(true) {
+            // radio.receive();
+            //  deserialize
+            // publisher.publish(topic::message::Led{});
+            delay(1);
+        }
+    }
+
+public:
+    Receiver(nRF24L01p &radio)
+        : Thread{"radio rx", Thread::Priority::Mid}, publisher{topic::LedControl}, radio{radio} {
+    }
+};
+
+extern SPI_HandleTypeDef hspi2;
+
+static nRF24L01p radio1(hspi2, Output(GPIOC, GPIO_PIN_1), Output(GPIOC, GPIO_PIN_0));
+
+static Transmitter tx(radio1);
+static Receiver rx(radio1);
