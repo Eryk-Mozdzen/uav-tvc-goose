@@ -5,6 +5,7 @@
 void SystemClock_Config();
 void MX_GPIO_Init();
 void MX_USART2_UART_Init();
+void MX_SPI1_Init();
 void MX_SPI2_Init();
 
 int main() {
@@ -14,6 +15,7 @@ int main() {
 
     MX_GPIO_Init();
     MX_USART2_UART_Init();
+    MX_SPI1_Init();
     MX_SPI2_Init();
 
     vTaskStartScheduler();

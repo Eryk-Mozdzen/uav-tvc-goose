@@ -337,9 +337,11 @@ public:
     }
 };
 
+extern SPI_HandleTypeDef hspi1;
 extern SPI_HandleTypeDef hspi2;
 
 static nRF24L01p radio1(hspi2, Output(GPIOC, GPIO_PIN_1), Output(GPIOC, GPIO_PIN_0));
+static nRF24L01p radio2(hspi1, Output(GPIOA, GPIO_PIN_10), Output(GPIOA, GPIO_PIN_8));
 
 static Transmitter tx(radio1);
-static Receiver rx(radio1);
+static Receiver rx(radio2);
