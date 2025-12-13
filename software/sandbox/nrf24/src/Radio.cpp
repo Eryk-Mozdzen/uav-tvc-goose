@@ -1,9 +1,10 @@
 #include <stm32u0xx_hal.h>
 
+#include "rtos/Log.hpp"
 #include "rtos/Publisher.hpp"
 #include "rtos/Subscriber.hpp"
 #include "rtos/Thread.hpp"
-#include "topic/Topics.hpp"
+#include "rtos/Topics.hpp"
 
 using namespace rtos;
 
@@ -25,7 +26,7 @@ public:
     }
 };
 
-class nRF24L01p : Thread<1024> {
+class nRF24L01p : Thread<512> {
     enum Register {
         CONFIG = 0x00,
         EN_AA = 0x01,
@@ -303,22 +304,22 @@ public:
     }
 };
 
-class Transmitter : Subscriber<topic::message::Led, 1024> {
+class Transmitter : Subscriber<messages::Led, 1024> {
     nRF24L01p &radio;
 
-    void receive(const topic::message::Led &message) {
+    void receive(const messages::Led &message) {
         // serialization
         // radio.transmit();
     }
 
 public:
     Transmitter(nRF24L01p &radio)
-        : Subscriber{topic::LedControl, "radio tx", Thread::Priority::Mid}, radio{radio} {
+        : Subscriber{topics::LedControl, "radio tx", Thread::Priority::Mid}, radio{radio} {
     }
 };
 
 class Receiver : Thread<1024> {
-    Publisher<topic::message::Led> publisher;
+    Publisher<messages::Led> publisher;
     nRF24L01p &radio;
 
     void thread() {
@@ -332,7 +333,7 @@ class Receiver : Thread<1024> {
 
 public:
     Receiver(nRF24L01p &radio)
-        : Thread{"radio rx", Thread::Priority::Mid}, publisher{topic::LedControl}, radio{radio} {
+        : Thread{"radio rx", Thread::Priority::Mid}, publisher{topics::LedControl}, radio{radio} {
     }
 };
 

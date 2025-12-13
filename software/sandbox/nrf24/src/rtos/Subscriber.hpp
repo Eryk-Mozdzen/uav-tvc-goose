@@ -9,14 +9,13 @@ namespace rtos {
 template <typename MESSAGE, uint32_t STACK>
 class Subscriber : public Thread<STACK> {
     const Topic<MESSAGE> &topic;
+    MESSAGE message;
 
     virtual void receive(const MESSAGE &message) = 0;
 
     void thread() {
-        MESSAGE message;
-
         while(true) {
-            message = topic.wait();
+            topic.wait(message);
             receive(message);
         }
     }

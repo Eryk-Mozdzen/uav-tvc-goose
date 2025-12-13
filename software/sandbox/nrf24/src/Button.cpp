@@ -1,22 +1,24 @@
 #include <stm32u0xx_hal.h>
 
+#include "rtos/Log.hpp"
 #include "rtos/Publisher.hpp"
 #include "rtos/Thread.hpp"
-#include "topic/Topics.hpp"
+#include "rtos/Topics.hpp"
 
 using namespace rtos;
 
 class Button : Thread<1024> {
-    Publisher<topic::message::Led> publisher;
+    Publisher<messages::Led> publisher;
     bool last;
 
     void thread() {
-        topic::message ::Led message;
+        messages::Led message;
 
         while(true) {
             const bool current = (HAL_GPIO_ReadPin(GPIOC, GPIO_PIN_13) == GPIO_PIN_RESET);
 
             if(current != last) {
+                RTOS_LOG("guzik %d", current);
                 message.state = current;
                 publisher.publish(message);
             }
@@ -28,7 +30,8 @@ class Button : Thread<1024> {
     }
 
 public:
-    Button() : Thread{"button", Thread::Priority::Idle}, publisher{topic::LedControl}, last{false} {
+    Button()
+        : Thread{"button", Thread::Priority::Idle}, publisher{topics::LedControl}, last{false} {
     }
 };
 

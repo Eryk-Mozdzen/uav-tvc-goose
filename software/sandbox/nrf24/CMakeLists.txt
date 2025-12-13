@@ -79,7 +79,8 @@ add_executable(${TARGET}
 
 	"src/rtos/main.c"
     "src/rtos/freertos.c"
-    "src/topic/Topics.cpp"
+    "src/rtos/Log.cpp"
+    "src/rtos/Topics.cpp"
     "src/Blink.cpp"
     "src/Button.cpp"
     "src/Led.cpp"

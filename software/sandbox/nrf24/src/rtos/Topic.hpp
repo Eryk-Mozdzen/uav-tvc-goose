@@ -28,13 +28,11 @@ public:
         xEventGroupSetBits(event, 0x01);
     }
 
-    MESSAGE wait() const {
-        MESSAGE message;
+    void wait(MESSAGE &message) const {
         xEventGroupWaitBits(event, 0x01, pdTRUE, pdFALSE, portMAX_DELAY);
         xSemaphoreTake(mutex, portMAX_DELAY);
         message = value;
         xSemaphoreGive(mutex);
-        return message;
     }
 };
 

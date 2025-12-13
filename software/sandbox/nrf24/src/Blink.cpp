@@ -1,14 +1,14 @@
 #include "rtos/Publisher.hpp"
 #include "rtos/Thread.hpp"
-#include "topic/Topics.hpp"
+#include "rtos/Topics.hpp"
 
 using namespace rtos;
 
-class Blink : Thread<1024> {
-    Publisher<topic::message::Led> publisher;
+class Blink : Thread<512> {
+    Publisher<messages::Led> publisher;
 
     void thread() {
-        topic::message ::Led message;
+        messages::Led message;
 
         while(true) {
             message.state = true;
@@ -22,7 +22,7 @@ class Blink : Thread<1024> {
     }
 
 public:
-    Blink() : Thread{"blink", Thread::Priority::Idle}, publisher{topic::LedControl} {
+    Blink() : Thread{"blink", Thread::Priority::Idle}, publisher{topics::LedControl} {
     }
 };
 
