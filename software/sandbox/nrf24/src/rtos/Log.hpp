@@ -17,7 +17,8 @@
         const auto value = (expr);                                                                 \
         if(value != (expected)) {                                                                  \
             rtos::log << rtos::acquire << __FILE_NAME__ << ":" << rtos::noshowpos << rtos::dec     \
-                      << __LINE__ << " " #expr " failed: " << value << rtos::endl                  \
+                      << static_cast<uint32_t>(__LINE__) << " " #expr " failed: " << value         \
+                      << rtos::endl                                                                \
                       << rtos::release;                                                            \
         }                                                                                          \
     }

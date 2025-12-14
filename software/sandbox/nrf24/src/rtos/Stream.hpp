@@ -1,6 +1,7 @@
 #ifndef RTOS_STREAM_HPP
 #define RTOS_STREAM_HPP
 
+#include <cmath>
 #include <cstdint>
 #include <cstring>
 
@@ -12,8 +13,6 @@ struct Hex {};
 struct Dec {};
 struct ShowSign {};
 struct NoSign {};
-struct Left {};
-struct Right {};
 struct SetW {
     uint32_t value;
 };
@@ -27,8 +26,6 @@ constexpr fmt::Hex hex{};
 constexpr fmt::Dec dec{};
 constexpr fmt::ShowSign showpos{};
 constexpr fmt::NoSign noshowpos{};
-constexpr fmt::Left left{};
-constexpr fmt::Right right{};
 
 inline fmt::SetW setw(const uint32_t w) {
     return {w};
@@ -45,14 +42,8 @@ class Stream {
         Hex = 16,
     };
 
-    enum class Align : uint32_t {
-        Left,
-        Right,
-    };
-
     struct Format {
         Base base = Base::Dec;
-        Align align = Align::Right;
         uint32_t width = 0;
         uint32_t precision = 3;
         bool sign = false;
@@ -63,10 +54,6 @@ class Stream {
 
     uint32_t index = 0;
     Format format;
-
-    DERIVED &self() {
-        return static_cast<DERIVED &>(*this);
-    }
 
     static int writeInt(char *str, const int32_t variable) {
         if(variable == 0) {
@@ -108,42 +95,32 @@ public:
 
     DERIVED &operator<<(const fmt::Hex &modifier) {
         format.base = Stream::Base::Hex;
-        return self();
+        return static_cast<DERIVED &>(*this);
     }
 
     DERIVED &operator<<(const fmt::Dec &modifier) {
         format.base = Stream::Base::Dec;
-        return self();
+        return static_cast<DERIVED &>(*this);
     }
 
     DERIVED &operator<<(const fmt::ShowSign &modifier) {
         format.sign = true;
-        return self();
+        return static_cast<DERIVED &>(*this);
     }
 
     DERIVED &operator<<(const fmt::NoSign &modifier) {
         format.sign = false;
-        return self();
-    }
-
-    DERIVED &operator<<(const fmt::Left &modifier) {
-        format.align = Stream::Align::Left;
-        return self();
-    }
-
-    DERIVED &operator<<(const fmt::Right &modifier) {
-        format.align = Stream::Align::Right;
-        return self();
+        return static_cast<DERIVED &>(*this);
     }
 
     DERIVED &operator<<(const fmt::SetW &modifier) {
         format.width = modifier.value;
-        return self();
+        return static_cast<DERIVED &>(*this);
     }
 
     DERIVED &operator<<(const fmt::SetPrecision &modifier) {
         format.precision = modifier.value;
-        return self();
+        return static_cast<DERIVED &>(*this);
     }
 
     DERIVED &operator<<(const char variable) {
@@ -154,7 +131,7 @@ public:
             index++;
         }
 
-        return self();
+        return static_cast<DERIVED &>(*this);
     }
 
     DERIVED &operator<<(const char *variable) {
@@ -166,90 +143,146 @@ public:
 
         index += write;
 
-        return self();
+        return static_cast<DERIVED &>(*this);
     }
 
     DERIVED &operator<<(const bool variable) {
         *this << (variable ? "true" : "false");
-        return self();
-    }
-
-    DERIVED &operator<<(const int variable) {
-        if(format.sign) {
-            if(variable >= 0) {
-                *this << '+';
-            } else {
-                *this << '-';
-            }
-        }
-
-        if(variable > 0) {
-            index += writeInt(&buffer[index], variable);
-        } else {
-            index += writeInt(&buffer[index], -variable);
-        }
-
-        return self();
+        return static_cast<DERIVED &>(*this);
     }
 
     DERIVED &operator<<(const float variable) {
-        if(format.sign) {
-            if(variable >= 0.f) {
-                *this << '+';
-            } else {
-                *this << '-';
-            }
+        if(std::isnan(variable)) {
+            *this << "nan";
+            return static_cast<DERIVED &>(*this);
         }
 
         float value = variable;
 
-        if(value < 0.f) {
+        if(variable < 0.f) {
+            *this << '-';
             value = -value;
+        } else if(format.sign) {
+            *this << '+';
         }
 
-        const int integer = (int)value;
-        const float frac = value - (float)integer;
-        const int decimals = (int)(frac * 1000.f + 0.5f);
+        if(std::isinf(value)) {
+            *this << "inf";
+            return static_cast<DERIVED &>(*this);
+        };
+
+        int multiplier = 1;
+        for(uint32_t i = 0; i < format.precision; i++) {
+            multiplier *= 10;
+        }
+
+        int integer = static_cast<int>(value);
+        float frac = value - static_cast<float>(integer);
+        int decimals = static_cast<int>((frac * static_cast<float>(multiplier)) + 0.5f);
+
+        if(decimals >= multiplier) {
+            integer += (decimals / multiplier);
+            decimals -= (decimals / multiplier) * multiplier;
+        }
 
         index += writeInt(&buffer[index], integer);
 
         *this << '.';
 
-        if(decimals < 100) {
-            *this << '0';
-        }
-
-        if(decimals < 10) {
-            *this << '0';
+        for(uint32_t i = 0; i < format.precision; i++) {
+            multiplier /= 10;
+            if((multiplier >= 10) && (decimals < multiplier)) {
+                *this << '0';
+            }
         }
 
         index += writeInt(&buffer[index], decimals);
 
-        return self();
+        return static_cast<DERIVED &>(*this);
     }
 
     DERIVED &operator<<(const uint8_t variable) {
-        index += writeInt(&buffer[index], variable);
-        return self();
+        switch(format.base) {
+            case Base::Dec: {
+                index += writeInt(&buffer[index], variable);
+            } break;
+            case Base::Hex: {
+                *this << "0x";
+
+                const uint32_t nibble1 = (variable >> 4) & 0x0F;
+                const uint32_t nibble0 = (variable >> 0) & 0x0F;
+
+                if(nibble1 < 10) {
+                    *this << static_cast<char>('0' + nibble1);
+                } else {
+                    *this << static_cast<char>('A' + nibble1 - 10);
+                }
+
+                if(nibble0 < 10) {
+                    *this << static_cast<char>('0' + nibble0);
+                } else {
+                    *this << static_cast<char>('A' + nibble0 - 10);
+                }
+            } break;
+        }
+
+        return static_cast<DERIVED &>(*this);
     }
 
     DERIVED &operator<<(const uint32_t variable) {
-        index += writeInt(&buffer[index], variable);
-        return self();
+        switch(format.base) {
+            case Base::Dec: {
+                index += writeInt(&buffer[index], variable);
+            } break;
+            case Base::Hex: {
+                *this << "0x";
+
+                for(uint32_t i = 0; i < 8; i++) {
+                    const uint32_t nibble = (variable >> (4 * (7 - i))) & 0x0F;
+
+                    if(nibble < 10) {
+                        *this << static_cast<char>('0' + nibble);
+                    } else {
+                        *this << static_cast<char>('A' + nibble - 10);
+                    }
+                }
+
+            } break;
+        }
+
+        return static_cast<DERIVED &>(*this);
     }
 
     DERIVED &operator<<(const int32_t variable) {
-        if(variable > 0) {
-            *this << '+';
-            index += writeInt(&buffer[index], variable);
-        } else if(variable < 0) {
-            *this << '-';
-            index += writeInt(&buffer[index], -variable);
-        } else {
-            *this << "0";
+        switch(format.base) {
+            case Base::Dec: {
+                if(format.sign) {
+                    if(variable > 0) {
+                        *this << '+';
+                        index += writeInt(&buffer[index], variable);
+                    } else {
+                        *this << '-';
+                        index += writeInt(&buffer[index], -variable);
+                    }
+                }
+            } break;
+            case Base::Hex: {
+                *this << "0x";
+
+                for(uint32_t i = 0; i < 8; i++) {
+                    const uint32_t nibble = (variable >> (4 * (7 - i))) & 0x0F;
+
+                    if(nibble < 10) {
+                        *this << static_cast<char>('0' + nibble);
+                    } else {
+                        *this << static_cast<char>('A' + nibble - 10);
+                    }
+                }
+
+            } break;
         }
 
-        return self();
+        return static_cast<DERIVED &>(*this);
     }
 };
 
