@@ -7,7 +7,7 @@
 
 using namespace rtos;
 
-class Button : Thread<1024> {
+class Button : Thread<512> {
     Publisher<messages::Led> publisher;
     bool last;
 
@@ -18,7 +18,7 @@ class Button : Thread<1024> {
             const bool current = (HAL_GPIO_ReadPin(GPIOC, GPIO_PIN_13) == GPIO_PIN_RESET);
 
             if(current != last) {
-                RTOS_LOG("guzik %d", current);
+                rtos::log << rtos::acquire << "button " << current << rtos::endl << rtos::release;
                 message.state = current;
                 publisher.publish(message);
             }

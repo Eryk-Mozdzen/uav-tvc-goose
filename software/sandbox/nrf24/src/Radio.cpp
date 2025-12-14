@@ -160,7 +160,7 @@ class nRF24L01p : Thread<512> {
         uint8_t rxData[2] = {0};
 
         csn.set(Output::State::LOW);
-        HAL_SPI_TransmitReceive(&hspi, txData, rxData, 2, HAL_MAX_DELAY);
+        RTOS_ASSERT(HAL_SPI_TransmitReceive(&hspi, txData, rxData, 2, 10), HAL_OK);
         csn.set(Output::State::HIGH);
 
         return rxData[1];
@@ -173,8 +173,10 @@ class nRF24L01p : Thread<512> {
         };
 
         csn.set(Output::State::LOW);
-        HAL_SPI_Transmit(&hspi, txData, 2, HAL_MAX_DELAY);
+        RTOS_ASSERT(HAL_SPI_Transmit(&hspi, txData, 2, 10), HAL_OK);
         csn.set(Output::State::HIGH);
+
+        RTOS_ASSERT(readReg(reg), value);
     }
 
     void flushRx() {
@@ -271,22 +273,22 @@ class nRF24L01p : Thread<512> {
         ce.set(Output::State::LOW);
         csn.set(Output::State::HIGH);
 
-        /*delay(5);
+        delay(5);
 
         setPALevel(PaDbm::MAX);
         setDataRate(DataRate::_250KBPS);
         setCRCLength(CRCLength::_8);
-        setRetries(0x04, 0x07);
+        // setRetries(0x04, 0x07);
         writeReg(Register::DYNPD, 0);
         setRFChannel(10);
-        setPayloadSize(0, PAYLOAD_SIZE);
-        enablePipe(0, 1);
-        autoACK(0, 1);
-        setAddressWidth(ADDR_SIZE);
+        // setPayloadSize(0, PAYLOAD_SIZE);
+        // enablePipe(0, 1);
+        // autoACK(0, 1);
+        // setAddressWidth(ADDR_SIZE);
 
-        setRXAddress(0, "Nad");
-        setTXAddress("Odb");
-        txMode();*/
+        // setRXAddress(0, "Nad");
+        // setTXAddress("Odb");
+        // txMode();
 
         while(true) {
             /*const char *msg = "witajcie w mojej kuchni";
@@ -304,7 +306,7 @@ public:
     }
 };
 
-class Transmitter : Subscriber<messages::Led, 1024> {
+class Transmitter : Subscriber<messages::Led, 512> {
     nRF24L01p &radio;
 
     void receive(const messages::Led &message) {
@@ -318,7 +320,7 @@ public:
     }
 };
 
-class Receiver : Thread<1024> {
+class Receiver : Thread<512> {
     Publisher<messages::Led> publisher;
     nRF24L01p &radio;
 

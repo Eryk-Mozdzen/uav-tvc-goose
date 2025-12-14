@@ -1,114 +1,196 @@
-#include <cstdarg>
-#include <cstdint>
-#include <cstdio>
 #include <cstring>
 
 #include <FreeRTOS.h>
+#include <message_buffer.h>
 #include <semphr.h>
-#include <task.h>
 
+#include "rtos/Log.hpp"
 #include "rtos/Publisher.hpp"
 #include "rtos/Thread.hpp"
 #include "rtos/Topics.hpp"
 
-using namespace rtos;
-
-class Counter {
-    uint32_t counter;
-    StaticSemaphore_t mutexStorage;
-    SemaphoreHandle_t mutexHandle;
-
-public:
-    Counter() : counter{0} {
-        mutexHandle = xSemaphoreCreateMutexStatic(&mutexStorage);
+static int writeInt(char *str, const int variable) {
+    if(variable == 0) {
+        *str = '0';
+        return 1;
     }
 
-    uint32_t generate() {
-        uint32_t value;
-        xSemaphoreTake(mutexHandle, portMAX_DELAY);
-        value = counter;
-        counter++;
-        xSemaphoreGive(mutexHandle);
-        return value;
-    }
-};
+    char buffer[16];
+    int val = variable;
+    int i = 0;
 
-class Logger : Thread<512> {
-    Publisher<messages::LogBuffer> publisher;
-
-    StaticSemaphore_t mutexStorage;
-    SemaphoreHandle_t mutexHandle;
-
-    messages::LogBuffer buffer;
-    messages::LogBuffer message;
-    uint32_t index;
-
-    void thread() {
-        while(true) {
-            xSemaphoreTake(mutexHandle, portMAX_DELAY);
-            memcpy(&message.logs, &buffer.logs[index],
-                   (messages::LogBuffer::DEPTH - index) * messages::LogBuffer::LENGTH);
-            memcpy(&message.logs[messages::LogBuffer::DEPTH - index - 1], &buffer.logs,
-                   index * messages::LogBuffer::LENGTH);
-            xSemaphoreGive(mutexHandle);
-
-            publisher.publish(message);
-
-            delay(1000);
-        }
+    while(val > 0) {
+        buffer[i++] = '0' + (val % 10);
+        val /= 10;
     }
 
-public:
-    Logger() : Thread<512>("rtos logger", Thread<512>::High), publisher{topics::Logs}, index{0} {
-        mutexHandle = xSemaphoreCreateMutexStatic(&mutexStorage);
+    const int len = i;
+
+    while(i--) {
+        *str = buffer[i];
+        str++;
     }
 
-    void append(const char *str, const uint32_t len) {
-        xSemaphoreTake(mutexHandle, portMAX_DELAY);
-        memcpy(buffer.logs[index], str, len);
-        index++;
-        if(index >= messages::LogBuffer::DEPTH) {
-            index = 0;
-        }
-        xSemaphoreGive(mutexHandle);
-    }
-};
-
-static Counter counter;
-static Logger logger;
+    return len;
+}
 
 namespace rtos {
 
-void log(const char *filepath, const uint32_t line, const char *format, ...) {
-    const uint32_t timestamp = xTaskGetTickCount();
-    const uint32_t id = counter.generate();
+Log log;
 
-    const char *slash = strrchr(filepath, '/');
-    const char *file = slash ? slash + 1 : filepath;
+Log::Log() : Thread{"rtos logger", Thread::High}, index{8}, counter{0}, publisher{topics::Logs} {
+    bufferHandle = xMessageBufferCreateStatic(sizeof(buffer), buffer, &bufferStorage);
+    mutexHandle = xSemaphoreCreateMutexStatic(&mutexStorage);
+}
 
-    char str[messages::LogBuffer::LENGTH];
-    int result;
-    uint32_t len = 0;
+void Log::thread() {
+    rtos::log << rtos::acquire << "----- SYSTEM RESET ----- " << rtos::endl << rtos::release;
 
-    result = snprintf(str, sizeof(str), "%8lu %8lu %s:%lu ", id, timestamp, file, line);
-    if(result < 0) {
-        return;
+    while(true) {
+        message.len =
+            xMessageBufferReceive(bufferHandle, message.str, messages::Log::LENGTH, portMAX_DELAY);
+
+        publisher.publish(message);
+
+        delay(10);
     }
-    len += result;
+}
 
-    va_list args;
-    va_start(args, format);
-
-    result = vsnprintf(&str[result], sizeof(str) - len, format, args);
-
-    va_end(args);
-
-    if(result < 0) {
-        return;
+Log &operator<<(Log &log, const LogCommand &command) {
+    switch(command) {
+        case LogCommand::acquire: {
+            xSemaphoreTake(log.mutexHandle, portMAX_DELAY);
+        } break;
+        case LogCommand::release: {
+            xSemaphoreGive(log.mutexHandle);
+        } break;
+        case LogCommand::endl: {
+            memset(log.line, ' ', 8);
+            writeInt(log.line, log.counter);
+            xMessageBufferSend(log.bufferHandle, log.line, log.index, portMAX_DELAY);
+            log.index = 8;
+            log.counter++;
+        } break;
     }
-    len += result;
 
-    logger.append(str, len);
+    return log;
+}
+
+Log &operator<<(Log &log, const char variable) {
+    const uint32_t available = sizeof(log.line) - log.index;
+
+    if(available > 0) {
+        log.line[log.index] = variable;
+        log.index++;
+    }
+
+    return log;
+}
+
+Log &operator<<(Log &log, const char *variable) {
+    const uint32_t len = strlen(variable);
+    const uint32_t available = sizeof(log.line) - log.index;
+    const uint32_t write = (available > len) ? len : available;
+
+    memcpy(&log.line[log.index], variable, write);
+
+    log.index += write;
+
+    return log;
+}
+
+Log &operator<<(Log &log, const bool variable) {
+    log << (variable ? "true" : "false");
+    return log;
+}
+
+Log &operator<<(Log &log, const int variable) {
+    if(variable > 0) {
+        log << '+';
+        log.index += writeInt(&log.line[log.index], variable);
+    } else if(variable < 0) {
+        log << '-';
+        log.index += writeInt(&log.line[log.index], -variable);
+    } else {
+        log << "+0";
+        return log;
+    }
+
+    return log;
+}
+
+Log &operator<<(Log &log, const float variable) {
+    float value = variable;
+
+    if(value < 0.f) {
+        log << '-';
+        value = -value;
+    } else {
+        log << '+';
+    }
+
+    const int integer = (int)value;
+    const float frac = value - (float)integer;
+    const int decimals = (int)(frac * 1000.f + 0.5f);
+
+    log.index += writeInt(&log.line[log.index], integer);
+
+    log << '.';
+
+    if(decimals < 100) {
+        log << '0';
+    }
+
+    if(decimals < 10) {
+        log << '0';
+    }
+
+    log.index += writeInt(&log.line[log.index], decimals);
+
+    return log;
+}
+
+Log &operator<<(Log &log, const uint8_t variable) {
+    log.index += writeInt(&log.line[log.index], variable);
+    return log;
+}
+
+Log &operator<<(Log &log, const uint32_t variable) {
+    log.index += writeInt(&log.line[log.index], variable);
+    return log;
+}
+
+Log &operator<<(Log &log, const int32_t variable) {
+    if(variable > 0) {
+        log << '+';
+        log.index += writeInt(&log.line[log.index], variable);
+    } else if(variable < 0) {
+        log << '-';
+        log.index += writeInt(&log.line[log.index], -variable);
+    } else {
+        log << "+0";
+        return log;
+    }
+
+    return log;
+}
+
+Log &operator<<(Log &log, const HAL_StatusTypeDef variable) {
+    switch(variable) {
+        case HAL_OK: {
+            log << "HAL_OK";
+        } break;
+        case HAL_BUSY: {
+            log << "HAL_BUSY";
+        } break;
+        case HAL_TIMEOUT: {
+            log << "HAL_TIMEOUT";
+        } break;
+        case HAL_ERROR: {
+            log << "HAL_ERROR";
+        } break;
+    }
+    return log;
 }
 
 }
