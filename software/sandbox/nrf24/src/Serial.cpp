@@ -9,10 +9,9 @@ using namespace rtos;
 extern UART_HandleTypeDef huart2;
 
 class Serial : Subscriber<messages::Log, 512> {
+    const uint8_t crlf[2] = {'\r', '\n'};
 
     void receive(const messages::Log &message) {
-        const uint8_t crlf[2] = {'\r', '\n'};
-
         RTOS_ASSERT(
             HAL_UART_Transmit(&huart2, (const uint8_t *)message.str, message.len, HAL_MAX_DELAY),
             HAL_OK);
