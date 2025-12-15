@@ -37,9 +37,9 @@ inline fmt::SetPrecision setprecision(const uint32_t p) {
 
 template <typename DERIVED>
 class Stream {
-    enum class Base : uint32_t {
-        Dec = 10,
-        Hex = 16,
+    enum class Base {
+        Dec,
+        Hex,
     };
 
     struct Format {
@@ -55,29 +55,52 @@ class Stream {
     uint32_t index = 0;
     Format format;
 
-    static int writeInt(char *str, const int32_t variable) {
+    void writeUnsignedInteger(uint32_t variable) {
+        const uint32_t available = bufferMaxSize - index;
+
         if(variable == 0) {
-            *str = '0';
-            return 1;
+            if(available > 0) {
+                buffer[index] = '0';
+                index++;
+            }
+            return;
         }
 
-        char buffer[16];
-        int val = variable;
-        int i = 0;
+        char tmp[10];
+        uint32_t num = 0;
 
-        while(val > 0) {
-            buffer[i++] = '0' + (val % 10);
-            val /= 10;
+        while(variable > 0) {
+            tmp[num] = '0' + (variable % 10);
+            num++;
+            variable /= 10;
         }
 
-        const int len = i;
+        const uint32_t write = (available > num) ? num : available;
 
-        while(i--) {
-            *str = buffer[i];
-            str++;
+        for(uint32_t i = 0; i < write; i++) {
+            buffer[index + i] = tmp[num - i - 1];
         }
 
-        return len;
+        index += write;
+    }
+
+    void align(const uint32_t start) {
+        const uint32_t taken = index - start;
+
+        if(taken < format.width) {
+            for(uint32_t i = 0; i < taken; i++) {
+                if((start + format.width - i - 1) < bufferMaxSize) {
+                    buffer[start + format.width - i - 1] = buffer[start + taken - i - 1];
+                }
+            }
+
+            for(uint32_t i = start; i < (start + format.width - taken); i++) {
+                buffer[i] = ' ';
+            }
+
+            index = ((start + format.width) < bufferMaxSize) ? (start + format.width)
+                                                             : bufferMaxSize - 1;
+        }
     }
 
 public:
@@ -147,13 +170,18 @@ public:
     }
 
     DERIVED &operator<<(const bool variable) {
+        const uint32_t start = index;
         *this << (variable ? "true" : "false");
+        align(start);
         return static_cast<DERIVED &>(*this);
     }
 
     DERIVED &operator<<(const float variable) {
+        const uint32_t start = index;
+
         if(std::isnan(variable)) {
             *this << "nan";
+            align(start);
             return static_cast<DERIVED &>(*this);
         }
 
@@ -168,43 +196,55 @@ public:
 
         if(std::isinf(value)) {
             *this << "inf";
+            align(start);
             return static_cast<DERIVED &>(*this);
         };
 
-        int multiplier = 1;
-        for(uint32_t i = 0; i < format.precision; i++) {
+        const uint32_t precision = (format.precision > 8) ? 8 : format.precision;
+
+        uint32_t multiplier = 1;
+        for(uint32_t i = 0; i < precision; i++) {
             multiplier *= 10;
         }
 
-        int integer = static_cast<int>(value);
-        float frac = value - static_cast<float>(integer);
-        int decimals = static_cast<int>((frac * static_cast<float>(multiplier)) + 0.5f);
+        uint32_t integer = static_cast<uint32_t>(value);
+        const float frac = value - static_cast<float>(integer);
+        uint32_t decimals = static_cast<uint32_t>((frac * static_cast<float>(multiplier)) + 0.5f);
 
         if(decimals >= multiplier) {
             integer += (decimals / multiplier);
             decimals -= (decimals / multiplier) * multiplier;
         }
 
-        index += writeInt(&buffer[index], integer);
+        writeUnsignedInteger(integer);
 
-        *this << '.';
+        if(precision > 0) {
+            *this << '.';
 
-        for(uint32_t i = 0; i < format.precision; i++) {
-            multiplier /= 10;
-            if((multiplier >= 10) && (decimals < multiplier)) {
+            for(uint32_t i = 0; i < precision; i++) {
+                multiplier /= 10;
+                if((multiplier >= 10) && (decimals < multiplier)) {
+                    *this << '0';
+                }
+            }
+
+            writeUnsignedInteger(decimals);
+
+            for(uint32_t i = 0; i < (format.precision - precision); i++) {
                 *this << '0';
             }
         }
 
-        index += writeInt(&buffer[index], decimals);
-
+        align(start);
         return static_cast<DERIVED &>(*this);
     }
 
     DERIVED &operator<<(const uint8_t variable) {
+        const uint32_t start = index;
+
         switch(format.base) {
             case Base::Dec: {
-                index += writeInt(&buffer[index], variable);
+                writeUnsignedInteger(variable);
             } break;
             case Base::Hex: {
                 *this << "0x";
@@ -226,13 +266,16 @@ public:
             } break;
         }
 
+        align(start);
         return static_cast<DERIVED &>(*this);
     }
 
     DERIVED &operator<<(const uint32_t variable) {
+        const uint32_t start = index;
+
         switch(format.base) {
             case Base::Dec: {
-                index += writeInt(&buffer[index], variable);
+                writeUnsignedInteger(variable);
             } break;
             case Base::Hex: {
                 *this << "0x";
@@ -250,20 +293,23 @@ public:
             } break;
         }
 
+        align(start);
         return static_cast<DERIVED &>(*this);
     }
 
     DERIVED &operator<<(const int32_t variable) {
+        const uint32_t start = index;
+
         switch(format.base) {
             case Base::Dec: {
-                if(format.sign) {
-                    if(variable > 0) {
-                        *this << '+';
-                        index += writeInt(&buffer[index], variable);
-                    } else {
-                        *this << '-';
-                        index += writeInt(&buffer[index], -variable);
+                if(variable < 0) {
+                    *this << "-";
+                    writeUnsignedInteger(-variable);
+                } else {
+                    if(format.sign) {
+                        *this << "+";
                     }
+                    writeUnsignedInteger(variable);
                 }
             } break;
             case Base::Hex: {
@@ -282,6 +328,7 @@ public:
             } break;
         }
 
+        align(start);
         return static_cast<DERIVED &>(*this);
     }
 };
