@@ -14,10 +14,10 @@
 
 #define RTOS_ASSERT(expr, expected)                                                                \
     {                                                                                              \
-        const auto value = (expr);                                                                 \
-        if(value != (expected)) {                                                                  \
+        const auto _value = (expr);                                                                \
+        if(_value != (expected)) {                                                                 \
             rtos::log << rtos::acquire << __FILE_NAME__ << ":" << rtos::dec << rtos::setw(0)       \
-                      << static_cast<uint32_t>(__LINE__) << " " #expr " failed: " << value         \
+                      << static_cast<uint32_t>(__LINE__) << " " #expr " failed: " << _value        \
                       << rtos::endl                                                                \
                       << rtos::release;                                                            \
         }                                                                                          \
@@ -60,6 +60,7 @@ Log &release(Log &log);
 Log &endl(Log &log);
 
 Log &operator<<(Log &log, const HAL_StatusTypeDef variable);
+Log &operator<<(Log &log, const HAL_SPI_StateTypeDef variable);
 
 extern Log log;
 

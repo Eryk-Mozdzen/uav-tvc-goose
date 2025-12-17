@@ -75,4 +75,35 @@ Log &operator<<(Log &log, const HAL_StatusTypeDef variable) {
     return log;
 }
 
+Log &operator<<(Log &log, const HAL_SPI_StateTypeDef variable) {
+    switch(variable) {
+        case HAL_SPI_STATE_RESET: {
+            log << "HAL_SPI_STATE_RESET";
+        } break;
+        case HAL_SPI_STATE_READY: {
+            log << "HAL_SPI_STATE_READY";
+        } break;
+        case HAL_SPI_STATE_BUSY: {
+            log << "HAL_SPI_STATE_BUSY";
+        } break;
+        case HAL_SPI_STATE_BUSY_TX: {
+            log << "HAL_SPI_STATE_BUSY_TX";
+        } break;
+        case HAL_SPI_STATE_BUSY_RX: {
+            log << "HAL_SPI_STATE_BUSY_RX";
+        } break;
+        case HAL_SPI_STATE_BUSY_TX_RX: {
+            log << "HAL_SPI_STATE_BUSY_TX_RX";
+        } break;
+        case HAL_SPI_STATE_ERROR: {
+            log << "HAL_SPI_STATE_ERROR";
+        } break;
+        case HAL_SPI_STATE_ABORT: {
+            log << "HAL_SPI_STATE_ABORT";
+        } break;
+    }
+
+    return log;
+}
+
 }

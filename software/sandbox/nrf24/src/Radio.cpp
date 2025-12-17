@@ -21,7 +21,7 @@ public:
     Output(GPIO_TypeDef *GPIOx, uint16_t GPIO_Pin) : GPIOx{GPIOx}, GPIO_Pin{GPIO_Pin} {
     }
 
-    void set(const State state) {
+    inline void set(const State state) {
         HAL_GPIO_WritePin(GPIOx, GPIO_Pin, static_cast<GPIO_PinState>(state));
     }
 };
@@ -301,7 +301,7 @@ class nRF24L01p : Thread<512> {
     }
 
 public:
-    nRF24L01p(SPI_HandleTypeDef hspi, const Output csn, const Output ce)
+    nRF24L01p(SPI_HandleTypeDef &hspi, const Output csn, const Output ce)
         : Thread{"nRF24L01+ driver", Thread::Priority::Mid}, hspi{hspi}, ce{ce}, csn{csn} {
     }
 };
