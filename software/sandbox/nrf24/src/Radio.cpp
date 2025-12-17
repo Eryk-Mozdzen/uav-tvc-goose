@@ -27,7 +27,7 @@ public:
 };
 
 class nRF24L01p : Thread<512> {
-    enum Register {
+    enum Register : uint8_t {
         CONFIG = 0x00,
         EN_AA = 0x01,
         EN_RXADDR = 0x02,
@@ -56,105 +56,39 @@ class nRF24L01p : Thread<512> {
         FEATURE = 0x1D,
     };
 
-    enum PaDbm {
-        MIN,
-        LOW,
-        HIGH,
-        MAX,
-        ERROR,
+    struct SPICommand {
+        enum Word : uint8_t {
+            R_RX_PAYLOAD = 0x61,
+            W_TX_PAYLOAD = 0xA0,
+            FLUSH_TX = 0xE1,
+            FLUSH_RX = 0xE2,
+            REUSE_TX_PL = 0xE3,
+            R_RX_PL_WID = 0x60,
+            W_TX_PAYLOAD_NO_ACK = 0xB0,
+            NOP = 0xFF,
+        };
+
+        static constexpr Word R_REGISTER(const uint8_t reg) {
+            return static_cast<Word>(0x00 | (reg & 0x1F));
+        }
+
+        static constexpr Word W_REGISTER(const uint8_t reg) {
+            return static_cast<Word>(0x20 | (reg & 0x1F));
+        }
+
+        static constexpr Word W_ACK_PAYLOAD(const uint8_t pipe) {
+            return static_cast<Word>(0xA8 | (pipe & 0x07));
+        }
     };
-
-    enum DataRate {
-        _1MBPS,
-        _2MBPS,
-        _250KBPS,
-    };
-
-    enum CRCLength {
-        DISABLED,
-        _8,
-        _16,
-    };
-
-    static constexpr uint8_t MASK_RX_DR = 6;
-    static constexpr uint8_t MASK_TX_DS = 5;
-    static constexpr uint8_t MASK_MAX_RT = 4;
-    static constexpr uint8_t EN_CRC = 3;
-    static constexpr uint8_t CRCO = 2;
-    static constexpr uint8_t PWR_UP = 1;
-    static constexpr uint8_t PRIM_RX = 0;
-    static constexpr uint8_t ENAA_P5 = 5;
-    static constexpr uint8_t ENAA_P4 = 4;
-    static constexpr uint8_t ENAA_P3 = 3;
-    static constexpr uint8_t ENAA_P2 = 2;
-    static constexpr uint8_t ENAA_P1 = 1;
-    static constexpr uint8_t ENAA_P0 = 0;
-    static constexpr uint8_t ERX_P5 = 5;
-    static constexpr uint8_t ERX_P4 = 4;
-    static constexpr uint8_t ERX_P3 = 3;
-    static constexpr uint8_t ERX_P2 = 2;
-    static constexpr uint8_t ERX_P1 = 1;
-    static constexpr uint8_t ERX_P0 = 0;
-    static constexpr uint8_t AW = 0;
-    static constexpr uint8_t ARD = 4;
-    static constexpr uint8_t ARC = 0;
-    static constexpr uint8_t PLL_LOCK = 4;
-    static constexpr uint8_t RF_DR = 3;
-    static constexpr uint8_t RF_PWR = 6;
-    static constexpr uint8_t RX_DR = 6;
-    static constexpr uint8_t TX_DS = 5;
-    static constexpr uint8_t MAX_RT = 4;
-    static constexpr uint8_t RX_P_NO = 1;
-    static constexpr uint8_t TX_FULL = 0;
-    static constexpr uint8_t PLOS_CNT = 4;
-    static constexpr uint8_t ARC_CNT = 0;
-    static constexpr uint8_t TX_REUSE = 6;
-    static constexpr uint8_t FIFO_FULL = 5;
-    static constexpr uint8_t TX_EMPTY = 4;
-    static constexpr uint8_t RX_FULL = 1;
-    static constexpr uint8_t RX_EMPTY = 0;
-    static constexpr uint8_t DPL_P5 = 5;
-    static constexpr uint8_t DPL_P4 = 4;
-    static constexpr uint8_t DPL_P3 = 3;
-    static constexpr uint8_t DPL_P2 = 2;
-    static constexpr uint8_t DPL_P1 = 1;
-    static constexpr uint8_t DPL_P0 = 0;
-    static constexpr uint8_t EN_DPL = 2;
-    static constexpr uint8_t EN_ACK_PAY = 1;
-    static constexpr uint8_t EN_DYN_ACK = 0;
-
-    static constexpr uint8_t R_REGISTER = 0x00;
-    static constexpr uint8_t W_REGISTER = 0x20;
-    static constexpr uint8_t REGISTER_MASK = 0x1F;
-    static constexpr uint8_t ACTIVATE = 0x50;
-    static constexpr uint8_t R_RX_PL_WID = 0x60;
-    static constexpr uint8_t R_RX_PAYLOAD = 0x61;
-    static constexpr uint8_t W_TX_PAYLOAD = 0xA0;
-    static constexpr uint8_t W_ACK_PAYLOAD = 0xA8;
-    static constexpr uint8_t FLUSH_TX = 0xE1;
-    static constexpr uint8_t FLUSH_RX = 0xE2;
-    static constexpr uint8_t REUSE_TX_PL = 0xE3;
-    static constexpr uint8_t NOP = 0xFF;
-
-    static constexpr uint8_t LNA_HCURR = 0;
-
-    static constexpr uint8_t RPD = 0x09;
-
-    static constexpr uint8_t RF_DR_LOW = 5;
-    static constexpr uint8_t RF_DR_HIGH = 3;
-    static constexpr uint8_t RF_PWR_LOW = 1;
-    static constexpr uint8_t RF_PWR_HIGH = 2;
-
-    static constexpr uint8_t PAYLOAD_SIZE = 1;
-    static constexpr uint8_t ADDR_SIZE = 3;
 
     SPI_HandleTypeDef &hspi;
     Output ce;
     Output csn;
+    const bool transmitter;
 
     uint8_t readReg(const Register reg) {
         const uint8_t txData[2] = {
-            static_cast<uint8_t>(R_REGISTER | (REGISTER_MASK & reg)),
+            SPICommand::R_REGISTER(reg),
             0,
         };
         uint8_t rxData[2] = {0};
@@ -166,9 +100,22 @@ class nRF24L01p : Thread<512> {
         return rxData[1];
     }
 
+    void readReg(const Register reg, uint8_t *values, const uint32_t num) {
+        const uint32_t len = (num <= 32) ? num : 32;
+
+        const uint8_t txData[33] = {SPICommand::R_REGISTER(reg)};
+        uint8_t rxData[33] = {0};
+
+        csn.set(Output::State::LOW);
+        RTOS_ASSERT(HAL_SPI_TransmitReceive(&hspi, txData, rxData, len + 1, 10), HAL_OK);
+        csn.set(Output::State::HIGH);
+
+        memcpy(values, &rxData[1], len);
+    }
+
     void writeReg(const Register reg, const uint8_t value) {
         const uint8_t txData[2] = {
-            static_cast<uint8_t>(W_REGISTER | (REGISTER_MASK & reg)),
+            SPICommand::W_REGISTER(reg),
             value,
         };
 
@@ -179,130 +126,169 @@ class nRF24L01p : Thread<512> {
         RTOS_ASSERT(readReg(reg), value);
     }
 
-    void flushRx() {
-        const uint8_t txData[1] = {FLUSH_RX};
+    void writeReg(const Register reg, const uint8_t *values, const uint32_t num) {
+        const uint32_t len = (num <= 32) ? num : 32;
+
+        uint8_t txData[33] = {SPICommand::W_REGISTER(reg)};
+
+        memcpy(&txData[1], values, len);
+
+        csn.set(Output::State::LOW);
+        RTOS_ASSERT(HAL_SPI_Transmit(&hspi, txData, len + 1, 10), HAL_OK);
+        csn.set(Output::State::HIGH);
+
+        uint8_t tmp[32];
+        readReg(reg, tmp, num);
+        RTOS_ASSERT(static_cast<int32_t>(memcmp(values, tmp, num)), 0);
+    }
+
+    void readRxPayload(uint8_t *data, const uint32_t num) {
+        const uint32_t len = (num <= 32) ? num : 32;
+
+        const uint8_t txData[33] = {SPICommand::R_RX_PAYLOAD};
+        uint8_t rxData[33] = {0};
+
+        csn.set(Output::State::LOW);
+        RTOS_ASSERT(HAL_SPI_TransmitReceive(&hspi, txData, rxData, len + 1, 10), HAL_OK);
+        csn.set(Output::State::HIGH);
+
+        memcpy(data, &rxData[1], len);
+    }
+
+    void writeTxPayload(const uint8_t *data, const uint32_t num) {
+        const uint32_t len = (num <= 32) ? num : 32;
+
+        uint8_t txData[33] = {SPICommand::W_TX_PAYLOAD};
+
+        memcpy(&txData[1], data, len);
+
+        csn.set(Output::State::LOW);
+        RTOS_ASSERT(HAL_SPI_Transmit(&hspi, txData, len + 1, 10), HAL_OK);
+        csn.set(Output::State::HIGH);
+    }
+
+    void flushRxFifo() {
+        const uint8_t txData[1] = {SPICommand::FLUSH_RX};
 
         csn.set(Output::State::LOW);
         HAL_SPI_Transmit(&hspi, txData, 1, HAL_MAX_DELAY);
         csn.set(Output::State::HIGH);
     }
 
-    void flushTx() {
-        const uint8_t txData[1] = {FLUSH_TX};
+    void flushTxFifo() {
+        const uint8_t txData[1] = {SPICommand::FLUSH_TX};
 
         csn.set(Output::State::LOW);
         HAL_SPI_Transmit(&hspi, txData, 1, HAL_MAX_DELAY);
         csn.set(Output::State::HIGH);
-    }
-
-    void setRFChannel(uint8_t channel) {
-        if(channel > 127) {
-            channel = 127;
-        }
-        writeReg(RF_CH, channel);
-    }
-
-    void setPALevel(const PaDbm level) {
-        uint8_t setup = readReg(RF_SETUP);
-
-        setup &= ~((1 << RF_PWR_LOW) | (1 << RF_PWR_HIGH));
-
-        switch(level) {
-            case MIN: {
-
-            } break;
-            case LOW: {
-                setup |= (1 << RF_PWR_LOW);
-            } break;
-            case HIGH: {
-                setup |= (1 << RF_PWR_HIGH);
-            } break;
-            case MAX: {
-                setup |= ((1 << RF_PWR_LOW) | (1 << RF_PWR_HIGH));
-            } break;
-            case ERROR: {
-                setup |= ((1 << RF_PWR_LOW) | (1 << RF_PWR_HIGH));
-            } break;
-        }
-
-        writeReg(RF_SETUP, setup);
-    }
-
-    void setDataRate(const DataRate datarate) {
-        uint8_t setup = readReg(RF_SETUP);
-
-        setup &= ~((1 << RF_DR_LOW) | (1 << RF_DR_HIGH));
-
-        switch(datarate) {
-            case _1MBPS: {
-
-            } break;
-            case _2MBPS: {
-                setup |= (1 << RF_DR_HIGH);
-            } break;
-            case _250KBPS: {
-                setup |= (1 << RF_DR_LOW);
-            } break;
-        }
-
-        writeReg(RF_SETUP, setup);
-    }
-
-    void setCRCLength(const CRCLength length) {
-        uint8_t config = readReg(CONFIG);
-
-        config &= ~((1 << CRCO) | (1 << EN_CRC));
-
-        switch(length) {
-            case DISABLED: {
-
-            } break;
-            case _8: {
-                config |= (1 << EN_CRC);
-            } break;
-            case _16: {
-                config |= (1 << EN_CRC);
-                config |= (1 << CRCO);
-            } break;
-        }
-
-        writeReg(CONFIG, config);
     }
 
     void thread() {
-        ce.set(Output::State::LOW);
         csn.set(Output::State::HIGH);
+        ce.set(Output::State::LOW);
 
-        delay(5);
+        delay(100);
 
-        setPALevel(PaDbm::MAX);
-        setDataRate(DataRate::_250KBPS);
-        setCRCLength(CRCLength::_8);
-        // setRetries(0x04, 0x07);
-        writeReg(Register::DYNPD, 0);
-        setRFChannel(10);
-        // setPayloadSize(0, PAYLOAD_SIZE);
-        // enablePipe(0, 1);
-        // autoACK(0, 1);
-        // setAddressWidth(ADDR_SIZE);
+        // PWR_UP = 0
+        writeReg(Register::CONFIG, 0x00);
 
-        // setRXAddress(0, "Nad");
-        // setTXAddress("Odb");
-        // txMode();
+        delay(10);
+
+        // MASK_RX_DR = 1
+        // MASK_TX_DS = 1
+        // MASK_MAX_RT = 1
+        // EN_CRC = 1
+        // CRCO = 0
+        // PWR_UP = 1
+        // PRIM_RX = 0
+        writeReg(Register::CONFIG, 0x7A);
+
+        delay(10);
+
+        // ERX_P0 = 1
+        writeReg(Register::EN_RXADDR, 0x01);
+
+        // AW = 11
+        writeReg(Register::SETUP_AW, 0x03);
+
+        // ARD = 0000
+        // ARC = 0000
+        writeReg(Register::SETUP_RETR, 0x00);
+
+        // RF_CH = 0000010
+        writeReg(Register::RF_CH, 0x02);
+
+        // CONT_WAVE = 0
+        // RF_DR_LOW = 1
+        // PLL_LOCK = 0
+        // RF_DR_HIGH = 0
+        // RF_PWR = 11
+        writeReg(Register::RF_SETUP, 0x26);
+
+        // PIPE0 RX ADDR = 05 04 03 02 01
+        const uint8_t addrRx[5] = {0x01, 0x02, 0x03, 0x04, 0x05};
+        writeReg(Register::RX_ADDR_P0, addrRx, sizeof(addrRx));
+
+        // TX ADDR = 05 04 03 02 01
+        const uint8_t addrTx[5] = {0x01, 0x02, 0x03, 0x04, 0x05};
+        writeReg(Register::TX_ADDR, addrTx, sizeof(addrTx));
+
+        // RX_PW_P0 = 17
+        writeReg(Register::RX_PW_P0, 17);
+
+        if(!transmitter) {
+            // PRIM_RX = 1
+            // CE = 1
+            const uint8_t val = readReg(Register::CONFIG);
+            writeReg(Register::CONFIG, val | 0x01);
+            ce.set(Output::State::HIGH);
+
+            delay(1);
+        }
 
         while(true) {
-            /*const char *msg = "witajcie w mojej kuchni";
+            if(transmitter) {
+                const char *msg = "hello world nRF24";
 
-            writeTxPayload(msg);
-            delay(1);
-            waitTx();*/
-            delay(100);
+                writeTxPayload((const uint8_t *)msg, 17);
+                // flushTxFifo();
+
+                // PRIM_RX = 0
+                // CE = 1
+                const uint8_t val = readReg(Register::CONFIG);
+                writeReg(Register::CONFIG, val & ~0x01);
+                ce.set(Output::State::HIGH);
+
+                // rtos::log << rtos::acquire << "TX " << readReg(Register::FIFO_STATUS) <<
+                // rtos::endl
+                //           << rtos::release;
+
+                flushTxFifo();
+
+                delay(10);
+
+                // CE = 0
+                ce.set(Output::State::LOW);
+
+                delay(1000);
+            } else {
+                char msg[32] = {0};
+                readRxPayload((uint8_t *)msg, 17);
+
+                rtos::log << rtos::acquire << msg << rtos::endl << rtos::release;
+
+                delay(100);
+            }
         }
     }
 
 public:
-    nRF24L01p(SPI_HandleTypeDef &hspi, const Output csn, const Output ce)
-        : Thread{"nRF24L01+ driver", Thread::Priority::Mid}, hspi{hspi}, ce{ce}, csn{csn} {
+    nRF24L01p(SPI_HandleTypeDef &hspi, const Output csn, const Output ce, const bool transmitter)
+        : Thread{"nRF24L01+ driver", Thread::Priority::Mid},
+          hspi{hspi},
+          ce{ce},
+          csn{csn},
+          transmitter{transmitter} {
     }
 };
 
@@ -342,8 +328,8 @@ public:
 extern SPI_HandleTypeDef hspi1;
 extern SPI_HandleTypeDef hspi2;
 
-static nRF24L01p radio1(hspi2, Output(GPIOC, GPIO_PIN_1), Output(GPIOC, GPIO_PIN_0));
-static nRF24L01p radio2(hspi1, Output(GPIOA, GPIO_PIN_10), Output(GPIOA, GPIO_PIN_8));
+static nRF24L01p radio1(hspi2, Output(GPIOC, GPIO_PIN_1), Output(GPIOC, GPIO_PIN_0), true);
+static nRF24L01p radio2(hspi1, Output(GPIOA, GPIO_PIN_10), Output(GPIOA, GPIO_PIN_8), false);
 
 static Transmitter tx(radio1);
 static Receiver rx(radio2);
