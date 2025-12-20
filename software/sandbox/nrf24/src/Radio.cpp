@@ -37,7 +37,7 @@ class nRF24L01p : Thread<512> {
         RF_SETUP = 0x06,
         STATUS = 0x07,
         OBSERVE_TX = 0x08,
-        CD = 0x09,
+        RPD = 0x09,
         RX_ADDR_P0 = 0x0A,
         RX_ADDR_P1 = 0x0B,
         RX_ADDR_P2 = 0x0C,
@@ -122,49 +122,48 @@ class nRF24L01p : Thread<512> {
         csn.set(Output::State::LOW);
         RTOS_ASSERT(HAL_SPI_Transmit(&hspi, txData, 2, 10), HAL_OK);
         csn.set(Output::State::HIGH);
-
-        RTOS_ASSERT(readReg(reg), value);
     }
 
-    void writeReg(const Register reg, const uint8_t *values, const uint32_t num) {
-        const uint32_t len = (num <= 32) ? num : 32;
-
-        uint8_t txData[33] = {SPICommand::W_REGISTER(reg)};
-
-        memcpy(&txData[1], values, len);
+    void writeReg(const Register reg,
+                  const uint8_t value1,
+                  const uint8_t value2,
+                  const uint8_t value3,
+                  const uint8_t value4,
+                  const uint8_t value5) {
+        const uint8_t txData[6] = {
+            SPICommand::W_REGISTER(reg), value1, value2, value3, value4, value5,
+        };
 
         csn.set(Output::State::LOW);
-        RTOS_ASSERT(HAL_SPI_Transmit(&hspi, txData, len + 1, 10), HAL_OK);
+        RTOS_ASSERT(HAL_SPI_Transmit(&hspi, txData, 6, 10), HAL_OK);
         csn.set(Output::State::HIGH);
-
-        uint8_t tmp[32];
-        readReg(reg, tmp, num);
-        RTOS_ASSERT(static_cast<int32_t>(memcmp(values, tmp, num)), 0);
     }
 
-    void readRxPayload(uint8_t *data, const uint32_t num) {
-        const uint32_t len = (num <= 32) ? num : 32;
-
+    uint8_t readRxPayload(void *data) {
         const uint8_t txData[33] = {SPICommand::R_RX_PAYLOAD};
         uint8_t rxData[33] = {0};
+
+        csn.set(Output::State::LOW);
+        RTOS_ASSERT(HAL_SPI_TransmitReceive(&hspi, txData, rxData, 33, 10), HAL_OK);
+        csn.set(Output::State::HIGH);
+
+        memcpy(data, &rxData[1], 32);
+        return rxData[0];
+    }
+
+    uint8_t writeTxPayload(const void *data, const uint32_t num) {
+        const uint32_t len = (num <= 32) ? num : 32;
+
+        uint8_t txData[33] = {SPICommand::W_TX_PAYLOAD};
+        uint8_t rxData[33] = {0};
+
+        memcpy(&txData[1], data, len);
 
         csn.set(Output::State::LOW);
         RTOS_ASSERT(HAL_SPI_TransmitReceive(&hspi, txData, rxData, len + 1, 10), HAL_OK);
         csn.set(Output::State::HIGH);
 
-        memcpy(data, &rxData[1], len);
-    }
-
-    void writeTxPayload(const uint8_t *data, const uint32_t num) {
-        const uint32_t len = (num <= 32) ? num : 32;
-
-        uint8_t txData[33] = {SPICommand::W_TX_PAYLOAD};
-
-        memcpy(&txData[1], data, len);
-
-        csn.set(Output::State::LOW);
-        RTOS_ASSERT(HAL_SPI_Transmit(&hspi, txData, len + 1, 10), HAL_OK);
-        csn.set(Output::State::HIGH);
+        return rxData[0];
     }
 
     void flushRxFifo() {
@@ -189,8 +188,32 @@ class nRF24L01p : Thread<512> {
 
         delay(100);
 
-        // PWR_UP = 0
+        // default register values
         writeReg(Register::CONFIG, 0x00);
+        writeReg(Register::EN_AA, 0x3F);
+        writeReg(Register::EN_RXADDR, 0x03);
+        writeReg(Register::SETUP_AW, 0x03);
+        writeReg(Register::SETUP_RETR, 0x03);
+        writeReg(Register::RF_CH, 0x02);
+        writeReg(Register::RF_SETUP, 0x0E);
+        writeReg(Register::STATUS, 0x70);
+        writeReg(Register::RX_ADDR_P0, 0xE7, 0xE7, 0xE7, 0xE7, 0xE7);
+        writeReg(Register::RX_ADDR_P1, 0xC2, 0xC2, 0xC2, 0xC2, 0xC2);
+        writeReg(Register::RX_ADDR_P2, 0xC3);
+        writeReg(Register::RX_ADDR_P3, 0xC4);
+        writeReg(Register::RX_ADDR_P4, 0xC5);
+        writeReg(Register::RX_ADDR_P5, 0xC6);
+        writeReg(Register::TX_ADDR, 0xE7, 0xE7, 0xE7, 0xE7, 0xE7);
+        writeReg(Register::RX_PW_P0, 0x00);
+        writeReg(Register::RX_PW_P1, 0x00);
+        writeReg(Register::RX_PW_P2, 0x00);
+        writeReg(Register::RX_PW_P3, 0x00);
+        writeReg(Register::RX_PW_P4, 0x00);
+        writeReg(Register::RX_PW_P5, 0x00);
+        writeReg(Register::DYNPD, 0x00);
+
+        flushRxFifo();
+        flushTxFifo();
 
         delay(10);
 
@@ -225,16 +248,16 @@ class nRF24L01p : Thread<512> {
         // RF_PWR = 11
         writeReg(Register::RF_SETUP, 0x26);
 
-        // PIPE0 RX ADDR = 05 04 03 02 01
-        const uint8_t addrRx[5] = {0x01, 0x02, 0x03, 0x04, 0x05};
-        writeReg(Register::RX_ADDR_P0, addrRx, sizeof(addrRx));
+        if(transmitter) {
+            // TX ADDR = 05 04 03 02 01
+            writeReg(Register::TX_ADDR, 0x01, 0x02, 0x03, 0x04, 0x05);
+        } else {
+            // PIPE0 RX ADDR = 05 04 03 02 01
+            writeReg(Register::RX_ADDR_P0, 0x01, 0x02, 0x03, 0x04, 0x05);
 
-        // TX ADDR = 05 04 03 02 01
-        const uint8_t addrTx[5] = {0x01, 0x02, 0x03, 0x04, 0x05};
-        writeReg(Register::TX_ADDR, addrTx, sizeof(addrTx));
-
-        // RX_PW_P0 = 17
-        writeReg(Register::RX_PW_P0, 17);
+            // RX_PW_P0 = 17
+            writeReg(Register::RX_PW_P0, 17);
+        }
 
         if(!transmitter) {
             // PRIM_RX = 1
@@ -243,39 +266,48 @@ class nRF24L01p : Thread<512> {
             writeReg(Register::CONFIG, val | 0x01);
             ce.set(Output::State::HIGH);
 
-            delay(1);
+            delay(10);
         }
 
         while(true) {
             if(transmitter) {
                 const char *msg = "hello world nRF24";
 
-                writeTxPayload((const uint8_t *)msg, 17);
-                // flushTxFifo();
+                const uint8_t status = writeTxPayload(msg, 17);
+                if(status & 0x01) {
+                    rtos::log << rtos::acquire << "TX_FULL" << rtos::endl << rtos::release;
+                }
 
-                // PRIM_RX = 0
-                // CE = 1
-                const uint8_t val = readReg(Register::CONFIG);
-                writeReg(Register::CONFIG, val & ~0x01);
-                ce.set(Output::State::HIGH);
+                {
+                    // PRIM_RX = 0
+                    // CE = 1
+                    const uint8_t val = readReg(Register::CONFIG);
+                    writeReg(Register::CONFIG, val & ~0x01);
+                    ce.set(Output::State::HIGH);
+                }
 
-                // rtos::log << rtos::acquire << "TX " << readReg(Register::FIFO_STATUS) <<
-                // rtos::endl
-                //           << rtos::release;
-
-                flushTxFifo();
-
-                delay(10);
+                delay(100);
 
                 // CE = 0
                 ce.set(Output::State::LOW);
 
+                {
+                    // MAX_RT cleared
+                    const uint8_t val = readReg(Register::STATUS);
+                    writeReg(Register::STATUS, val | 0x10);
+                }
+
+                flushTxFifo();
+
                 delay(1000);
             } else {
-                char msg[32] = {0};
-                readRxPayload((uint8_t *)msg, 17);
+                char msg[32];
+                const uint8_t status = readRxPayload(msg);
 
-                rtos::log << rtos::acquire << msg << rtos::endl << rtos::release;
+                if((status & 0x0E) == 0x00) {
+                    msg[18] = '\0';
+                    rtos::log << rtos::acquire << rtos::dec << msg << rtos::endl << rtos::release;
+                }
 
                 delay(100);
             }
