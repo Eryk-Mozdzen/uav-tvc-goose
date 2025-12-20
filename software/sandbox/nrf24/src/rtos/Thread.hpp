@@ -21,8 +21,12 @@ class Thread {
     }
 
 protected:
-    void delay(const TickType_t ticks) {
+    void delay(const uint32_t ticks) {
         vTaskDelay(ticks);
+    }
+
+    uint32_t getTicks() const {
+        return xTaskGetTickCount();
     }
 
 public:

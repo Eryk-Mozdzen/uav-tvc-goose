@@ -2,6 +2,7 @@
 
 #include "rtos/Log.hpp"
 #include "rtos/Publisher.hpp"
+#include "rtos/StringStream.hpp"
 #include "rtos/Subscriber.hpp"
 #include "rtos/Thread.hpp"
 #include "rtos/Topics.hpp"
@@ -271,7 +272,10 @@ class nRF24L01p : Thread<512> {
 
         while(true) {
             if(transmitter) {
-                const char *msg = "hello world nRF24";
+                char msg[17];
+                StringStream ss(msg, sizeof(msg));
+
+                ss << "ticks " << rtos::dec << rtos::setw(10) << getTicks();
 
                 const uint8_t status = writeTxPayload(msg, 17);
                 if(status & 0x01) {
@@ -286,7 +290,7 @@ class nRF24L01p : Thread<512> {
                     ce.set(Output::State::HIGH);
                 }
 
-                delay(100);
+                delay(10);
 
                 // CE = 0
                 ce.set(Output::State::LOW);
@@ -299,17 +303,19 @@ class nRF24L01p : Thread<512> {
 
                 flushTxFifo();
 
-                delay(1000);
+                // rtos::log << rtos::acquire << "TX " << msg << rtos::endl << rtos::release;
+
+                delay(10);
             } else {
                 char msg[32];
                 const uint8_t status = readRxPayload(msg);
 
                 if((status & 0x0E) == 0x00) {
-                    msg[18] = '\0';
-                    rtos::log << rtos::acquire << rtos::dec << msg << rtos::endl << rtos::release;
+                    msg[17] = '\0';
+                    rtos::log << rtos::acquire << msg << rtos::endl << rtos::release;
                 }
 
-                delay(100);
+                delay(1);
             }
         }
     }

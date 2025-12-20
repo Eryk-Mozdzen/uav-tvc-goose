@@ -52,7 +52,7 @@ class Stream {
     char *const buffer;
     const uint32_t bufferMaxSize;
 
-    uint32_t index = 0;
+    uint32_t index;
     Format format;
 
     void writeUnsignedInteger(uint32_t variable) {
@@ -103,9 +103,18 @@ class Stream {
         }
     }
 
+    void terminate() {
+        if(index < bufferMaxSize) {
+            buffer[index] = '\0';
+        } else {
+            buffer[bufferMaxSize - 1] = '\0';
+        }
+    }
+
 public:
     Stream(char *buffer, const uint32_t bufferMaxSize)
-        : buffer{buffer}, bufferMaxSize{bufferMaxSize} {
+        : buffer{buffer}, bufferMaxSize{bufferMaxSize}, index{0} {
+        terminate();
     }
 
     uint32_t length() const {
@@ -154,6 +163,7 @@ public:
             index++;
         }
 
+        terminate();
         return static_cast<DERIVED &>(*this);
     }
 
@@ -166,6 +176,7 @@ public:
 
         index += write;
 
+        terminate();
         return static_cast<DERIVED &>(*this);
     }
 
@@ -173,6 +184,7 @@ public:
         const uint32_t start = index;
         *this << (variable ? "true" : "false");
         align(start);
+        terminate();
         return static_cast<DERIVED &>(*this);
     }
 
@@ -236,6 +248,7 @@ public:
         }
 
         align(start);
+        terminate();
         return static_cast<DERIVED &>(*this);
     }
 
@@ -267,6 +280,7 @@ public:
         }
 
         align(start);
+        terminate();
         return static_cast<DERIVED &>(*this);
     }
 
@@ -294,6 +308,7 @@ public:
         }
 
         align(start);
+        terminate();
         return static_cast<DERIVED &>(*this);
     }
 
@@ -329,6 +344,7 @@ public:
         }
 
         align(start);
+        terminate();
         return static_cast<DERIVED &>(*this);
     }
 };
