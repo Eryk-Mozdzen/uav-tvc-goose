@@ -1,0 +1,59 @@
+<mujoco model="simulation">
+    <option gravity="0 0 -9.81" timestep="0.001" integrator="RK4"/>
+    <visual>
+        <headlight ambient="0.7 0.7 0.7"/>
+    </visual>
+    <asset>
+        <texture name="checker" type="2d" builtin="checker" width="512" height="512" rgb1="0.7 0.7 0.7" rgb2="0.3 0.3 0.3"/>
+        <material name="grid" texture="checker" texrepeat="1 1" texuniform="true"/>
+    </asset>
+    <worldbody>
+        <geom type="plane" size="1000 1000 1" material="grid"/>
+        <body name="usv" pos="0 0 1">
+            <freejoint/>
+            <geom type="box" size="0.2 0.1 0.1" mass="1" rgba="1 0 0 1"/>
+            <site name="s_imu" pos="0 0 0"/>
+            <site name="s_rangefinder" pos="0 0 -0.5" zaxis="0 0 -1"/>
+            <body name="m1" pos="0.25 0.25 0">
+                <joint name="j1" type="hinge" axis="0 0 1"/>
+                <site name="s1" pos="0 0 0"/>
+                <geom type="box" size="0.2 0.05 0.01" mass="0.01" rgba="1 1 0 1"/>
+            </body>
+            <body name="m2" pos="-0.25 0.25 0">
+                <joint name="j2" type="hinge" axis="0 0 1"/>
+                <site name="s2" pos="0 0 0"/>
+                <geom type="box" size="0.2 0.05 0.01" mass="0.01" rgba="1 1 0 1"/>
+            </body>
+            <body name="m3" pos="-0.25 -0.25 0">
+                <joint name="j3" type="hinge" axis="0 0 1"/>
+                <site name="s3" pos="0 0 0"/>
+                <geom type="box" size="0.2 0.05 0.01" mass="0.01" rgba="1 1 0 1"/>
+            </body>
+            <body name="m4" pos="0.25 -0.25 0">
+                <joint name="j4" type="hinge" axis="0 0 1"/>
+                <site name="s4" pos="0 0 0"/>
+                <geom type="box" size="0.2 0.05 0.01" mass="0.01" rgba="1 1 0 1"/>
+            </body>
+        </body>
+    </worldbody>
+    <actuator>
+        <motor name="motor1" joint="j1"/>
+        <motor name="motor2" joint="j2"/>
+        <motor name="motor3" joint="j3"/>
+        <motor name="motor4" joint="j4"/>
+        <general name="propeller1" site="s1" gear="0 0 +0.000003133 0 0 -0.00000003133"/>
+        <general name="propeller2" site="s2" gear="0 0 -0.000003133 0 0 -0.00000003133"/>
+        <general name="propeller3" site="s3" gear="0 0 +0.000003133 0 0 -0.00000003133"/>
+        <general name="propeller4" site="s4" gear="0 0 -0.000003133 0 0 -0.00000003133"/>
+    </actuator>
+    <sensor>
+        <jointvel name="omega1" joint="j1"/>
+        <jointvel name="omega2" joint="j2"/>
+        <jointvel name="omega3" joint="j3"/>
+        <jointvel name="omega4" joint="j4"/>
+        <gyro name="gyro" site="s_imu" interval="0.001 0"/>
+        <accelerometer name="accel" site="s_imu" interval="0.001 0"/>
+        <magnetometer name="mag" site="s_imu" interval="0.02 0"/>
+        <rangefinder name="rangefinder" site="s_rangefinder" interval="0.1 0" data="dist"/>
+    </sensor>
+</mujoco>

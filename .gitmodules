@@ -10,3 +10,6 @@
 [submodule "software/sandbox/nrf24/FreeRTOS-Kernel"]
 	path = software/sandbox/nrf24/FreeRTOS-Kernel
 	url = https://github.com/FreeRTOS/FreeRTOS-Kernel.git
+[submodule "software/third-party/mujoco"]
+	path = software/simulation/mujoco
+	url = https://github.com/google-deepmind/mujoco.git
